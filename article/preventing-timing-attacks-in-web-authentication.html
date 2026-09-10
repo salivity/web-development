@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing Timing Attacks in Web Authentication - web-development</title>
+    <meta name="description" content="Timing attacks exploit subtle discrepancies in processing duration to extract sensitive information, such as valid usernames, cryptographic secrets, or passwords. In web applications, even a fraction of a millisecond difference in server response times c">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/preventing-timing-attacks-in-web-authentication">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing Timing Attacks in Web Authentication - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/preventing-timing-attacks-in-web-authentication" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Timing attacks exploit subtle discrepancies in processing duration to extract sensitive information, such as valid usernames, cryptographic secrets, or passwords. In web applications, even a fraction of a millisecond difference in server response times c" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="preventing-timing-attacks-in-web-authentication">Preventing
+Timing Attacks in Web Authentication</h1>
+<p>Timing attacks exploit subtle discrepancies in processing duration to
+extract sensitive information, such as valid usernames, cryptographic
+secrets, or passwords. In web applications, even a fraction of a
+millisecond difference in server response times can allow an attacker
+using statistical analysis to map out valid credentials. Securing
+authentication systems against these side-channel vectors requires
+designing workflows that ensure predictable, uniform execution
+regardless of input validity.</p>
+<h3 id="implement-constant-time-string-comparisons">Implement
+Constant-Time String Comparisons</h3>
+<p>Standard equality operators (like <code>==</code> or
+<code>===</code>) short-circuit, returning <code>false</code>
+immediately upon encountering the first non-matching byte. This behavior
+allows attackers to guess secrets, such as API keys, tokens, or password
+hashes, byte by byte based on how long the comparison takes.</p>
+<p>Developers must replace standard comparisons with constant-time
+functions designed to process every byte regardless of whether a
+mismatch occurs early in the sequence. Most modern environments provide
+native implementations:</p>
+<ul>
+<li><strong>Node.js:</strong> <code>crypto.timingSafeEqual()</code></li>
+<li><strong>PHP:</strong> <code>hash_equals()</code></li>
+<li><strong>Python:</strong> <code>secrets.compare_digest()</code></li>
+<li><strong>Java:</strong> <code>MessageDigest.isEqual()</code></li>
+</ul>
+<h3 id="execute-dummy-hashes-for-non-existent-users">Execute Dummy
+Hashes for Non-Existent Users</h3>
+<p>Password hashing functions such as Argon2, bcrypt, and PBKDF2 are
+deliberately designed to be computationally expensive. If an
+authentication system queries the database, fails to find a user, and
+returns immediately, the response takes only a few milliseconds.
+Conversely, if the user exists and the system hashes the provided
+password, the response takes hundreds of milliseconds. This stark
+contrast enables user enumeration.</p>
+<p>To mitigate this:</p>
+<ol type="1">
+<li>When a user is not found, do not return immediately.</li>
+<li>Compute a hash against a predefined "dummy" password hash using the
+exact same cost parameters applied to real users.</li>
+<li>Ensure the dummy hash calculation runs synchronously in the response
+pipeline so the execution duration mirrors a failed login attempt for an
+existing account.</li>
+</ol>
+<h3 id="standardize-error-responses">Standardize Error Responses</h3>
+<p>Response timing must be matched by response semantics. Authentication
+systems must return identical generic error messages (such as "Invalid
+username or password") and identical HTTP status codes (typically
+<code>401 Unauthorized</code>) for both invalid usernames and incorrect
+passwords. Leaking state through unique error responses undermines the
+time-equalization logic.</p>
+<h3 id="apply-rate-limiting-and-throttling">Apply Rate Limiting and
+Throttling</h3>
+<p>Statistical timing attacks depend on gathering hundreds or thousands
+of high-precision network samples to average out network jitter.
+Implementing aggressive rate limiting dramatically diminishes an
+attacker's ability to collect statistically significant datasets.</p>
+<p>Effective controls include:</p>
+<ul>
+<li>Restricting requests per IP address over sliding windows.</li>
+<li>Enforcing global thresholds on authentication endpoints.</li>
+<li>Employing exponential back-off delays after repeated consecutive
+failures on a specific account or IP address.</li>
+</ul>
+<h3
+id="mitigate-network-measurement-with-architectural-controls">Mitigate
+Network Measurement with Architectural Controls</h3>
+<p>While network jitter can naturally obscure small timing variations in
+standard web requests, advanced attackers can bypass jitter by measuring
+from network locations close to the target server or by using large
+sample sizes. In addition to application-level code fixes, hosting
+authentication services behind reverse proxies or Web Application
+Firewalls (WAFs) that enforce standardized request buffering and global
+throttling adds an additional layer of protection against side-channel
+analysis.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

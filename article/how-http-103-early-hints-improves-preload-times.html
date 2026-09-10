@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How HTTP 103 Early Hints Improves Preload Times - web-development</title>
+    <meta name="description" content="The HTTP 103 Early Hints status code significantly reduces critical asset preloading times by allowing web servers to send preliminary response headers while the main HTML document is still being generated. Traditionally, a browser must remain idle durin">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-http-103-early-hints-improves-preload-times">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How HTTP 103 Early Hints Improves Preload Times - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-http-103-early-hints-improves-preload-times" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The HTTP 103 Early Hints status code significantly reduces critical asset preloading times by allowing web servers to send preliminary response headers while the main HTML document is still being generated. Traditionally, a browser must remain idle durin" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-http-103-early-hints-improves-preload-times">How HTTP 103
+Early Hints Improves Preload Times</h1>
+<p>The HTTP 103 Early Hints status code significantly reduces critical
+asset preloading times by allowing web servers to send preliminary
+response headers while the main HTML document is still being generated.
+Traditionally, a browser must remain idle during the server's backend
+processing time before discovering critical resources like CSS,
+JavaScript, and fonts. By utilizing HTTP 103, developers can eliminate
+this "server think time" bottleneck, enabling browsers to fetch
+render-blocking assets in parallel with server computation and
+drastically improving key performance metrics like Largest Contentful
+Paint (LCP).</p>
+<h3 id="the-server-think-time-problem">The "Server Think Time"
+Problem</h3>
+<p>In a standard HTTP/1.1 or basic HTTP/2 flow, the browser requests an
+HTML document and must wait for the server to prepare it. This backend
+preparation—querying databases, authenticating users, rendering
+templates, or communicating with microservices—is known as server think
+time.</p>
+<p>During this interval, the network connection between the browser and
+server sits completely idle. The browser cannot discover or request
+essential stylesheets, web fonts, or scripts until it receives and
+parses the first chunk of the <code>200 OK</code> HTML response. This
+serialized process creates an unavoidable delay in page rendering.</p>
+<h3 id="how-http-103-early-hints-resolves-the-delay">How HTTP 103 Early
+Hints Resolves the Delay</h3>
+<p>HTTP 103 is an informational response defined in RFC 8297. It permits
+the server to transmit HTTP headers containing <code>Link</code>
+relations (such as <code>rel=preload</code> or
+<code>rel=preconnect</code>) immediately after receiving the request,
+before the final status code and response body are ready.</p>
+<p>The workflow operates as follows:</p>
+<ol type="1">
+<li><strong>Client Request:</strong> The user navigates to a URL, and
+the browser sends an HTTP <code>GET</code> request for the HTML
+document.</li>
+<li><strong>Early Hints Response:</strong> The server immediately
+returns an <code>HTTP/103 Early Hints</code> response containing
+<code>Link</code> headers pointing to critical resources (e.g.,
+<code>Link: &lt;/style.css&gt;; rel=preload; as=style</code>).</li>
+<li><strong>Parallel Execution:</strong> While the server continues
+processing the database queries and constructing the HTML, the browser
+receives the 103 status code and begins downloading the declared
+critical assets. It can also perform DNS lookups and TLS handshakes for
+third-party origins via <code>preconnect</code>.</li>
+<li><strong>Final Response:</strong> The server finishes generating the
+HTML and transmits the standard <code>HTTP/200 OK</code> response along
+with the document body.</li>
+<li><strong>Fast Rendering:</strong> Because critical assets were
+already fetched during step 3, the browser can parse and paint the page
+almost instantly upon receiving the HTML.</li>
+</ol>
+<h3 id="impact-on-web-performance-and-core-web-vitals">Impact on Web
+Performance and Core Web Vitals</h3>
+<p>Early Hints directly targets load-time bottlenecks to optimize user
+experience and Core Web Vitals:</p>
+<ul>
+<li><strong>Largest Contentful Paint (LCP):</strong> By initiating
+downloads for hero images, primary stylesheets, and essential fonts
+earlier, the main content of the viewport renders significantly
+faster.</li>
+<li><strong>First Contentful Paint (FCP):</strong> Early delivery of
+render-blocking CSS ensures that the browser exits its blank-screen
+state much sooner.</li>
+<li><strong>Bandwidth Optimization:</strong> Unlike traditional HTTP/2
+Server Push, which often wasted bandwidth by pushing assets already
+stored in the client cache, HTTP 103 respects browser caching. The
+browser checks its local cache upon receiving the Early Hints header and
+only downloads assets it does not already possess.</li>
+</ul>
+<h3 id="best-practices-for-implementation">Best Practices for
+Implementation</h3>
+<p>To maximize the benefits of HTTP 103 Early Hints, implement the
+following architectural practices:</p>
+<ul>
+<li><strong>Target Only Critical Assets:</strong> Only preload resources
+essential for the initial render, such as primary CSS bundles, critical
+web fonts, or the main above-the-fold image. Overloading the 103
+response with non-critical assets causes network contention that delays
+vital resources.</li>
+<li><strong>Utilize Modern Protocols:</strong> Early Hints requires
+HTTP/2 or HTTP/3 to handle multiple interim responses over a single
+multiplexed connection without connection-blocking overhead.</li>
+<li><strong>Deploy at the Edge:</strong> Content Delivery Networks
+(CDNs) and reverse proxies are ideally positioned to serve HTTP 103
+responses instantly from the network edge, maximizing the time available
+for asset retrieval while origin servers process complex backend
+logic.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

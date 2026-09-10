@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Detect Silent JavaScript Errors in Production - web-development</title>
+    <meta name="description" content="Silent JavaScript errors occur when scripts fail or promises reject without breaking the entire user interface, often leaving users with degraded functionality while development teams remain unaware. Detecting these issues in production requires a combin">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-detect-silent-javascript-errors-in-production">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Detect Silent JavaScript Errors in Production - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-detect-silent-javascript-errors-in-production" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Silent JavaScript errors occur when scripts fail or promises reject without breaking the entire user interface, often leaving users with degraded functionality while development teams remain unaware. Detecting these issues in production requires a combin" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-detect-silent-javascript-errors-in-production">How to
+Detect Silent JavaScript Errors in Production</h1>
+<p>Silent JavaScript errors occur when scripts fail or promises reject
+without breaking the entire user interface, often leaving users with
+degraded functionality while development teams remain unaware. Detecting
+these issues in production requires a combination of native browser
+listeners, API instrumentation, reporting standards, and dedicated
+client-side monitoring tools. This guide breaks down the core mechanisms
+development teams use to capture, aggregate, and diagnose silent browser
+errors in real time.</p>
+<h3 id="global-runtime-event-listeners">Global Runtime Event
+Listeners</h3>
+<p>The first line of defense against undetected client-side failures is
+registering global browser event listeners:</p>
+<ul>
+<li><strong><code>window.onerror</code> and
+<code>window.addEventListener('error')</code>:</strong> These capture
+uncaught runtime exceptions, parsing errors, and broken resource loads
+(such as failed script or image tags). The error listener provides the
+message, source URL, line number, column number, and the error object
+itself.</li>
+<li><strong><code>window.addEventListener('unhandledrejection')</code>:</strong>
+As modern web applications rely heavily on asynchronous operations,
+promises that fail without a <code>.catch()</code> block fail silently.
+The <code>unhandledrejection</code> event intercepts these rejections,
+exposing the rejection reason and promise context.</li>
+</ul>
+<h3 id="wrapping-and-overriding-native-apis">Wrapping and Overriding
+Native APIs</h3>
+<p>Many silent failures are swallowed by libraries or handled locally
+using <code>try...catch</code> blocks that simply log to the developer
+console. To surface these events:</p>
+<ul>
+<li><strong>Monkey-Patching <code>console.error</code>:</strong> Teams
+often intercept <code>console.error</code> and <code>console.warn</code>
+by storing the original method and replacing it with a custom function.
+This function logs the issue to the console as usual while
+simultaneously dispatching a payload to a telemetry endpoint.</li>
+<li><strong>Wrapping Framework Error Boundaries:</strong> Frontend
+frameworks like React (Error Boundaries), Vue
+(<code>errorHandler</code>), and Angular (<code>ErrorHandler</code>)
+catch component-level crashes to prevent white-screen states. By
+default, these can hide errors from global window listeners unless the
+framework’s handler is configured to forward the diagnostic data to an
+external service.</li>
+<li><strong>Instrumenting Network Requests:</strong> Overriding
+<code>fetch</code> and <code>XMLHttpRequest</code> enables teams to
+detect silent HTTP failures (such as 4xx or 5xx responses) that the UI
+may fail to present to the user properly.</li>
+</ul>
+<h3 id="the-browser-reporting-api-and-csp-directives">The Browser
+Reporting API and CSP Directives</h3>
+<p>Modern browsers provide native reporting mechanisms that do not rely
+strictly on JavaScript execution:</p>
+<ul>
+<li><strong>Reporting API:</strong> Using the
+<code>Reporting-Observer</code> interface or HTTP
+<code>Reporting-Endpoints</code> headers, browsers can automatically
+queue and send reports directly to an endpoint for browser crashes,
+deprecations, and feature interventions.</li>
+<li><strong>Content Security Policy (CSP) Violation Reports:</strong>
+When a script fails to execute due to security policies (such as inline
+execution blocks or unauthorized external script sources), it fails
+silently to the user. Using the <code>report-to</code> or
+<code>report-uri</code> CSP directives instructs the browser to send a
+structured JSON report whenever a policy violation occurs.</li>
+</ul>
+<h3 id="real-user-monitoring-rum-and-error-tracking-services">Real User
+Monitoring (RUM) and Error Tracking Services</h3>
+<p>Specialized client-side SDKs (such as Sentry, Datadog, Bugsnag, or
+LogRocket) combine the mechanisms above into an integrated pipeline:</p>
+<ul>
+<li><strong>Breadcrumb Tracking:</strong> SDKs record a rolling timeline
+of user interactions, route changes, network requests, and DOM mutations
+preceding an error, providing reproducible context for bugs that do not
+hard-crash the browser.</li>
+<li><strong>Source Map Processing:</strong> Production code is minified
+and obfuscated. Telemetry pipelines upload private source maps to their
+servers, automatically mapping minified stack traces back to the
+original source code lines and files.</li>
+<li><strong>Session Replay:</strong> When a silent error occurs, session
+replay tooling can reconstruct the user's DOM state visually, allowing
+developers to see the exact user actions and UI behavior leading up to
+the failure.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

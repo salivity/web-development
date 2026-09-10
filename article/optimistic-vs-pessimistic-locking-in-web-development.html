@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimistic vs Pessimistic Locking in Web Development - web-development</title>
+    <meta name="description" content="Choosing between optimistic and pessimistic locking directly dictates how an application balances data integrity against system throughput under heavy traffic. This article examines the core mechanics of both concurrency control strategies, evaluating th">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/optimistic-vs-pessimistic-locking-in-web-development">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimistic vs Pessimistic Locking in Web Development - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/optimistic-vs-pessimistic-locking-in-web-development" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Choosing between optimistic and pessimistic locking directly dictates how an application balances data integrity against system throughput under heavy traffic. This article examines the core mechanics of both concurrency control strategies, evaluating th" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="optimistic-vs-pessimistic-locking-in-web-development">Optimistic
+vs Pessimistic Locking in Web Development</h1>
+<p>Choosing between optimistic and pessimistic locking directly dictates
+how an application balances data integrity against system throughput
+under heavy traffic. This article examines the core mechanics of both
+concurrency control strategies, evaluating their impact on database
+performance, latency, developer complexity, and user experience, while
+providing clear criteria for selecting the appropriate approach for
+modern web architectures.</p>
+<h2 id="understanding-the-mechanics">Understanding the Mechanics</h2>
+<p>Concurrency conflicts occur when two or more transactions attempt to
+read and mutate the same piece of state simultaneously. Locking
+strategies prevent race conditions such as lost updates or dirty
+writes.</p>
+<ul>
+<li><strong>Optimistic Locking:</strong> Assumes that record collisions
+are rare. Instead of placing physical locks on records during read
+operations, it tracks changes using an identifier, such as an
+incrementing <code>version</code> number or a <code>timestamp</code>.
+When committing a write, the system checks whether the version has
+changed since it was read. If the version matches, the update succeeds
+and the version increments. If it does not match, the transaction fails
+or triggers a retry.</li>
+<li><strong>Pessimistic Locking:</strong> Assumes that conflicts will
+happen frequently. It places an exclusive lock on the target data at the
+moment of reading (for example, using SQL's
+<code>SELECT ... FOR UPDATE</code>). Other transactions attempting to
+access or modify that specific record are forced to wait in a queue
+until the holding transaction either commits or rolls back.</li>
+</ul>
+<h2 id="database-throughput-and-latency">Database Throughput and
+Latency</h2>
+<p>The choice of lock fundamentally affects database resource allocation
+and response times.</p>
+<h3 id="optimistic-locking">Optimistic Locking</h3>
+<p>Optimistic locking is entirely non-blocking for read operations.
+Database connections are held only for the brief duration of the read
+and the subsequent write, not during intermediate processing. In
+low-to-moderate contention environments, this yields significantly
+higher throughput and predictable latency.</p>
+<p>However, in scenarios with extreme contention (such as a flash sale
+on a single SKU), optimistic locking degrades rapidly. Because
+high-frequency writes constantly invalidate the version token,
+transactions repeatedly fail and trigger retries, resulting in wasted
+CPU cycles and network overhead.</p>
+<h3 id="pessimistic-locking">Pessimistic Locking</h3>
+<p>Pessimistic locking guarantees that once a transaction acquires a
+lock, its write operation will succeed. This eliminates the CPU overhead
+associated with transaction retries.</p>
+<p>The downside is thread and connection starvation. While a transaction
+holds a lock, all competing transactions must wait. In high-concurrency
+systems, this quickly exhausts database connection pools, causes request
+latency to spike, and introduces the risk of deadlocks, where two
+transactions hold locks the other needs, requiring database-level
+intervention to abort one of the workers.</p>
+<h2 id="architectural-fit-for-modern-web-apps">Architectural Fit for
+Modern Web Apps</h2>
+<p>Modern web applications are predominantly stateless, operating over
+HTTP request-response cycles.</p>
+<p>Optimistic locking naturally aligns with stateless architectures and
+microservices. Because the version check happens strictly at the point
+of update, state does not need to be pinned to a specific database
+connection across multiple user steps or network hops. A REST API can
+simply accept an entity payload containing the <code>version_id</code>
+and handle conflicts gracefully using HTTP
+<code>409 Conflict</code>.</p>
+<p>Pessimistic locking requires an active, open database transaction to
+maintain the lock. Holding database locks across network boundaries or
+user think-time is an anti-pattern that leads to cascading system
+failures. Consequently, pessimistic locks must be scoped tightly within
+discrete backend execution blocks, requiring careful transaction
+design.</p>
+<h2 id="when-to-use-which-strategy">When to Use Which Strategy</h2>
+<h3 id="use-optimistic-locking-when">Use Optimistic Locking When:</h3>
+<ul>
+<li><strong>The system is read-heavy:</strong> Scenarios such as content
+management systems, user profile edits, and document collaboration,
+where multiple users rarely update the exact same field at the exact
+same millisecond.</li>
+<li><strong>Architecture is stateless:</strong> Environments where
+transactions cannot span multiple API calls.</li>
+<li><strong>Conflict cost is low:</strong> Workflows where notifying the
+user that "the record was updated by someone else" and asking them to
+refresh is acceptable.</li>
+</ul>
+<h3 id="use-pessimistic-locking-when">Use Pessimistic Locking When:</h3>
+<ul>
+<li><strong>Contention is consistently high:</strong> Scenarios such as
+inventory countdowns for high-demand ticket sales, where hundreds of
+requests attempt to claim the same slot per second.</li>
+<li><strong>The cost of rollback is prohibitive:</strong> Critical
+financial transactions or banking balances, where duplicate or retried
+operations carry heavy business, legal, or computational penalties.</li>
+<li><strong>Operations are short and predictable:</strong> Backend
+processes that can acquire the lock, mutate the value, and commit the
+transaction within a few milliseconds to avoid queuing downstream
+workers.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

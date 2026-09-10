@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent SSRF Attacks on Cloud Metadata Services - web-development</title>
+    <meta name="description" content="Server-Side Request Forgery (SSRF) represents a severe security risk in cloud environments when vulnerable web applications are manipulated into querying internal infrastructure. Attackers frequently target instance metadata services (typically reachable">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-ssrf-attacks-on-cloud-metadata-services">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent SSRF Attacks on Cloud Metadata Services - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-ssrf-attacks-on-cloud-metadata-services" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Server-Side Request Forgery (SSRF) represents a severe security risk in cloud environments when vulnerable web applications are manipulated into querying internal infrastructure. Attackers frequently target instance metadata services (typically reachable" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="prevent-ssrf-attacks-on-cloud-metadata-services">Prevent SSRF
+Attacks on Cloud Metadata Services</h1>
+<p>Server-Side Request Forgery (SSRF) represents a severe security risk
+in cloud environments when vulnerable web applications are manipulated
+into querying internal infrastructure. Attackers frequently target
+instance metadata services (typically reachable via the link-local IP
+<code>169.254.169.254</code>) to steal temporary IAM credentials, access
+tokens, and environment configurations. Securing these endpoints
+requires a defense-in-depth approach combining metadata service
+hardening, network filtering, application-layer validation, and
+least-privilege identity management.</p>
+<h3 id="upgrade-to-session-oriented-metadata-services-imdsv2">Upgrade to
+Session-Oriented Metadata Services (IMDSv2)</h3>
+<p>Major cloud providers offer hardened versions of their metadata
+services to defeat basic SSRF attacks:</p>
+<ul>
+<li><strong>AWS IMDSv2:</strong> Mandates session-oriented requests.
+Applications must first send a <code>PUT</code> request with an
+<code>X-aws-ec2-metadata-token-ttl-seconds</code> header to obtain a
+session token, and then include that token in an
+<code>X-aws-ec2-metadata-token</code> header in subsequent
+<code>GET</code> requests. Because simple SSRF vulnerabilities typically
+cannot initiate arbitrary <code>PUT</code> requests or inject custom
+headers, IMDSv2 effectively blocks unauthorized access.</li>
+<li><strong>Hop Limit Restriction:</strong> In AWS, set the metadata
+response hop limit to <code>1</code>. This prevents containerized
+workloads (such as Docker or Kubernetes pods running on an EC2 instance)
+from accessing the host's metadata service if the traffic must traverse
+a virtual bridge.</li>
+<li><strong>GCP and Azure Protections:</strong> Google Cloud requires
+the <code>Metadata-Flavor: Google</code> header on all requests to
+<code>metadata.google.internal</code>, while Azure requires the
+<code>Metadata: true</code> header for its Instance Metadata Service
+(IMDS). Ensure these requirements are strictly enforced and cannot be
+bypassed by your application's client libraries.</li>
+</ul>
+<h3 id="apply-network-level-egress-filtering">Apply Network-Level Egress
+Filtering</h3>
+<p>Do not rely solely on application logic to block unauthorized
+requests; enforce boundaries at the operating system and network
+levels:</p>
+<ul>
+<li><strong>Firewall Rules (<code>iptables</code> /
+<code>nftables</code>):</strong> Block or redirect outbound traffic
+destined for <code>169.254.169.254</code>. If specific local processes
+need access, restrict access exclusively to the process user ID (UID) of
+that authorized daemon.</li>
+<li><strong>Container Isolation:</strong> In Kubernetes or Docker
+environments, block access to link-local IP addresses using
+NetworkPolicies or service meshes (e.g., Istio, Cilium) so application
+pods cannot communicate directly with the underlying node's metadata
+IP.</li>
+<li><strong>Null Routing:</strong> If an instance does not require local
+metadata access, create a null route on the operating system for
+<code>169.254.169.254/32</code> to discard all outgoing packets to that
+address immediately.</li>
+</ul>
+<h3 id="implement-strict-application-level-validation">Implement Strict
+Application-Level Validation</h3>
+<p>Mitigate the vulnerability directly within the application's
+request-handling logic:</p>
+<ul>
+<li><strong>Strict Allowlisting:</strong> Only permit requests to
+explicit, pre-approved domain names or IP addresses. Reject any user
+input containing generic schemes or arbitrary target addresses.</li>
+<li><strong>Resolve and Verify IPs:</strong> Resolve target hostnames to
+their IP addresses before dispatching the request. Verify that the
+resolved IP does not belong to link-local ranges
+(<code>169.254.0.0/16</code>), private networks (RFC 1918), or loopback
+interfaces (<code>127.0.0.0/8</code>).</li>
+<li><strong>Prevent DNS Rebinding:</strong> Ensure that the IP address
+validated by your security logic is the exact IP used for the
+connection, avoiding a secondary DNS resolution that could point to a
+malicious address during runtime.</li>
+<li><strong>Disable HTTP Redirects:</strong> Disable automatic redirect
+following in HTTP client libraries. Attackers often provide a benign URL
+that responds with a <code>301</code> or <code>302</code> redirect
+pointing to <code>http://169.254.169.254/</code>.</li>
+</ul>
+<h3 id="enforce-least-privilege-on-compute-roles">Enforce Least
+Privilege on Compute Roles</h3>
+<p>Treat metadata protection as a multi-layered boundary where identity
+boundaries serve as the final backstop:</p>
+<ul>
+<li>Assign only the minimal IAM roles and permissions necessary for the
+application instance to function.</li>
+<li>Avoid granting administrator, credential management, or
+privilege-escalation permissions to compute instances.</li>
+<li>Ensure that even if an attacker successfully extracts temporary
+credentials via an SSRF vulnerability, the blast radius is strictly
+constrained to read-only or low-impact operational tasks.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

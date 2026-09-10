@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property-Based Testing with fast-check for Edge Cases - web-development</title>
+    <meta name="description" content="This article explores how property-based testing, implemented through the JavaScript and TypeScript library fast-check, uncovers hidden edge-case bugs in complex web development algorithms. By shifting the testing paradigm from hardcoded examples to univ">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/property-based-testing-with-fast-check-for-edge-cases">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Property-Based Testing with fast-check for Edge Cases - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/property-based-testing-with-fast-check-for-edge-cases" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how property-based testing, implemented through the JavaScript and TypeScript library fast-check, uncovers hidden edge-case bugs in complex web development algorithms. By shifting the testing paradigm from hardcoded examples to univ" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="property-based-testing-with-fast-check-for-edge-cases">Property-Based
+Testing with fast-check for Edge Cases</h1>
+<p>This article explores how property-based testing, implemented through
+the JavaScript and TypeScript library fast-check, uncovers hidden
+edge-case bugs in complex web development algorithms. By shifting the
+testing paradigm from hardcoded examples to universal invariants,
+developers can automatically fuzz their code with hundreds of generated
+inputs. Below, we examine the mechanics of fast-check, how its input
+generation and shrinking algorithms work, and how it solves real-world
+algorithmic challenges in web applications.</p>
+<h3 id="the-problem-with-example-based-unit-tests">The Problem with
+Example-Based Unit Tests</h3>
+<p>Traditional unit testing relies on specific inputs chosen by the
+developer. While effective for happy paths and known boundaries—such as
+passing zero, negative numbers, or empty strings—it inherently reflects
+the author's blind spots. Developers rarely think to test surrogate
+pairs, odd-length Unicode sequences, unbalanced JSON trees, or
+boundary-skating floating-point numbers.</p>
+<p>In complex web algorithms—such as rich-text parsers, checkout price
+calculators, canvas renderers, and reactive state reconcilers—bugs often
+emerge from unexpected combinations of values rather than single bad
+inputs. Example-based tests struggle to expose these multidimensional
+edge cases.</p>
+<h3 id="how-fast-check-works">How fast-check Works</h3>
+<p>fast-check is a property-based testing framework for JavaScript and
+TypeScript. Instead of checking that <code>f(a) === b</code>, it
+verifies that a general property holds true across an entire domain of
+generated inputs:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> fc <span class="im">from</span> <span class="st">&#39;fast-check&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">test</span>(<span class="st">&#39;reversing a list twice returns original list&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  fc<span class="op">.</span><span class="fu">assert</span>(</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    fc<span class="op">.</span><span class="fu">property</span>(fc<span class="op">.</span><span class="fu">array</span>(fc<span class="op">.</span><span class="fu">integer</span>())<span class="op">,</span> (arr) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">expect</span>(<span class="fu">reverse</span>(<span class="fu">reverse</span>(arr)))<span class="op">.</span><span class="fu">toEqual</span>(arr)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>The framework operates on three primary components:</p>
+<ol type="1">
+<li><strong>Arbitraries (<code>fc.arbitrary</code>)</strong>: Generators
+that define the shape and constraints of the test data (e.g., integers,
+objects, URLs, dates, or custom domain models).</li>
+<li><strong>Properties (<code>fc.property</code>)</strong>: Declarative
+rules that must remain true for any valid input produced by the
+arbitraries.</li>
+<li><strong>Runner (<code>fc.assert</code>)</strong>: The execution
+engine that runs the property hundreds of times with randomized,
+pseudo-stochastic inputs.</li>
+</ol>
+<h3 id="uncovering-edge-cases-with-arbitraries">Uncovering Edge Cases
+with Arbitraries</h3>
+<p>fast-check ships with built-in arbitraries designed specifically to
+surface edge cases in web environments:</p>
+<ul>
+<li><strong>Strings and Text Processing</strong>: Built-in primitives
+such as <code>fc.string()</code>, <code>fc.fullUnicodeString()</code>,
+and <code>fc.unicode()</code> automatically inject zero-width spaces,
+RTL overrides, control characters, and surrogate pairs. This directly
+exposes crashes in custom text parsers, string truncators, and slug
+generators.</li>
+<li><strong>Structural Diversity</strong>: Composite generators such as
+<code>fc.record()</code> and <code>fc.oneof()</code> construct deeply
+nested, irregularly shaped JSON payloads. This stress-tests schema
+validators and state management reducers against deep recursion,
+prototype pollution properties, and sparse arrays.</li>
+<li><strong>Numbers and Formats</strong>: Primitives generate extreme
+values such as <code>-0</code>, <code>NaN</code>, <code>Infinity</code>,
+<code>Number.MIN_VALUE</code>, and floating-point boundaries that break
+client-side financial calculations or pagination indices.</li>
+</ul>
+<h3 id="the-power-of-shrinking">The Power of Shrinking</h3>
+<p>Finding an edge case is only half the battle; debugging a failure
+generated from an arbitrary 5,000-character string or a deeply nested
+20-level object is extremely difficult.</p>
+<p>fast-check solves this through <strong>shrinking</strong>. When an
+assertion fails, fast-check intercepts the failure and systematically
+searches for smaller, simpler variations of the failing input that still
+trigger the failure:</p>
+<ul>
+<li>If an array of 50 elements fails, it tries subsets (25, 12, 1) until
+it identifies the exact minimal array needed to reproduce the bug.</li>
+<li>If a complex Unicode string crashes an algorithm, fast-check strips
+away unnecessary characters until only the problematic code point
+remains (e.g., reducing a long paragraph to just <code>"\u0000"</code>
+or a single unpaired surrogate).</li>
+</ul>
+<p>This provides developers with the absolute smallest reproducible
+example directly in the test output.</p>
+<h3 id="invariant-patterns-for-web-development">Invariant Patterns for
+Web Development</h3>
+<p>To effectively apply fast-check to web algorithms, developers
+identify invariants rather than exact outputs:</p>
+<h4 id="1-round-trip-serialization">1. Round-Trip Serialization</h4>
+<p>Custom encoders and decoders (e.g., query string serializers, local
+storage adapters, or base64 helpers) must preserve identity:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>fc<span class="op">.</span><span class="fu">assert</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  fc<span class="op">.</span><span class="fu">property</span>(fc<span class="op">.</span><span class="fu">record</span>({ id<span class="op">:</span> fc<span class="op">.</span><span class="fu">uuid</span>()<span class="op">,</span> query<span class="op">:</span> fc<span class="op">.</span><span class="fu">string</span>() })<span class="op">,</span> (state) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(<span class="fu">deserialize</span>(<span class="fu">serialize</span>(state)))<span class="op">.</span><span class="fu">toEqual</span>(state)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<h4 id="2-idempotence">2. Idempotence</h4>
+<p>Operations like data normalization, sorting, or sanitization
+functions should produce the same output if executed more than once on
+that output:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>fc<span class="op">.</span><span class="fu">assert</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  fc<span class="op">.</span><span class="fu">property</span>(fc<span class="op">.</span><span class="fu">string</span>()<span class="op">,</span> (rawHtml) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> cleanOnce <span class="op">=</span> <span class="fu">sanitizeHtml</span>(rawHtml)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> cleanTwice <span class="op">=</span> <span class="fu">sanitizeHtml</span>(cleanOnce)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(cleanTwice)<span class="op">.</span><span class="fu">toEqual</span>(cleanOnce)<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<h4 id="3-metamorphic-properties">3. Metamorphic Properties</h4>
+<p>When testing search, filtering, or sorting algorithms, applying a
+stricter filter to a dataset should always return a subset of the
+original results:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>fc<span class="op">.</span><span class="fu">assert</span>(</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  fc<span class="op">.</span><span class="fu">property</span>(fc<span class="op">.</span><span class="fu">array</span>(fc<span class="op">.</span><span class="fu">record</span>({ age<span class="op">:</span> fc<span class="op">.</span><span class="fu">nat</span>() }))<span class="op">,</span> fc<span class="op">.</span><span class="fu">nat</span>()<span class="op">,</span> (users<span class="op">,</span> threshold) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> broad <span class="op">=</span> <span class="fu">filterUsers</span>(users<span class="op">,</span> threshold)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> strict <span class="op">=</span> <span class="fu">filterUsers</span>(users<span class="op">,</span> threshold <span class="op">+</span> <span class="dv">10</span>)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">expect</span>(broad<span class="op">.</span><span class="at">length</span>)<span class="op">.</span><span class="fu">toBeGreaterThanOrEqual</span>(strict<span class="op">.</span><span class="at">length</span>)<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<h3 id="summary">Summary</h3>
+<p>fast-check bridges the gap between traditional unit testing and
+automated fuzzing. By generating diverse, hostile inputs and
+automatically reducing failures to minimal reproductions, it
+systematically uncovers edge cases—such as encoding traps, numerical
+anomalies, and structural edge cases—that manual test suites
+consistently overlook.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

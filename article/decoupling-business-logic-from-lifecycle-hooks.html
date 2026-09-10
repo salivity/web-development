@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decoupling Business Logic from Lifecycle Hooks - web-development</title>
+    <meta name="description" content="Coupling core business logic directly to framework-specific lifecycle hooks—such as React's useEffect, Vue's onMounted, or Angular's ngOnInit—creates brittle, untestable applications that are difficult to refactor. This article outlines the strategie">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/decoupling-business-logic-from-lifecycle-hooks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Decoupling Business Logic from Lifecycle Hooks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/decoupling-business-logic-from-lifecycle-hooks" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Coupling core business logic directly to framework-specific lifecycle hooks—such as React's useEffect, Vue's onMounted, or Angular's ngOnInit—creates brittle, untestable applications that are difficult to refactor. This article outlines the strategie" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="decoupling-business-logic-from-lifecycle-hooks">Decoupling
+Business Logic from Lifecycle Hooks</h1>
+<p>Coupling core business logic directly to framework-specific lifecycle
+hooks—such as React's <code>useEffect</code>, Vue's
+<code>onMounted</code>, or Angular's <code>ngOnInit</code>—creates
+brittle, untestable applications that are difficult to refactor. This
+article outlines the strategies software engineers use to isolate domain
+rules from UI runtime events, including extracting pure domain services,
+utilizing headless architectural patterns, and adopting event-driven and
+state machine architectures to keep frameworks strictly at the
+application's boundary.</p>
+<h3 id="the-problem-with-lifecycle-coupling">The Problem with Lifecycle
+Coupling</h3>
+<p>Lifecycle hooks are designed to coordinate a component with external
+systems (such as the DOM, network requests, or subscriptions) relative
+to when a component renders or unmounts. When developers embed
+calculations, validation, and domain state mutations directly inside
+these hooks, several problems emerge:</p>
+<ul>
+<li><strong>Testability degradation:</strong> Testing business rules
+requires rendering a virtual component and simulating its lifecycle
+phases, slowing down test suites and increasing maintenance
+overhead.</li>
+<li><strong>Framework lock-in:</strong> Upgrades or framework migrations
+require rewriting both UI and core logic.</li>
+<li><strong>Hidden execution flows:</strong> Lifecycle hooks often
+trigger unexpected multi-pass re-renders or race conditions because
+logic is tied to presentation state instead of explicit user
+actions.</li>
+</ul>
+<h3 id="1-extract-logic-into-plain-typescriptjavascript-services">1.
+Extract Logic into Plain TypeScript/JavaScript Services</h3>
+<p>The most effective method for decoupling is creating
+framework-agnostic modules—often termed domain services, use cases, or
+Plain Old JavaScript Objects (POJOs).</p>
+<p>A domain service should be written entirely in standard TypeScript
+without importing framework tokens:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// cart.service.ts (Framework-agnostic)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">class</span> CartService {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">calculateTotal</span>(items<span class="op">:</span> CartItem[]<span class="op">,</span> discount<span class="op">:</span> Discount)<span class="op">:</span> <span class="dt">number</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> subtotal <span class="op">=</span> items<span class="op">.</span><span class="fu">reduce</span>((sum<span class="op">,</span> item) <span class="kw">=&gt;</span> sum <span class="op">+</span> item<span class="op">.</span><span class="at">price</span> <span class="op">*</span> item<span class="op">.</span><span class="at">quantity</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> subtotal <span class="op">-</span> (subtotal <span class="op">*</span> discount<span class="op">.</span><span class="at">rate</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By extracting the rules into a pure class or set of functions, unit
+testing requires only standard assertion runners (like Vitest or Jest)
+without needing component-mounting libraries.</p>
+<h3 id="2-treat-lifecycle-hooks-as-translators">2. Treat Lifecycle Hooks
+as Translators</h3>
+<p>Under clean architecture principles, lifecycle hooks belong to the
+"infrastructure" or "presentation" layer. Their sole responsibility
+should be translating a lifecycle event into an input for the domain
+layer, acting like a bridge.</p>
+<p>Instead of writing data transformations within a hook:</p>
+<ol type="1">
+<li>The lifecycle hook fires (e.g., component mounts).</li>
+<li>The hook calls a decoupled use case or handler function.</li>
+<li>The hook receives the output and updates local component state, if
+necessary.</li>
+</ol>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// React example: Hook acts strictly as an adapter</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">UserProfile</span>({ userId }<span class="op">:</span> { userId<span class="op">:</span> <span class="dt">string</span> }) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [user<span class="op">,</span> setUser] <span class="op">=</span> <span class="fu">useState</span><span class="op">&lt;</span>User <span class="op">|</span> <span class="dt">null</span><span class="op">&gt;</span>(<span class="kw">null</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">useEffect</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> isSubscribed <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Pure async domain function defined outside the component</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">fetchUserProfile</span>(userId)<span class="op">.</span><span class="fu">then</span>(profile <span class="kw">=&gt;</span> {</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (isSubscribed) <span class="fu">setUser</span>(profile)<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> () <span class="kw">=&gt;</span> { isSubscribed <span class="op">=</span> <span class="kw">false</span><span class="op">;</span> }<span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span> [userId])<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">&lt;</span>div<span class="op">&gt;</span>{user<span class="op">?.</span><span class="at">name</span>}<span class="op">&lt;/</span>div<span class="op">&gt;;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="3-implement-headless-hooks-and-composables">3. Implement
+Headless Hooks and Composables</h3>
+<p>Frameworks like React and Vue support idiomatic encapsulation through
+custom hooks and composables. Engineers use "headless" patterns to
+divide responsibilities:</p>
+<ul>
+<li><strong>View Layer:</strong> Defines layout, styling, and binds
+event listeners.</li>
+<li><strong>Controller Layer (Custom Hook/Composable):</strong> Manages
+framework lifecycles and reactive primitives.</li>
+<li><strong>Domain Layer (Pure Modules):</strong> Holds the business
+logic, independent of any UI framework.</li>
+</ul>
+<p>The custom hook acts as a facade, binding framework reactivity (e.g.,
+<code>ref</code>, <code>useState</code>) to the pure logic modules,
+ensuring the actual business logic remains isolated from
+framework-specific APIs.</p>
+<h3 id="4-rely-on-finite-state-machines-fsms">4. Rely on Finite State
+Machines (FSMs)</h3>
+<p>Complex lifecycle logic often arises when trying to synchronize
+asynchronous states (loading, error, success, retry) within hooks.
+Finite state machines (such as XState) decouple this logic
+completely.</p>
+<p>With a state machine:</p>
+<ul>
+<li>State transitions and side effects are defined in an independent
+machine configuration.</li>
+<li>The UI component simply sends events (e.g., <code>FETCH_DATA</code>)
+inside a lifecycle hook.</li>
+<li>The machine handles transition rules, preventing invalid states
+regardless of how often a component re-renders or mounts.</li>
+</ul>
+<h3 id="5-dependency-injection-and-ports--adapters">5. Dependency
+Injection and Ports &amp; Adapters</h3>
+<p>In larger systems, engineers apply Ports and Adapters (Hexagonal
+Architecture). The core business logic defines interfaces (ports) for
+required side effects, such as an HTTP client or cache storage. Concrete
+implementations (adapters) are passed into the business logic.</p>
+<p>When a lifecycle hook runs, it invokes a domain controller that has
+already received its dependencies. This approach allows developers to
+run the exact same domain workflow inside a CLI, a web component, or an
+automated integration test simply by swapping the adapter.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

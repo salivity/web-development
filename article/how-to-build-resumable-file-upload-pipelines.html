@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Build Resumable File Upload Pipelines - web-development</title>
+    <meta name="description" content="Building a fault-tolerant file upload pipeline requires combining client-side chunking, stateful session tracking, robust cloud storage integrations, and automatic failure recovery. This article covers the core architectural patterns engineers use to imp">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-build-resumable-file-upload-pipelines">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Build Resumable File Upload Pipelines - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-build-resumable-file-upload-pipelines" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Building a fault-tolerant file upload pipeline requires combining client-side chunking, stateful session tracking, robust cloud storage integrations, and automatic failure recovery. This article covers the core architectural patterns engineers use to imp" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-build-resumable-file-upload-pipelines">How to Build
+Resumable File Upload Pipelines</h1>
+<p>Building a fault-tolerant file upload pipeline requires combining
+client-side chunking, stateful session tracking, robust cloud storage
+integrations, and automatic failure recovery. This article covers the
+core architectural patterns engineers use to implement resumable
+uploads, including slicing files via browser APIs, tracking transfer
+offsets, integrating cloud multipart upload protocols, and handling
+intermittent network failures cleanly without data corruption.</p>
+<h3 id="client-side-chunking-and-hashing">Client-Side Chunking and
+Hashing</h3>
+<p>The foundation of a resumable upload pipeline is breaking large files
+into smaller, manageable parts—typically between 5MB and 20MB. Browsers
+achieve this natively using the <code>Blob.slice()</code> API.</p>
+<p>Before transmission begins, the client generates a unique file
+identifier. This is often created by hashing the file's contents, or by
+combining stable file metadata such as file name, size, and last
+modified timestamp with a user identifier. For each chunk, the client
+calculates a checksum (such as MD5 or SHA-256). These individual
+checksums are sent in request headers, allowing the receiving server or
+object store to verify the integrity of each part immediately upon
+arrival.</p>
+<h3 id="standard-protocols-and-state-management">Standard Protocols and
+State Management</h3>
+<p>Engineers commonly rely on open specifications like the <a
+href="https://tus.io/">tus protocol</a> or implement custom RESTful APIs
+using standard conventions:</p>
+<ol type="1">
+<li><strong>Upload Initiation:</strong> The client sends an initial
+<code>POST</code> request with metadata (total file size, MIME type,
+file hash). The server validates authorization, allocates an upload
+session, and returns a unique upload URL or session ID.</li>
+<li><strong>State Storage:</strong> The server tracks upload progress
+using a fast, low-latency datastore such as Redis. The state record
+maintains the session ID, expected total bytes, and an array of
+successfully received chunk indexes or the current byte offset.</li>
+<li><strong>Offset Inquiries:</strong> If an upload is interrupted, the
+client sends a <code>HEAD</code> or <code>GET</code> request to retrieve
+the current offset. The server returns the byte position up to which
+data is fully secured, directing the client exactly where to resume
+slicing.</li>
+</ol>
+<h3 id="direct-to-storage-multipart-uploads">Direct-to-Storage Multipart
+Uploads</h3>
+<p>Routing gigabytes of binary payload through application servers
+creates severe I/O bottlenecks. To prevent this, engineers design
+pipelines that offload chunk reception directly to object storage
+services like Amazon S3, Google Cloud Storage, or Azure Blob
+Storage.</p>
+<p>Under this pattern:</p>
+<ul>
+<li>The client requests permission to upload a chunk.</li>
+<li>The application server communicates with the object storage API to
+initiate a multipart upload and generates pre-signed URLs with limited
+lifespans for each specific part index.</li>
+<li>The client uploads the binary chunk directly to the cloud provider
+using the pre-signed URL.</li>
+<li>Once the chunk upload succeeds, the cloud provider returns an
+<code>ETag</code>. The client passes this <code>ETag</code> and the part
+number back to the application server to confirm receipt.</li>
+</ul>
+<h3 id="network-resilience-and-exponential-backoff">Network Resilience
+and Exponential Backoff</h3>
+<p>Network interruptions are guaranteed at scale. A resilient
+client-side worker must treat dropped connections as routine events
+rather than fatal errors.</p>
+<p>When an HTTP request fails due to a timeout, connection reset, or 5xx
+status code, the client applies an exponential backoff algorithm
+combined with jitter. Exponential backoff increases the delay between
+successive retries (e.g., 1s, 2s, 4s, 8s), while jitter adds a
+randomized variation to the delay to prevent the thundering herd problem
+against the backend. Chunks are retried individually; completed chunks
+are never re-uploaded.</p>
+<h3 id="assembly-and-final-integrity-verification">Assembly and Final
+Integrity Verification</h3>
+<p>Once all parts are uploaded, the client triggers the finalization
+stage:</p>
+<ul>
+<li><strong>Assembly:</strong> The application server instructs the
+object store to combine the parts into a single object using the saved
+list of part numbers and <code>ETags</code>.</li>
+<li><strong>Integrity Validation:</strong> The server compares the
+composite checksum produced by the storage provider against the original
+hash declared during the initiation phase. If the hashes mismatch, the
+file is rejected.</li>
+<li><strong>Orphan Cleanup:</strong> Failed or abandoned uploads leave
+orphaned chunks that accumulate storage costs. Engineers set Object
+Lifecycle Management rules on storage buckets to automatically delete
+incomplete multipart uploads after a specified retention window
+(typically 24 to 72 hours).</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

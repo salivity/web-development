@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Managing API Deprecation Without Breaking Clients - web-development</title>
+    <meta name="description" content="Managing API deprecation without breaking web and mobile clients requires a structured lifecycle strategy centered on backward compatibility, clear deprecation standards, observability, and phased decommissioning. Because web clients update almost instan">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/managing-api-deprecation-without-breaking-clients">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Managing API Deprecation Without Breaking Clients - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/managing-api-deprecation-without-breaking-clients" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Managing API deprecation without breaking web and mobile clients requires a structured lifecycle strategy centered on backward compatibility, clear deprecation standards, observability, and phased decommissioning. Because web clients update almost instan" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="managing-api-deprecation-without-breaking-clients">Managing API
+Deprecation Without Breaking Clients</h1>
+<p>Managing API deprecation without breaking web and mobile clients
+requires a structured lifecycle strategy centered on backward
+compatibility, clear deprecation standards, observability, and phased
+decommissioning. Because web clients update almost instantly while
+mobile clients depend on user-driven app store updates, teams must
+decouple endpoint updates from client releases. By employing versioning
+schemes, machine-readable HTTP deprecation headers, active consumer
+monitoring, and simulated downtime (brownouts), engineering teams can
+safely retire legacy endpoints without degrading user experience.</p>
+<h3 id="implement-predictable-versioning">Implement Predictable
+Versioning</h3>
+<p>A successful deprecation lifecycle begins before an endpoint is even
+modified, using a clear API versioning strategy. Teams commonly choose
+between URI path versioning (e.g., <code>/api/v1/resource</code>),
+custom request headers, or content negotiation via <code>Accept</code>
+headers. URI versioning remains the most widely adopted for public and
+client-facing APIs because it makes the targeted interface explicit,
+easily cacheable, and simple to route at the gateway level. Major schema
+updates or breaking field removals must trigger a version increment,
+leaving the previous version fully operational.</p>
+<h3 id="use-standard-deprecation-headers">Use Standard Deprecation
+Headers</h3>
+<p>Rather than relying solely on developer documentation, teams should
+communicate deprecation directly through network responses. Standardized
+HTTP response headers provide machine-readable warnings that automated
+monitoring tools and API gateways can detect:</p>
+<ul>
+<li><strong><code>Deprecation</code></strong>: Indicates that the
+endpoint is deprecated, optionally including the date or timestamp when
+the deprecation began (e.g.,
+<code>Deprecation: @1704067200</code>).</li>
+<li><strong><code>Sunset</code></strong>: Defines the precise date and
+time when the endpoint will become completely unavailable (e.g.,
+<code>Sunset: Wed, 01 Jul 2026 00:00:00 GMT</code>).</li>
+<li><strong><code>Link</code></strong>: Directs developers to
+deprecation documentation or the replacement endpoint (e.g.,
+<code>Link: &lt;https://api.example.com/v2/docs&gt;; rel="deprecation"</code>).</li>
+</ul>
+<p>These headers allow consumer teams to build automated alerts that
+catch deprecated usage during routine development and integration
+testing.</p>
+<h3 id="account-for-mobile-app-update-latency">Account for Mobile App
+Update Latency</h3>
+<p>Web applications can be updated across an entire user base with a
+single continuous deployment push. Mobile applications, however, suffer
+from long update tails; users frequently delay updating apps for months
+or turn off automatic updates entirely.</p>
+<p>To prevent mobile outages:</p>
+<ol type="1">
+<li><strong>Establish Long Deprecation Windows</strong>: Set sunset
+periods of at least 6 to 12 months for endpoints consumed by native
+applications.</li>
+<li><strong>Build In-App Force-Update Mechanisms</strong>: Native apps
+should include a remote-config or version-check endpoint at launch. If
+an app version relies on a sunsetted API version, it can prompt or
+require the user to update via the app store.</li>
+<li><strong>Maintain Additive Changes</strong>: Avoid removing fields or
+altering data types on existing schemas. Add new fields alongside
+existing ones whenever possible to extend the lifetime of a version
+without a breaking release.</li>
+</ol>
+<h3 id="track-consumer-usage-with-telemetry">Track Consumer Usage with
+Telemetry</h3>
+<p>Teams should never sunset an API based on assumptions or schedules
+alone. Modern API gateways (such as Kong, Apigee, or AWS API Gateway)
+must log traffic against deprecated endpoints, tagged by
+<code>User-Agent</code>, API key, client ID, or client application
+version.</p>
+<p>Telemetry identifies which platforms or customer segments are still
+dependent on old contracts. Once active traffic approaches an acceptable
+threshold—ideally zero for internal clients—teams can contact remaining
+high-volume consumers directly to assist with migration.</p>
+<h3 id="execute-phased-sunsetting-and-brownouts">Execute Phased
+Sunsetting and Brownouts</h3>
+<p>The final decommissioning phase should follow a gradual path to catch
+lingering dependencies before permanent removal:</p>
+<ol type="1">
+<li><strong>Deprecation Announcement</strong>: Publish documentation,
+send developer notices, and inject deprecation headers into API
+responses.</li>
+<li><strong>Brownout Windows</strong>: Temporarily disable the
+deprecated endpoint for short, scheduled intervals (e.g., return HTTP
+<code>410 Gone</code> or <code>404 Not Found</code> for 15 minutes
+during non-peak hours, increasing to several hours over several weeks).
+Brownouts deliberately trigger alerts in lagging systems and surface
+unmigrated clients while there is still time to recover.</li>
+<li><strong>Permanent Retirement</strong>: Return HTTP
+<code>410 Gone</code> permanently on sunsetted routes. This status
+explicitly informs clients that the resource is intentionally removed
+and will not return, preventing infinite automated retry loops often
+triggered by <code>500</code> or <code>404</code> responses.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

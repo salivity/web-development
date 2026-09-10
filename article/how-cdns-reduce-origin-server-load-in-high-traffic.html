@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CDNs Reduce Origin Server Load in High Traffic - web-development</title>
+    <meta name="description" content="A surge in web traffic can quickly overwhelm an origin server, leading to latency spikes, resource exhaustion, and downtime. Content Delivery Networks (CDNs) resolve this bottleneck by deploying a globally distributed layer of reverse proxy edge servers">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-cdns-reduce-origin-server-load-in-high-traffic">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CDNs Reduce Origin Server Load in High Traffic - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-cdns-reduce-origin-server-load-in-high-traffic" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="A surge in web traffic can quickly overwhelm an origin server, leading to latency spikes, resource exhaustion, and downtime. Content Delivery Networks (CDNs) resolve this bottleneck by deploying a globally distributed layer of reverse proxy edge servers" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-cdns-reduce-origin-server-load-in-high-traffic">How CDNs
+Reduce Origin Server Load in High Traffic</h1>
+<p>A surge in web traffic can quickly overwhelm an origin server,
+leading to latency spikes, resource exhaustion, and downtime. Content
+Delivery Networks (CDNs) resolve this bottleneck by deploying a globally
+distributed layer of reverse proxy edge servers between end users and
+the central backend infrastructure. This article examines how CDNs
+mitigate origin server load during high-traffic scenarios through
+strategic caching, request collapsing, connection optimization, security
+filtering, and edge computing.</p>
+<h3 id="edge-caching-of-static-and-dynamic-assets">Edge Caching of
+Static and Dynamic Assets</h3>
+<p>The primary way a CDN relieves origin load is by serving content
+directly from edge nodes closest to the requesting user. Web
+applications consist of static assets (images, JavaScript, CSS
+stylesheets, and pre-rendered HTML) that do not change between
+requests.</p>
+<p>When an asset is requested for the first time, the edge node fetches
+it from the origin and stores it according to the origin's
+<code>Cache-Control</code> headers and Time-To-Live (TTL) policies.
+Subsequent requests from other users within that geographic region are
+served directly from the edge cache. This completely prevents millions
+of static asset requests from ever reaching the origin server's CPU,
+memory, and disk I/O. Modern CDNs also support dynamic content caching
+by leveraging targeted cache invalidation hooks and surrogate keys,
+allowing even personalized or frequently updated data to be offloaded
+safely.</p>
+<h3 id="request-collapsing-and-origin-shielding">Request Collapsing and
+Origin Shielding</h3>
+<p>During flash-traffic spikes or when a popular cached object expires,
+hundreds or thousands of concurrent requests might hit the CDN
+simultaneously for the same asset. Without optimization, this causes a
+"cache stampede" that inundates the origin.</p>
+<p>CDNs prevent this through request collapsing (also known as
+connection coalescing). When multiple identical requests arrive for an
+uncached or expired resource, the edge server consolidates them into a
+single outbound request to the origin. The remaining client requests are
+queued at the edge, waiting for that single origin response, which is
+then broadcast to all waiting clients and saved to the cache.</p>
+<p>Additionally, many architectures employ an origin shield—a
+centralized caching tier placed between edge locations and the origin
+server. The origin shield aggregates requests from thousands of global
+edge nodes, ensuring the origin only ever communicates with a handful of
+designated proxy servers rather than the entire global CDN
+footprint.</p>
+<h3 id="ssltls-and-connection-termination">SSL/TLS and Connection
+Termination</h3>
+<p>Establishing secure network connections requires significant
+computational overhead. TLS handshakes, cryptographic key exchanges, and
+TCP slow-start algorithms consume significant CPU resources when handled
+directly by the origin for thousands of concurrent visitors.</p>
+<p>A CDN performs SSL/TLS offloading at the edge. The edge node
+terminates the encrypted connection with the client, performs the
+computationally intensive handshake, and manages the session state.
+Between the CDN and the origin, connections are kept alive via
+persistent, pre-warmed connection pools. This reduces the origin’s
+network overhead to a stable, manageable stream of optimized HTTP/2 or
+HTTP/3 traffic without repetitive TLS negotiation costs.</p>
+<h3 id="traffic-filtering-and-ddos-mitigation">Traffic Filtering and
+DDoS Mitigation</h3>
+<p>Malicious automated traffic, credential-stuffing bots, and
+Distributed Denial of Service (DDoS) attacks account for a substantial
+portion of origin server load during high-profile traffic events.</p>
+<p>CDNs act as a protective perimeter. By inspecting traffic at the
+edge, CDNs absorb and mitigate volumetric Layer 3/4 attacks (such as SYN
+floods) and filter out malicious Layer 7 HTTP flood attacks using Web
+Application Firewall (WAF) rules and rate limiting. Legitimate user
+requests pass through, while invalid, malicious, or excessive requests
+are dropped at the edge, preserving the origin's capacity for genuine
+business logic.</p>
+<h3 id="edge-computing-and-logic-execution">Edge Computing and Logic
+Execution</h3>
+<p>Modern web architectures shift computational tasks entirely away from
+the backend database and application servers to CDN edge workers. Using
+serverless edge runtimes, developers can run lightweight logic closer to
+the user:</p>
+<ul>
+<li><strong>Authentication and Authorization:</strong> Verifying JSON
+Web Tokens (JWTs) before allowing a request to hit the origin API.</li>
+<li><strong>Geographic Redirects and URL Rewrites:</strong> Handling
+routing rules and localized URL redirects without application
+intervention.</li>
+<li><strong>A/B Testing and Feature Flags:</strong> Serving alternate
+variants of a page based on edge-evaluated cookies.</li>
+</ul>
+<p>By moving these stateless, repetitive compute tasks to the CDN layer,
+the origin server is freed to focus strictly on complex transactional
+processing and core database operations.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

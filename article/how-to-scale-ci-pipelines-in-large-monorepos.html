@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Scale CI Pipelines in Large Monorepos - web-development</title>
+    <meta name="description" content="As software organizations scale, monorepos often become a bottleneck for continuous integration (CI) due to surging build times, redundant test runs, and merge queue congestion. This article explores actionable strategies to maintain clean, fast, and rel">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-scale-ci-pipelines-in-large-monorepos">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Scale CI Pipelines in Large Monorepos - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-scale-ci-pipelines-in-large-monorepos" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="As software organizations scale, monorepos often become a bottleneck for continuous integration (CI) due to surging build times, redundant test runs, and merge queue congestion. This article explores actionable strategies to maintain clean, fast, and rel" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-scale-ci-pipelines-in-large-monorepos">How to Scale CI
+Pipelines in Large Monorepos</h1>
+<p>As software organizations scale, monorepos often become a bottleneck
+for continuous integration (CI) due to surging build times, redundant
+test runs, and merge queue congestion. This article explores actionable
+strategies to maintain clean, fast, and reliable CI pipelines in large
+web development monorepos. By implementing dependency graph analysis,
+remote computation caching, dynamic test sharding, and tiered pipeline
+gates, engineering teams can scale their codebase without sacrificing
+deployment velocity or developer experience.</p>
+<h2 id="implement-affected-graph-analysis">Implement Affected Graph
+Analysis</h2>
+<p>Running every test, linter, and build step across an entire monorepo
+on every commit is unsustainable. Teams should use build systems with
+dependency-graph awareness—such as Turborepo, Nx, or Bazel.</p>
+<p>These tools analyze the Git diff against a target branch and
+cross-reference it with the internal dependency graph. CI runs tasks
+strictly for the packages modified and any downstream packages that
+depend on them. Unaffected packages are skipped entirely, reducing
+pipeline execution time from hours to minutes.</p>
+<h2 id="leverage-remote-caching">Leverage Remote Caching</h2>
+<p>Repeated computation is one of the largest sources of CI waste.
+Remote caching enables CI runners to share build, bundle, and test
+artifacts across the entire organization.</p>
+<p>When a CI runner processes a step:</p>
+<ol type="1">
+<li>It hashes the inputs (source code, environment variables,
+configuration files, dependencies).</li>
+<li>It checks a shared cloud cache for an artifact matching that
+hash.</li>
+<li>If an artifact exists, the runner downloads the output and replays
+the terminal output instantly, skipping execution.</li>
+</ol>
+<p>Because developers and CI agents populate the same cache, code that
+was already compiled or tested locally or in a previous pipeline runs in
+seconds rather than minutes.</p>
+<h2 id="dynamic-test-sharding-and-matrix-execution">Dynamic Test
+Sharding and Matrix Execution</h2>
+<p>Even with affected analysis, a change to a core shared library can
+trigger large end-to-end (E2E) and integration test suites. To avoid
+long-running single jobs, split workloads horizontally using test
+sharding.</p>
+<p>Instead of running tests sequentially on a single machine:</p>
+<ul>
+<li>Dynamically divide test suites into balanced chunks across multiple
+ephemeral runner nodes.</li>
+<li>Allocate shards based on historical test duration data to ensure all
+worker nodes finish at roughly the same time.</li>
+<li>Isolate flaky network-dependent tests into separate parallel
+pipelines with automatic retry policies, preventing them from blocking
+core unit test verification.</li>
+</ul>
+<h2 id="separate-fast-and-slow-verification-loops">Separate Fast and
+Slow Verification Loops</h2>
+<p>Not all CI tasks need to block a pull request from being evaluated.
+Implement a tiered pipeline structure:</p>
+<ul>
+<li><strong>Pre-Merge (Fast Gate):</strong> Run linting, type checks,
+unit tests, and security scans on the affected targets. Keep this
+feedback loop under 10 minutes to maintain developer momentum.</li>
+<li><strong>Post-Merge (Slow Gate):</strong> Run full-system regression
+tests, cross-browser compatibility checks, and performance benchmarks
+after the code merges to the primary integration branch.</li>
+<li><strong>Scheduled/Nightly Builds:</strong> Execute exhaustive
+dependency audits, long-running end-to-end scenarios, and full monorepo
+builds during off-peak hours.</li>
+</ul>
+<h2 id="deploy-merge-queues">Deploy Merge Queues</h2>
+<p>When multiple teams merge code into a shared repository concurrently,
+race conditions and broken <code>main</code> branches emerge. A merge
+queue (such as GitHub Merge Queue or Mergeify) serializes merges by
+testing speculative combinations of pull requests before adding them to
+the base branch.</p>
+<p>If a pull request fails the speculative test, the queue rejects it
+and tests the next batch without human intervention. This eliminates the
+need for developers to constantly rebase their branches locally to
+verify compatibility, ensuring that the primary branch remains clean and
+deployable.</p>
+<h2 id="enforce-strict-boundary-and-module-rules">Enforce Strict
+Boundary and Module Rules</h2>
+<p>A clean CI pipeline depends on clean code architecture. When
+dependencies between monorepo packages become circular or untracked,
+graph analysis fails to correctly isolate changes, forcing unnecessary
+CI executions.</p>
+<p>Use tools like ESLint module boundary plugins to enforce explicit
+boundaries between packages. Restrict internal packages from reaching
+across private directories without proper exposure through a shared
+public interface. Clear boundaries guarantee that build systems compute
+accurate change graphs, keeping CI pipelines optimized and
+deterministic.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

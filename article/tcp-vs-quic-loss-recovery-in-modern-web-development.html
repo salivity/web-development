@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCP vs QUIC: Loss Recovery in Modern Web Development - web-development</title>
+    <meta name="description" content="Modern web performance depends heavily on how transport protocols handle lost data packets during transmission. While Transmission Control Protocol (TCP) has anchored internet communication for decades, Quick UDP Internet Connections (QUIC)—the foundat">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/tcp-vs-quic-loss-recovery-in-modern-web-development">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="TCP vs QUIC: Loss Recovery in Modern Web Development - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/tcp-vs-quic-loss-recovery-in-modern-web-development" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern web performance depends heavily on how transport protocols handle lost data packets during transmission. While Transmission Control Protocol (TCP) has anchored internet communication for decades, Quick UDP Internet Connections (QUIC)—the foundat" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="tcp-vs-quic-loss-recovery-in-modern-web-development">TCP vs
+QUIC: Loss Recovery in Modern Web Development</h1>
+<p>Modern web performance depends heavily on how transport protocols
+handle lost data packets during transmission. While Transmission Control
+Protocol (TCP) has anchored internet communication for decades, Quick
+UDP Internet Connections (QUIC)—the foundation of HTTP/3—redesigns
+packet recovery from the ground up. This article explores the
+architectural differences between TCP and QUIC loss recovery mechanisms,
+detailing how QUIC eliminates head-of-line blocking, resolves
+retransmission ambiguity, and improves connection resilience for modern
+web applications.</p>
+<h2 id="how-tcp-handles-packet-loss">How TCP Handles Packet Loss</h2>
+<p>TCP provides a reliable, ordered byte stream over an unreliable
+network. When data is lost, TCP identifies and retransmits the missing
+segments using several core mechanisms:</p>
+<ul>
+<li><strong>Retransmission Timeouts (RTO):</strong> If a sender does not
+receive an acknowledgment (ACK) within a calculated timeframe, it
+assumes the packet was dropped and retransmits it. RTO calculation
+relies on smoothed round-trip time (RTT) estimates, which can cause
+significant latency spikes if packets drop frequently.</li>
+<li><strong>Fast Retransmit:</strong> When an out-of-order packet
+arrives at the receiver, it generates a duplicate ACK indicating the
+last in-order byte received. Upon receiving three duplicate ACKs, the
+sender immediately retransmits the missing segment without waiting for
+the RTO to expire.</li>
+<li><strong>Selective Acknowledgments (SACK):</strong> Without SACK, TCP
+can only acknowledge the highest contiguous byte received. SACK allows
+the receiver to inform the sender about non-contiguous blocks of data
+that have arrived successfully, reducing unnecessary
+retransmissions.</li>
+</ul>
+<h3 id="limitations-of-tcp-loss-recovery">Limitations of TCP Loss
+Recovery</h3>
+<p>Despite optimizations like SACK, TCP retains inherent architectural
+bottlenecks:</p>
+<ol type="1">
+<li><strong>Retransmission Ambiguity:</strong> In standard TCP,
+retransmitted packets use the exact same sequence numbers as original
+transmissions. When an ACK returns, the sender cannot reliably determine
+whether it acknowledges the original transmission or the retransmission,
+skewing RTT measurements.</li>
+<li><strong>Connection-Wide Head-of-Line (HoL) Blocking:</strong>
+Because TCP enforces a single, strictly ordered byte stream, a single
+lost packet halts the delivery of all subsequent packets in the buffer.
+When multiple HTTP/2 streams are multiplexed over one TCP connection, a
+drop affecting Stream A stalls Streams B and C as well.</li>
+</ol>
+<h2 id="how-quic-redesigns-loss-recovery">How QUIC Redesigns Loss
+Recovery</h2>
+<p>QUIC operates in user space over UDP, allowing it to bypass operating
+system kernel updates and introduce modernized transport-layer
+logic.</p>
+<h3 id="1-monotonically-increasing-packet-numbers">1. Monotonically
+Increasing Packet Numbers</h3>
+<p>Unlike TCP sequence numbers, which represent byte offsets, every QUIC
+packet carries a unique, strictly increasing packet number. If packet 10
+drops and its payload must be resent, the retransmitted data is packaged
+into a new packet with a higher number (e.g., packet 15). This design
+completely eliminates retransmission ambiguity, enabling precise RTT
+calculations even during heavy packet loss.</p>
+<h3 id="2-stream-multiplexing-without-head-of-line-blocking">2. Stream
+Multiplexing Without Head-of-Line Blocking</h3>
+<p>QUIC separates the transport layer from individual data streams.
+Packet loss is isolated to the specific stream carrying the dropped
+frame. If a packet containing data for Stream A is lost, only Stream A
+pauses to await recovery; other concurrent streams continue processing
+incoming data without interruption.</p>
+<h3 id="3-richer-ack-frames-and-explicit-delay-tracking">3. Richer ACK
+Frames and Explicit Delay Tracking</h3>
+<p>QUIC ACK frames support up to 256 ACK ranges, providing a far more
+detailed view of received and missing packets than TCP’s SACK option
+(which is limited to three or four blocks due to TCP header size
+constraints). Additionally, QUIC receivers measure and report the exact
+delay between receiving a packet and sending the corresponding ACK,
+allowing senders to separate network latency from endpoint processing
+delays.</p>
+<h3 id="4-probe-timeout-pto-instead-of-tail-loss-probes-and-rto">4.
+Probe Timeout (PTO) Instead of Tail Loss Probes and RTO</h3>
+<p>QUIC replaces TCP's separate RTO and Tail Loss Probe mechanisms with
+a unified Probe Timeout (PTO). When a timer expires, QUIC sends a probe
+containing new or unacknowledged data to solicit an immediate ACK. This
+approach prevents stalls at the tail end of transmissions and keeps RTT
+measurements accurate.</p>
+<h2 id="summary-of-differences">Summary of Differences</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">TCP</th>
+<th style="text-align: left;">QUIC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Underlying Protocol</strong></td>
+<td style="text-align: left;">Native IP transport</td>
+<td style="text-align: left;">UDP (User space)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Packet
+Identification</strong></td>
+<td style="text-align: left;">Byte sequence offsets</td>
+<td style="text-align: left;">Monotonically increasing packet
+numbers</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Retransmission
+Ambiguity</strong></td>
+<td style="text-align: left;">Present (requires heuristics)</td>
+<td style="text-align: left;">Eliminated entirely</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Head-of-Line
+Blocking</strong></td>
+<td style="text-align: left;">Affects entire connection</td>
+<td style="text-align: left;">Isolated to individual streams</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>ACK Capabilities</strong></td>
+<td style="text-align: left;">SACK (typically 3–4 blocks)</td>
+<td style="text-align: left;">Up to 256 ACK ranges</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Timeout Mechanism</strong></td>
+<td style="text-align: left;">RTO with exponential backoff</td>
+<td style="text-align: left;">Probe Timeout (PTO)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="impact-on-web-development">Impact on Web Development</h2>
+<p>For web developers, QUIC's loss recovery mechanisms provide tangible
+benefits for end-user experience:</p>
+<ul>
+<li><strong>Mobile and Lossy Networks:</strong> Mobile devices switching
+between cell towers or users on congested Wi-Fi experience frequent
+burst loss. QUIC recovers from these interruptions faster and without
+freezing unrelated application processes.</li>
+<li><strong>Faster Tail Latency:</strong> The combination of PTO,
+precise RTT calculations, and unambiguous ACKs reduces the 95th and 99th
+percentile latencies of web applications, directly improving Core Web
+Vitals such as Largest Contentful Paint (LCP) and Interaction to Next
+Paint (INP).</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Async Await Prevents Main Thread Blocking - web-development</title>
+    <meta name="description" content="JavaScript operates on a single-threaded runtime, meaning it can only execute one task at a time on the main thread. When long-running tasks like network requests or file operations run synchronously, they freeze the user interface and degrade performanc">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-async-await-prevents-main-thread-blocking">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Async Await Prevents Main Thread Blocking - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-async-await-prevents-main-thread-blocking" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="JavaScript operates on a single-threaded runtime, meaning it can only execute one task at a time on the main thread. When long-running tasks like network requests or file operations run synchronously, they freeze the user interface and degrade performanc" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-async-await-prevents-main-thread-blocking">How Async Await
+Prevents Main Thread Blocking</h1>
+<p>JavaScript operates on a single-threaded runtime, meaning it can only
+execute one task at a time on the main thread. When long-running tasks
+like network requests or file operations run synchronously, they freeze
+the user interface and degrade performance. The introduction of
+<code>async</code> and <code>await</code> provides a clean, readable
+syntax to handle asynchronous operations by offloading background tasks
+and yielding control back to the event loop. This article explains the
+internal mechanics of how <code>async</code> and <code>await</code>
+prevent blocking the main thread, ensuring web applications remain
+responsive and smooth.</p>
+<h2 id="the-single-threaded-nature-of-javascript">The Single-Threaded
+Nature of JavaScript</h2>
+<p>Web browsers run JavaScript on a single main thread, which is
+responsible for executing scripts, handling user inputs, parsing HTML,
+and rendering the user interface (UI). If a script initiates a
+long-running, synchronous operation—such as a blocking HTTP request or
+an intensive calculation—the main thread stops everything else until
+that operation finishes. During this period, the browser becomes
+unresponsive, leading to dropped frames, unclickable buttons, and a
+degraded user experience.</p>
+<h2 id="how-async-and-await-function-under-the-hood">How
+<code>async</code> and <code>await</code> Function Under the Hood</h2>
+<p>The <code>async</code> and <code>await</code> keywords are syntactic
+sugar built on top of native JavaScript Promises. They allow
+asynchronous code to be written in a linear, synchronous-looking style
+without adopting synchronous behavior.</p>
+<p>When a function is marked with <code>async</code>, it automatically
+returns a Promise. Inside an <code>async</code> function, the
+<code>await</code> keyword pauses the execution of that specific
+function until the awaited Promise resolves or rejects. Crucially,
+<code>await</code> does not pause the execution of the main thread; it
+only pauses the local execution flow within the enclosing
+<code>async</code> function.</p>
+<h2 id="yielding-to-the-event-loop">Yielding to the Event Loop</h2>
+<p>To understand why the main thread does not freeze, it is essential to
+examine how JavaScript delegates tasks:</p>
+<ol type="1">
+<li><strong>Encountering <code>await</code>:</strong> When execution
+hits an <code>await</code> statement, the runtime suspends the
+<code>async</code> function and pops it off the synchronous call
+stack.</li>
+<li><strong>Delegating Work to Web APIs:</strong> Operations like
+<code>fetch</code> requests, timers, or disk access are delegated to
+browser-managed background threads via Web APIs.</li>
+<li><strong>Freeing the Call Stack:</strong> Because the suspended
+function leaves the call stack, the main thread becomes immediately free
+to process other tasks, including user clicks, CSS animations, and
+layout recalculations.</li>
+<li><strong>Queueing the Microtask:</strong> Once the underlying
+asynchronous operation finishes, its resolution is pushed onto the
+microtask queue.</li>
+<li><strong>Resuming Execution:</strong> When the main call stack is
+empty, the event loop inspects the microtask queue, picks up the
+resolved Promise, and pushes the remaining code of the
+<code>async</code> function back onto the call stack to resume
+execution.</li>
+</ol>
+<h2 id="the-impact-on-web-performance">The Impact on Web
+Performance</h2>
+<p>By using <code>async</code> and <code>await</code> to manage
+non-blocking workflows, web developers ensure that input latency remains
+low and UI rendering stays at a consistent 60 frames per second. The
+browser can fetch resources, retrieve database records, and stream media
+in the background while the interface remains completely interactive for
+the user.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

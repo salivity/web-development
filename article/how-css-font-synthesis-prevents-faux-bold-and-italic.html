@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CSS font-synthesis Prevents Faux Bold and Italic - web-development</title>
+    <meta name="description" content="The CSS font-synthesis property allows web developers to control whether browsers can artificially create bold, italic, or small-caps variants of a font when those specific styles are missing from the loaded font family. When custom web fonts only includ">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-css-font-synthesis-prevents-faux-bold-and-italic">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CSS font-synthesis Prevents Faux Bold and Italic - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-css-font-synthesis-prevents-faux-bold-and-italic" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS font-synthesis property allows web developers to control whether browsers can artificially create bold, italic, or small-caps variants of a font when those specific styles are missing from the loaded font family. When custom web fonts only includ" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-css-font-synthesis-prevents-faux-bold-and-italic">How CSS
+font-synthesis Prevents Faux Bold and Italic</h1>
+<p>The CSS <code>font-synthesis</code> property allows web developers to
+control whether browsers can artificially create bold, italic, or
+small-caps variants of a font when those specific styles are missing
+from the loaded font family. When custom web fonts only include a
+regular weight, user agents typically step in by programmatically
+smearing glyphs to simulate bold text or slanting them to simulate
+italics—a process known as faux bolding and faux slanting. By utilizing
+<code>font-synthesis</code>, developers can completely disable this
+automatic generation to preserve typographic integrity, visual clarity,
+and design fidelity across modern web browsers.</p>
+<h3 id="the-problem-of-faux-fonts">The Problem of Faux Fonts</h3>
+<p>When a browser encounters markup like <code>&lt;strong&gt;</code> or
+<code>&lt;em&gt;</code>, or CSS rules like <code>font-weight: 700</code>
+and <code>font-style: italic</code>, it checks if the applied
+<code>@font-face</code> rule contains those specific font files. If the
+developer has only loaded the regular (400-weight, normal-style) version
+to save bandwidth, the browser’s default behavior is to fabricate the
+missing variations:</p>
+<ul>
+<li><strong>Faux Bold:</strong> The browser renders the font multiple
+times with slight offsets or expands the outline stroke. This often
+fills in delicate counters (the negative spaces inside letters like "e",
+"o", or "a"), destroys optical balance, and produces blurry, uneven
+letterforms.</li>
+<li><strong>Faux Italic (Oblique):</strong> The browser applies a
+mathematical shear transformation to tilt the regular glyphs. True
+italics feature distinct, often cursive designs crafted specifically for
+angled reading; an algorithmically slanted font merely distorts the
+original design proportions.</li>
+</ul>
+<h3 id="how-font-synthesis-solves-the-issue">How
+<code>font-synthesis</code> Solves the Issue</h3>
+<p>The <code>font-synthesis</code> property directly overrides the
+browser’s fallback rendering engine by instructing it not to synthesize
+missing variations. Instead of generating artificial modifications, the
+browser maintains the original letterforms without distortion.</p>
+<p>The property acts as a shorthand that accepts keywords governing
+three specific typographic elements:</p>
+<ul>
+<li><code>weight</code>: Enables or disables the synthesis of bold
+faces.</li>
+<li><code>style</code>: Enables or disables the synthesis of
+oblique/italic faces.</li>
+<li><code>small-caps</code>: Enables or disables the synthesis of small
+capital letters.</li>
+<li><code>none</code>: Disables all artificial synthesis entirely.</li>
+</ul>
+<h3 id="syntax-and-implementation">Syntax and Implementation</h3>
+<p>To stop the browser from synthesizing both bold and italicized styles
+across an entire site, apply <code>font-synthesis: none</code> to the
+root element:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>html {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-family</span><span class="ch">:</span> <span class="st">&quot;CustomFont&quot;</span><span class="op">,</span> <span class="dv">sans-serif</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-synthesis</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If a project requires granular control—for instance, allowing
+artificial italics while banning faux bolding—individual sub-properties
+or specific keyword combinations can be used:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Using the shorthand for specific features */</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.prevent-faux-bold</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-synthesis</span><span class="ch">:</span> <span class="dv">style</span><span class="op">;</span> <span class="co">/* Only style synthesis allowed; bold synthesis is blocked */</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">/* Using longhand properties */</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">.fine-grained-control</span> {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-synthesis-weight</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span> <span class="co">/* Disables faux bold */</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-synthesis-style</span><span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span>  <span class="co">/* Allows faux italic */</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-synthesis-small-caps</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span> <span class="co">/* Disables faux small-caps */</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="resulting-browser-behavior">Resulting Browser Behavior</h3>
+<p>When <code>font-synthesis: none</code> (or
+<code>font-synthesis-weight: none</code>) is active and an element with
+<code>font-weight: bold</code> is rendered without a corresponding bold
+font file, the browser does not artificially thicken the text. It
+renders the glyphs using the nearest available actual weight (often the
+regular 400 weight).</p>
+<p>Similarly, applying <code>font-synthesis-style: none</code> to an
+<code>&lt;i&gt;</code> or <code>&lt;em&gt;</code> tag ensures the text
+remains upright rather than mechanically skewed if no dedicated italic
+font file is loaded.</p>
+<p>Using <code>font-synthesis</code> forces designs to honor true
+typographic shapes, prevents muddy rendering on low-DPI displays, and
+signals to developers during QA that necessary font files or fallback
+weights must be explicitly loaded.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eval vs Function: Security in Sandboxed JavaScript - web-development</title>
+    <meta name="description" content="Executing dynamic JavaScript within web applications presents critical security challenges, particularly when isolating untrusted user input. While developers often compare eval() and the Function constructor for code interpretation, the two mechanisms h">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/eval-vs-function-security-in-sandboxed-javascript">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Eval vs Function: Security in Sandboxed JavaScript - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/eval-vs-function-security-in-sandboxed-javascript" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Executing dynamic JavaScript within web applications presents critical security challenges, particularly when isolating untrusted user input. While developers often compare eval() and the Function constructor for code interpretation, the two mechanisms h" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="eval-vs-function-security-in-sandboxed-javascript">Eval vs
+Function: Security in Sandboxed JavaScript</h1>
+<p>Executing dynamic JavaScript within web applications presents
+critical security challenges, particularly when isolating untrusted user
+input. While developers often compare <code>eval()</code> and the
+<code>Function</code> constructor for code interpretation, the two
+mechanisms handle scope, variable access, and execution contexts
+differently. This article examines the security distinctions between
+<code>eval()</code> and the <code>Function</code> constructor, analyzing
+their execution behavior, vulnerability surfaces, and limitations when
+building sandboxed environments.</p>
+<h2 id="scope-resolution-and-context-leaks">Scope Resolution and Context
+Leaks</h2>
+<p>The most significant security difference between <code>eval()</code>
+and the <code>Function</code> constructor lies in lexical scope
+binding.</p>
+<p>Direct calls to <code>eval()</code> execute within the caller's
+immediate lexical scope. This grants the evaluated code full read and
+write access to all local variables, enclosing closure scopes, and
+internal functions. If sensitive data—such as authentication tokens,
+user identifiers, or private state variables—exists within the enclosing
+function, untrusted code executed via direct <code>eval()</code> can
+inspect, leak, or modify those variables directly.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">secureContext</span>() {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> secretKey <span class="op">=</span> <span class="st">&quot;sensitive_token&quot;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// eval can access local variables directly</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="pp">eval</span>(<span class="st">&quot;console.log(secretKey)&quot;</span>)<span class="op">;</span> </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Conversely, the <code>Function</code> constructor always executes in
+the global scope, regardless of where it is initialized or called. It
+does not inherit the local lexical scope of the calling context.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">secureContext</span>() {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> secretKey <span class="op">=</span> <span class="st">&quot;sensitive_token&quot;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Throws ReferenceError: secretKey is not defined</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">new</span> <span class="bu">Function</span>(<span class="st">&quot;console.log(secretKey)&quot;</span>)()<span class="op">;</span> </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because <code>Function</code> limits access strictly to the global
+namespace, it eliminates the risk of local closure leakage. However, an
+indirect <code>eval()</code> call (e.g., <code>(0, eval)(code)</code>)
+also executes in the global scope, mirroring the scoping behavior of
+<code>Function</code>.</p>
+<h2 id="global-scope-exploitation">Global Scope Exploitation</h2>
+<p>Neither <code>eval()</code> nor the <code>Function</code> constructor
+inherently provides a sandboxed environment. Even when dynamic code is
+restricted to the global scope via <code>Function</code>, it maintains
+full access to the browser's global object (<code>window</code> or
+<code>globalThis</code>).</p>
+<p>A script executed via <code>new Function()</code> can:</p>
+<ul>
+<li>Read and modify <code>document.cookie</code> or
+<code>localStorage</code>.</li>
+<li>Manipulate the DOM to inject phishing forms, alter visual elements,
+or perform keylogging.</li>
+<li>Intercept network requests by monkey-patching
+<code>window.fetch</code> or <code>XMLHttpRequest</code>.</li>
+<li>Redirect users to malicious third-party websites using
+<code>window.location</code>.</li>
+</ul>
+<p>Furthermore, even if the dynamic code is provided with a restricted
+set of arguments to mimic a clean scope, untrusted code can traverse
+prototypes to re-acquire the global object:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sandboxFunction <span class="op">=</span> <span class="kw">new</span> <span class="bu">Function</span>(<span class="st">&quot;context&quot;</span><span class="op">,</span> <span class="st">&quot;with(context) { return (function() { return this; })().constructor.constructor(&#39;return window&#39;)(); }&quot;</span>)<span class="op">;</span></span></code></pre></div>
+<p>Because functions generated by the <code>Function</code> constructor
+retain access to <code>Object</code>, <code>Function</code>, and the
+underlying prototype chains, attackers can break out of simulated
+wrappers.</p>
+<h2 id="content-security-policy-csp-restrictions">Content Security
+Policy (CSP) Restrictions</h2>
+<p>From an enforcement standpoint, modern browser security treats
+<code>eval()</code> and <code>Function</code> identically under Content
+Security Policy (CSP).</p>
+<p>Both APIs require the <code>'unsafe-eval'</code> directive to
+function within an application. If an application enables
+<code>'unsafe-eval'</code>, it disables native browser protections
+against cross-site scripting (XSS) vectors that rely on dynamic
+string-to-code compilation. As a result, relying on
+<code>Function</code> instead of <code>eval</code> offers no security
+advantage against automated CSP auditing tools or defensive
+policies.</p>
+<h2 id="architectural-requirements-for-real-sandboxing">Architectural
+Requirements for Real Sandboxing</h2>
+<p>Because neither construct establishes an isolated security boundary,
+neither should be used in isolation to run untrusted code. True
+sandboxing requires strict process, context, or runtime boundaries:</p>
+<ol type="1">
+<li><strong>Sandboxed Iframes:</strong> Executing code inside an
+<code>&lt;iframe&gt;</code> configured with
+<code>sandbox="allow-scripts"</code> (omitting
+<code>allow-same-origin</code>) isolates the execution environment into
+a separate, null-origin context that cannot directly access the parent
+page's DOM, storage, or session tokens.</li>
+<li><strong>Web Workers:</strong> Running dynamic code inside a
+dedicated Web Worker limits the untrusted script's reach by removing
+direct access to the DOM and <code>window</code>, confining access
+strictly to worker-safe APIs and message passing.</li>
+<li><strong>Engine-Level Sandboxes:</strong> Employing systems like
+ShadowRealms or hardened JavaScript engines (e.g., WebAssembly-compiled
+interpreters) completely decouples execution from the host environment's
+prototype chains and global namespace.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

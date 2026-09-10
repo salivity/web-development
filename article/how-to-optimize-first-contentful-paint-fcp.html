@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Optimize First Contentful Paint (FCP) - web-development</title>
+    <meta name="description" content="First Contentful Paint (FCP) is a vital Core Web Vitals metric that measures the time it takes for a browser to render the first piece of DOM content—such as text, images, or non-white canvas elements—after a user navigates to a page. This guide expl">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-optimize-first-contentful-paint-fcp">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Optimize First Contentful Paint (FCP) - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-optimize-first-contentful-paint-fcp" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="First Contentful Paint (FCP) is a vital Core Web Vitals metric that measures the time it takes for a browser to render the first piece of DOM content—such as text, images, or non-white canvas elements—after a user navigates to a page. This guide expl" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-optimize-first-contentful-paint-fcp">How to Optimize
+First Contentful Paint (FCP)</h1>
+<p>First Contentful Paint (FCP) is a vital Core Web Vitals metric that
+measures the time it takes for a browser to render the first piece of
+DOM content—such as text, images, or non-white canvas elements—after a
+user navigates to a page. This guide explores the most effective
+engineering techniques to minimize FCP, including eliminating
+render-blocking assets, accelerating server response times, inlining
+critical CSS, optimizing web fonts, and utilizing modern delivery
+architectures. Implementing these strategies ensures fast initial
+rendering, boosts user retention, and improves search engine
+visibility.</p>
+<h2 id="1-eliminate-render-blocking-javascript-and-css">1. Eliminate
+Render-Blocking JavaScript and CSS</h2>
+<p>Browsers pause DOM construction whenever they encounter synchronous
+<code>&lt;script&gt;</code> or
+<code>&lt;link rel="stylesheet"&gt;</code> tags in the
+<code>&lt;head&gt;</code>. To prevent delays in the initial paint:</p>
+<ul>
+<li><strong>Defer or Asynchronously Load JavaScript:</strong> Add the
+<code>defer</code> or <code>async</code> attribute to non-essential
+scripts. <code>defer</code> downloads scripts in parallel and executes
+them in document order after parsing, preventing execution from blocking
+the initial render.</li>
+<li><strong>Remove Unused CSS:</strong> Audit stylesheets using tools
+like Chrome DevTools Coverage or PurgeCSS to strip out dead rules that
+unnecessarily bloat payload sizes.</li>
+</ul>
+<h2 id="2-extract-and-inline-critical-css">2. Extract and Inline
+Critical CSS</h2>
+<p>The browser must download and parse external CSS before it can render
+any content. You can bypass this network round-trip for above-the-fold
+content:</p>
+<ul>
+<li><strong>Identify Critical Path CSS:</strong> Extract the minimum CSS
+required to style the visible viewport content upon initial load.</li>
+<li><strong>Inline into the Document Head:</strong> Place these styles
+directly inside a <code>&lt;style&gt;</code> tag within the HTML
+<code>&lt;head&gt;</code>.</li>
+<li><strong>Asynchronously Load Non-Critical CSS:</strong> Load the
+remaining stylesheets asynchronously using <code>media="print"</code>
+with an <code>onload="this.media='all'"</code> attribute or via dynamic
+script injection.</li>
+</ul>
+<h2 id="3-minimize-server-response-time-ttfb">3. Minimize Server
+Response Time (TTFB)</h2>
+<p>FCP cannot happen until the browser receives the first byte of HTML
+from the server. Reduce Time to First Byte (TTFB) by:</p>
+<ul>
+<li><strong>Using a Content Delivery Network (CDN):</strong> Cache
+static HTML and assets on edge servers close to end users to eliminate
+latency caused by physical distance.</li>
+<li><strong>Implementing Edge or Application Caching:</strong> Use tools
+like Redis, Varnish, or CDN edge caching rules to serve pre-rendered
+HTML rather than querying databases on every request.</li>
+<li><strong>Upgrading Protocols:</strong> Adopt HTTP/2 or HTTP/3 to
+benefit from multiplexing, header compression, and reduced connection
+establishment overhead.</li>
+</ul>
+<h2 id="4-optimize-web-font-delivery">4. Optimize Web Font Delivery</h2>
+<p>Custom web fonts often cause a delay in text rendering, known as
+Flash of Invisible Text (FOIT), which directly delays FCP.</p>
+<ul>
+<li><strong>Apply <code>font-display: swap</code>:</strong> Include
+<code>font-display: swap</code> in your <code>@font-face</code>
+declarations. This instructs the browser to render fallback system fonts
+immediately and swap in the custom font once it downloads.</li>
+<li><strong>Preload Critical Fonts:</strong> Use
+<code>&lt;link rel="preload" as="font" type="font/woff2" href="..." crossorigin&gt;</code>
+in your <code>&lt;head&gt;</code> to start downloading high-priority
+font files before the CSS parser discovers them.</li>
+<li><strong>Self-Host Fonts:</strong> Hosting fonts on your own origin
+eliminates the DNS lookup and TLS negotiation overhead associated with
+third-party providers.</li>
+</ul>
+<h2 id="5-implement-strategic-resource-hints">5. Implement Strategic
+Resource Hints</h2>
+<p>Resource hints allow the browser to proactively establish connections
+and fetch necessary resources ahead of time:</p>
+<ul>
+<li><strong><code>preconnect</code>:</strong> Establishes early
+connections (DNS lookup, TCP handshake, TLS negotiation) to critical
+third-party origins (e.g.,
+<code>&lt;link rel="preconnect" href="https://cdn.example.com"&gt;</code>).</li>
+<li><strong><code>dns-prefetch</code>:</strong> Handles early DNS
+resolution for secondary external domains that will be needed later in
+the page load cycle.</li>
+<li><strong><code>preload</code>:</strong> Instructs the browser to
+prioritize the retrieval of essential above-the-fold assets, such as
+critical background images or hero graphics.</li>
+</ul>
+<h2
+id="6-adopt-server-side-rendering-ssr-or-static-site-generation-ssg">6.
+Adopt Server-Side Rendering (SSR) or Static Site Generation (SSG)</h2>
+<p>Client-side rendered single-page applications (SPAs) typically
+present a blank screen until the entire JavaScript bundle is downloaded,
+parsed, and executed.</p>
+<ul>
+<li><strong>Static Site Generation (SSG):</strong> Pre-render pages to
+static HTML at build time for the fastest possible TTFB and
+instantaneous FCP.</li>
+<li><strong>Server-Side Rendering (SSR):</strong> Render the initial
+HTML layout on the server for dynamic pages, delivering a fully formed
+DOM structure directly to the client before hydration begins.</li>
+</ul>
+<h2 id="7-compress-and-minify-payloads">7. Compress and Minify
+Payloads</h2>
+<p>Smaller files download faster over the network, shortening the
+pipeline to the first paint:</p>
+<ul>
+<li><strong>Minification:</strong> Strip all unnecessary whitespace,
+comments, and characters from HTML, CSS, and JavaScript files during the
+build step.</li>
+<li><strong>Modern Compression:</strong> Use Brotli compression
+(<code>br</code>) instead of Gzip, as Brotli consistently produces
+significantly smaller file sizes for text-based assets.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

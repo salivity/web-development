@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client-Side Routing with the HTML5 History API - web-development</title>
+    <meta name="description" content="The HTML5 History API is the foundational technology that powers client-side routing in modern single-page applications (SPAs). It allows developers to programmatically manipulate the browser's session history, update the address bar, and respond to user">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/client-side-routing-with-the-html5-history-api">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Client-Side Routing with the HTML5 History API - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/client-side-routing-with-the-html5-history-api" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The HTML5 History API is the foundational technology that powers client-side routing in modern single-page applications (SPAs). It allows developers to programmatically manipulate the browser's session history, update the address bar, and respond to user" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="client-side-routing-with-the-html5-history-api">Client-Side
+Routing with the HTML5 History API</h1>
+<p>The HTML5 History API is the foundational technology that powers
+client-side routing in modern single-page applications (SPAs). It allows
+developers to programmatically manipulate the browser's session history,
+update the address bar, and respond to user navigation—such as the
+forward and back buttons—all without triggering a full page reload. By
+decoupling URL changes from standard HTTP requests, the History API
+creates the seamless, instantaneous user experience expected in
+contemporary web applications while preserving bookmarkable and
+shareable URLs.</p>
+<h3 id="eliminating-full-page-reloads">Eliminating Full Page
+Reloads</h3>
+<p>In a traditional multi-page web application, clicking a link prompts
+the browser to request a new HTML document from the server, causing a
+blank flash as the browser tears down and rebuilds the DOM. Single-page
+applications avoid this by loading a single HTML shell and using
+JavaScript to dynamically render views.</p>
+<p>The History API makes this model practical by providing methods to
+update the URL in the browser's address bar to reflect the current view
+without forcing the browser to fetch a new document. Users get the
+performance benefit of a desktop-like application alongside standard web
+navigation semantics.</p>
+<h3 id="core-methods-pushstate-and-replacestate">Core Methods:
+<code>pushState</code> and <code>replaceState</code></h3>
+<p>Client-side routers primarily rely on two core methods provided by
+the <code>window.history</code> object:</p>
+<ul>
+<li><strong><code>history.pushState(state, title, url)</code></strong>:
+Appends a new entry to the browser's history stack. When a user clicks
+an internal link, the router intercepts the event, calls
+<code>pushState</code> to update the URL (for example, moving from
+<code>/dashboard</code> to <code>/settings</code>), and instructs the
+application's rendering engine to mount the corresponding
+component.</li>
+<li><strong><code>history.replaceState(state, title, url)</code></strong>:
+Overwrites the current history entry instead of adding a new one. This
+is ideal for updating query parameters, recording transient state
+changes (like search filters or accordion toggles), or executing
+client-side redirects where navigating back to the previous transient
+state would degrade user experience.</li>
+</ul>
+<p>Both methods accept a structured clone of a <code>state</code>
+object, allowing developers to associate arbitrary, serialized data
+directly with a history entry.</p>
+<h3 id="managing-navigation-with-the-popstate-event">Managing Navigation
+with the <code>popstate</code> Event</h3>
+<p>A critical requirement of client-side routing is maintaining the
+correct behavior of the browser’s back and forward buttons. While
+<code>pushState</code> and <code>replaceState</code> silently update the
+URL, they do not automatically notify the application when the user
+navigates through their history.</p>
+<p>To bridge this gap, the browser dispatches a <code>popstate</code>
+event on the <code>window</code> object whenever the active history
+entry changes via user navigation. Client-side routers attach an event
+listener to <code>popstate</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;popstate&#39;</span><span class="op">,</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Read the updated location or event.state</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Re-render the view matching window.location.pathname</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>When a user clicks "Back," the router intercepts the
+<code>popstate</code> event, determines the current path from
+<code>window.location.pathname</code>, and swaps the visible view to
+match that route without requesting data from the server.</p>
+<h3 id="the-evolution-beyond-hash-based-routing">The Evolution Beyond
+Hash-Based Routing</h3>
+<p>Before the adoption of the History API, SPAs relied on hash-based
+routing, using the URL fragment identifier (e.g.,
+<code>example.com/#/profile</code>). Because changes to the hash never
+trigger a server request, early frameworks used the
+<code>hashchange</code> event to mimic routing.</p>
+<p>The History API superseded hash routing by enabling standard,
+path-based URLs (e.g., <code>example.com/profile</code>). This shift
+delivered cleaner aesthetics, improved search engine optimization (SEO),
+and consistent handling of relative asset paths across the
+application.</p>
+<h3 id="the-server-side-requirement">The Server-Side Requirement</h3>
+<p>While the History API governs client-side operations, it requires
+complementary server-side configuration. If a user refreshes the page or
+navigates directly to a deep link like <code>/settings/billing</code>,
+the browser bypasses the client-side router and issues a
+<code>GET</code> request directly to the web server.</p>
+<p>To prevent <code>404 Not Found</code> errors, the web server must be
+configured with a fallback rule that routes all non-asset requests back
+to the application's primary entry file (<code>index.html</code>). Once
+<code>index.html</code> loads, the client-side router reads
+<code>window.location.pathname</code> and renders the intended view.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

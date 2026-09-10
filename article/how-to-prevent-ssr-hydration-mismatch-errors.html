@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Prevent SSR Hydration Mismatch Errors - web-development</title>
+    <meta name="description" content="Hydration mismatch errors occur in server-side rendered (SSR) applications when the pre-rendered HTML generated on the server does not match the initial DOM tree constructed by the client-side JavaScript framework. This article explores the primary cause">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-prevent-ssr-hydration-mismatch-errors">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Prevent SSR Hydration Mismatch Errors - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-prevent-ssr-hydration-mismatch-errors" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Hydration mismatch errors occur in server-side rendered (SSR) applications when the pre-rendered HTML generated on the server does not match the initial DOM tree constructed by the client-side JavaScript framework. This article explores the primary cause" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-prevent-ssr-hydration-mismatch-errors">How to Prevent SSR
+Hydration Mismatch Errors</h1>
+<p>Hydration mismatch errors occur in server-side rendered (SSR)
+applications when the pre-rendered HTML generated on the server does not
+match the initial DOM tree constructed by the client-side JavaScript
+framework. This article explores the primary causes of these
+discrepancies—such as non-deterministic data, invalid HTML structures,
+and premature access to browser-specific APIs—and outlines actionable
+engineering techniques to eliminate them in modern frameworks like
+React, Next.js, Vue, and Nuxt.</p>
+<h2 id="eliminate-non-deterministic-data-during-render">Eliminate
+Non-Deterministic Data During Render</h2>
+<p>Functions that return differing outputs on each execution inevitably
+cause hydration mismatches when evaluated separately on the server and
+client.</p>
+<ul>
+<li><strong>Timestamps and Dates:</strong> Calling
+<code>new Date()</code> or <code>Date.now()</code> during the render
+phase yields different timestamps between the server generation time and
+client hydration time. Pass static timestamps via initial props or state
+instead.</li>
+<li><strong>Random Values and Identifiers:</strong> Avoid
+<code>Math.random()</code> or client-generated UUIDs for keys and IDs
+during render. Use dedicated server-safe ID generators, such as React’s
+<code>useId</code> hook, which guarantees stable identifiers across
+server and client passes.</li>
+</ul>
+<h2 id="standardize-timezones-and-internationalization">Standardize
+Timezones and Internationalization</h2>
+<p>Formatting dates, numbers, or currencies relying on the host
+environment's default locale will fail if the server environment (often
+UTC) differs from the user's local browser settings.</p>
+<ul>
+<li><strong>Specify Explicit Locales:</strong> Always pass an explicit
+locale and timezone to formatting functions (e.g.,
+<code>Intl.DateTimeFormat('en-US', { timeZone: 'UTC' })</code>) rather
+than relying on system defaults.</li>
+<li><strong>Defer Localized Formatting:</strong> If user-specific local
+time must be displayed, render a neutral placeholder or ISO string
+initially, updating the representation only after the client
+mounts.</li>
+</ul>
+<h2 id="guard-browser-specific-apis">Guard Browser-Specific APIs</h2>
+<p>Server environments lack global browser objects such as
+<code>window</code>, <code>document</code>, and
+<code>localStorage</code>. Accessing these directly in render logic
+leads to either server-side crashes or mismatch errors if guarded with
+<code>typeof window !== 'undefined'</code> inline branches.</p>
+<ul>
+<li><strong>Use Lifecycle Hooks:</strong> Access browser APIs strictly
+within post-hydration lifecycles (such as <code>useEffect</code> in
+React or <code>onMounted</code> in Vue). These hooks do not run on the
+server, ensuring identical initial renders.</li>
+<li><strong>The Two-Pass Rendering Pattern:</strong> Maintain a boolean
+state (e.g., <code>isMounted</code>) that initializes to
+<code>false</code> and switches to <code>true</code> inside a
+client-only lifecycle hook. Render client-dependent features only when
+<code>isMounted</code> is true.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { useState<span class="op">,</span> useEffect } <span class="im">from</span> <span class="st">&#39;react&#39;</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">ClientOnlyComponent</span>() {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> [hasMounted<span class="op">,</span> setHasMounted] <span class="op">=</span> <span class="fu">useState</span>(<span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">useEffect</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setHasMounted</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  }<span class="op">,</span> [])<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>hasMounted) {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span> <span class="co">// Renders identical empty state on server and initial client pass</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="op">&lt;</span>div<span class="op">&gt;</span>{<span class="bu">window</span><span class="op">.</span><span class="at">innerWidth</span>}px<span class="op">&lt;/</span>div<span class="op">&gt;;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="enforce-strict-and-valid-html-nesting">Enforce Strict and Valid
+HTML Nesting</h2>
+<p>Browsers attempt to fix invalid HTML structures before client-side
+hydration scripts execute. If the browser rearranges the DOM to fix an
+invalid tree, the client framework will encounter an unexpected
+structure and throw a mismatch error. Common invalid patterns
+include:</p>
+<ul>
+<li>Placing block-level elements inside inline elements (e.g., a
+<code>&lt;div&gt;</code> inside a <code>&lt;p&gt;</code>).</li>
+<li>Nesting interactive elements (e.g., an <code>&lt;a&gt;</code> inside
+another <code>&lt;a&gt;</code>, or a <code>&lt;button&gt;</code> inside
+an <code>&lt;a&gt;</code>).</li>
+<li>Improper table structures (e.g., omitting <code>&lt;tbody&gt;</code>
+or putting elements other than <code>&lt;tr&gt;</code> directly inside
+<code>&lt;table&gt;</code>).</li>
+</ul>
+<p>Ensure semantic validity using HTML linters and validators integrated
+into your build pipeline.</p>
+<h2 id="leverage-framework-specific-workarounds">Leverage
+Framework-Specific Workarounds</h2>
+<p>When mismatches are unavoidable—such as integrating third-party
+scripts that mutate the DOM prior to hydration—use framework escape
+hatches sparingly:</p>
+<ul>
+<li><strong>Disable SSR for Problematic Components:</strong> Use dynamic
+imports with SSR disabled (e.g., <code>next/dynamic</code> with
+<code>{ ssr: false }</code> in Next.js or
+<code>&lt;ClientOnly&gt;</code> wrappers in Nuxt) to load components
+purely on the client.</li>
+<li><strong>Suppress Specific Warnings:</strong> In React, attributes
+like <code>suppressHydrationWarning={true}</code> can be applied to
+individual elements displaying inherently variable content (such as
+dynamic timestamps) to silence false positives without disabling tree
+validation elsewhere.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcode Detection API Guide for Web Developers - web-development</title>
+    <meta name="description" content="This article provides an overview of how web development engineers implement the Shape Detection API's Barcode Detection API to enable high-performance, native in-browser scanning. By leveraging underlying device hardware and platform-level decoders, dev">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/barcode-detection-api-guide-for-web-developers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Barcode Detection API Guide for Web Developers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/barcode-detection-api-guide-for-web-developers" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how web development engineers implement the Shape Detection API's Barcode Detection API to enable high-performance, native in-browser scanning. By leveraging underlying device hardware and platform-level decoders, dev" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="barcode-detection-api-guide-for-web-developers">Barcode
+Detection API Guide for Web Developers</h1>
+<p>This article provides an overview of how web development engineers
+implement the Shape Detection API's Barcode Detection API to enable
+high-performance, native in-browser scanning. By leveraging underlying
+device hardware and platform-level decoders, developers can seamlessly
+identify 1D and 2D barcodes—including QR codes, UPCs, and Code
+128—directly through web cameras without relying on bulky third-party
+JavaScript libraries.</p>
+<h2 id="understanding-the-barcode-detection-api">Understanding the
+Barcode Detection API</h2>
+<p>The Barcode Detection API is part of the broader Web Shape Detection
+API specification. Historically, in-browser barcode scanning required
+downloading massive WebAssembly modules or JavaScript libraries like
+ZXing, which often introduced performance bottlenecks, high memory
+consumption, and frame drops. The native Barcode Detection API resolves
+this by delegating the decoding process directly to the host operating
+system's native imaging framework (such as AVFoundation on macOS/iOS or
+Google Play Services on Android).</p>
+<h2 id="step-1-feature-detection">Step 1: Feature Detection</h2>
+<p>Because the Barcode Detection API is a modern web standard with
+varying browser support, engineers must verify availability before
+executing detection logic.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">&#39;BarcodeDetector&#39;</span> <span class="kw">in</span> <span class="bu">window</span>) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Barcode Detector supported!&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">warn</span>(<span class="st">&#39;Barcode Detector is not supported in this browser.&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Engineers also check which barcode formats the current device
+supports by calling the static <code>getSupportedFormats()</code>
+method:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> supportedFormats <span class="op">=</span> <span class="cf">await</span> BarcodeDetector<span class="op">.</span><span class="fu">getSupportedFormats</span>()<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Supported formats:&#39;</span><span class="op">,</span> supportedFormats)<span class="op">;</span></span></code></pre></div>
+<h2 id="step-2-initializing-the-detector">Step 2: Initializing the
+Detector</h2>
+<p>Developers can instantiate the detector by passing an optional
+configuration object that defines the specific formats the application
+needs to target. Restricting formats optimizes processing speed and
+prevents false positives.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> barcodeDetector <span class="op">=</span> <span class="kw">new</span> <span class="fu">BarcodeDetector</span>({</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">formats</span><span class="op">:</span> [<span class="st">&#39;qr_code&#39;</span><span class="op">,</span> <span class="st">&#39;ean_13&#39;</span><span class="op">,</span> <span class="st">&#39;code_128&#39;</span>]</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h2 id="step-3-accessing-the-camera-stream">Step 3: Accessing the Camera
+Stream</h2>
+<p>To perform live scanning, the application accesses the device's
+camera using the <code>MediaDevices</code> interface and binds the
+stream to an HTML5 <code>&lt;video&gt;</code> element.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> video <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">querySelector</span>(<span class="st">&#39;video&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span> {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> stream <span class="op">=</span> <span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">mediaDevices</span><span class="op">.</span><span class="fu">getUserMedia</span>({</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">video</span><span class="op">:</span> { <span class="dt">facingMode</span><span class="op">:</span> <span class="st">&#39;environment&#39;</span> }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  video<span class="op">.</span><span class="at">srcObject</span> <span class="op">=</span> stream<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> video<span class="op">.</span><span class="fu">play</span>()<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>} <span class="cf">catch</span> (err) {</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Camera access denied:&#39;</span><span class="op">,</span> err)<span class="op">;</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="step-4-scanning-image-sources">Step 4: Scanning Image
+Sources</h2>
+<p>The primary method used for decoding is <code>detect()</code>. It
+accepts various image sources, including an
+<code>HTMLVideoElement</code>, <code>HTMLImageElement</code>,
+<code>HTMLCanvasElement</code>, <code>ImageBitmap</code>, or
+<code>Blob</code>.</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">scanFrame</span>() {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> barcodes <span class="op">=</span> <span class="cf">await</span> barcodeDetector<span class="op">.</span><span class="fu">detect</span>(video)<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (<span class="kw">const</span> barcode <span class="kw">of</span> barcodes) {</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Detected format: </span><span class="sc">${</span>barcode<span class="op">.</span><span class="at">format</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Value: </span><span class="sc">${</span>barcode<span class="op">.</span><span class="at">rawValue</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Bounding box:`</span><span class="op">,</span> barcode<span class="op">.</span><span class="at">boundingBox</span>)<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`Corner points:`</span><span class="op">,</span> barcode<span class="op">.</span><span class="at">cornerPoints</span>)<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (err) {</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Barcode detection failed:&#39;</span><span class="op">,</span> err)<span class="op">;</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="step-5-managing-the-scanning-loop">Step 5: Managing the Scanning
+Loop</h2>
+<p>Engineers implement continuous detection by combining
+<code>requestAnimationFrame()</code> or time-throttled loops to balance
+scanning responsiveness with device battery life and CPU usage.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> isScanning <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">renderLoop</span>() {</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>isScanning) <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (video<span class="op">.</span><span class="at">readyState</span> <span class="op">===</span> video<span class="op">.</span><span class="at">HAVE_ENOUGH_DATA</span>) {</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> barcodes <span class="op">=</span> <span class="cf">await</span> barcodeDetector<span class="op">.</span><span class="fu">detect</span>(video)<span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (barcodes<span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">handleSuccessfulScan</span>(barcodes[<span class="dv">0</span>]<span class="op">.</span><span class="at">rawValue</span>)<span class="op">;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>      isScanning <span class="op">=</span> <span class="kw">false</span><span class="op">;</span> <span class="co">// Stop after successful detection</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">requestAnimationFrame</span>(renderLoop)<span class="op">;</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="fallbacks-and-best-practices">Fallbacks and Best Practices</h2>
+<p>To deliver a reliable production experience across all platforms,
+engineers typically follow these operational guidelines:</p>
+<ul>
+<li><strong>Graceful Degradation:</strong> Use dynamic imports to load
+lightweight WebAssembly-based decoders only when
+<code>window.BarcodeDetector</code> is unavailable.</li>
+<li><strong>Stream Optimization:</strong> Request appropriate video
+resolutions (e.g., 720p or 1080p). Extremely high resolutions waste
+resources without improving detection accuracy.</li>
+<li><strong>Visual Feedback:</strong> Leverage the
+<code>boundingBox</code> and <code>cornerPoints</code> arrays returned
+by the API to render real-time tracking overlays on a transparent canvas
+positioned over the video feed.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

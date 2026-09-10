@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing JavaScript Event Dispatch Loops - web-development</title>
+    <meta name="description" content="High-frequency DOM events such as scrolling, resizing, and pointer tracking can flood the browser's main thread, causing frame drops, sluggish UI response, and excessive CPU consumption. Optimizing JavaScript event listener dispatch loops requires minimi">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/optimizing-javascript-event-dispatch-loops">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing JavaScript Event Dispatch Loops - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/optimizing-javascript-event-dispatch-loops" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="High-frequency DOM events such as scrolling, resizing, and pointer tracking can flood the browser's main thread, causing frame drops, sluggish UI response, and excessive CPU consumption. Optimizing JavaScript event listener dispatch loops requires minimi" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="optimizing-javascript-event-dispatch-loops">Optimizing
+JavaScript Event Dispatch Loops</h1>
+<p>High-frequency DOM events such as scrolling, resizing, and pointer
+tracking can flood the browser's main thread, causing frame drops,
+sluggish UI response, and excessive CPU consumption. Optimizing
+JavaScript event listener dispatch loops requires minimizing the
+computational work performed during the event cycle, reducing memory
+overhead, and decoupling event capture from execution logic. By
+implementing modern event-handling patterns—including event delegation,
+passive flags, debouncing or throttling, scheduling work via browser
+APIs, and proactive lifecycle cleanup—development teams can maintain a
+fluid 60 or 120 FPS interface while processing complex user
+interactions.</p>
+<h3 id="implement-event-delegation">Implement Event Delegation</h3>
+<p>Attaching individual event listeners to hundreds or thousands of DOM
+nodes bloats memory consumption and degrades dispatch loop performance.
+Event delegation uses the DOM event propagation mechanism (bubbling) to
+attach a single listener to a shared ancestor node.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Inefficient: Attaching listeners to all list items</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">document</span><span class="op">.</span><span class="fu">querySelectorAll</span>(<span class="st">&#39;.item&#39;</span>)<span class="op">.</span><span class="fu">forEach</span>(el <span class="kw">=&gt;</span> el<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> handler))<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Efficient: Using delegation on a common parent</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="bu">document</span><span class="op">.</span><span class="fu">querySelector</span>(<span class="st">&#39;#parent-list&#39;</span>)<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> target <span class="op">=</span> <span class="bu">event</span><span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="fu">closest</span>(<span class="st">&#39;.item&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (target <span class="op">&amp;&amp;</span> <span class="kw">this</span><span class="op">.</span><span class="fu">contains</span>(target)) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">handleItemClick</span>(target)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Using <code>event.target.closest()</code> ensures fast element
+resolution with minimal memory overhead and zero teardown cost when
+dynamic elements are added or removed.</p>
+<h3 id="use-passive-event-listeners">Use Passive Event Listeners</h3>
+<p>By default, touch and scroll event listeners block the browser's
+compositor thread because the engine must wait to see if the handler
+calls <code>event.preventDefault()</code>. Declaring an event listener
+as <code>passive</code> informs the browser that the loop will never
+cancel the event, allowing the browser to scroll smoothly on a separate
+thread.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;touchstart&#39;</span><span class="op">,</span> handleTouch<span class="op">,</span> { <span class="dt">passive</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;scroll&#39;</span><span class="op">,</span> handleScroll<span class="op">,</span> { <span class="dt">passive</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span></code></pre></div>
+<p>Always apply <code>{ passive: true }</code> to high-frequency
+observation events where <code>preventDefault()</code> is not
+required.</p>
+<h3 id="throttle-and-debounce-via-requestanimationframe">Throttle and
+Debounce via <code>requestAnimationFrame</code></h3>
+<p>High-frequency events like <code>mousemove</code> and
+<code>scroll</code> fire faster than the screen's refresh rate.
+Executing heavy logic on every dispatch wastes CPU cycles on
+intermediary states that the user never sees.</p>
+<p>Aligning event processing with the browser's paint cycle using
+<code>requestAnimationFrame</code> (rAF) eliminates redundant
+computations:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> isScheduled <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> lastScrollY <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;scroll&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  lastScrollY <span class="op">=</span> <span class="bu">window</span><span class="op">.</span><span class="at">scrollY</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>isScheduled) {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    isScheduled <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">requestAnimationFrame</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">renderStickyHeader</span>(lastScrollY)<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      isScheduled <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> { <span class="dt">passive</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span></code></pre></div>
+<p>For non-visual computations (e.g., auto-saving form input or search
+queries), use standard debouncing with timers to delay execution until
+the user stops dispatching events.</p>
+<h3 id="decouple-logic-and-prevent-layout-thrashing">Decouple Logic and
+Prevent Layout Thrashing</h3>
+<p>An event dispatch loop should never execute heavy business logic or
+cause forced synchronous layouts (layout thrashing).</p>
+<ul>
+<li><strong>State Capture Only:</strong> Keep the event listener body
+lightweight. Capture only the required data (deltas, mouse coordinates,
+keycodes) and push it to an internal queue or state variable.</li>
+<li><strong>Batch DOM Reads and Writes:</strong> Interleaving DOM reads
+(e.g., <code>offsetWidth</code>, <code>getBoundingClientRect()</code>)
+and DOM writes (e.g., modifying styles) inside an event handler forces
+the browser to recalculate layouts repeatedly. Read all properties
+first, then write layout changes in batches.</li>
+<li><strong>Offload Computations:</strong> Offload non-DOM computations,
+such as data filtering or complex coordinate math, to a Web Worker via
+<code>postMessage</code>.</li>
+</ul>
+<h3 id="control-lifecycles-with-abortcontroller">Control Lifecycles with
+<code>AbortController</code></h3>
+<p>Retaining obsolete listeners leads to memory leaks and unnecessary
+loop iterations. While <code>removeEventListener</code> requires an
+identical function reference, modern web development benefits from
+<code>AbortController</code>, which provides unified cleanup of multiple
+listeners across modules.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> controller <span class="op">=</span> <span class="kw">new</span> <span class="fu">AbortController</span>()<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> { signal } <span class="op">=</span> controller<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;resize&#39;</span><span class="op">,</span> handleResize<span class="op">,</span> { signal })<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;scroll&#39;</span><span class="op">,</span> handleScroll<span class="op">,</span> { signal<span class="op">,</span> <span class="dt">passive</span><span class="op">:</span> <span class="kw">true</span> })<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Teardown when component unmounts or view changes</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>controller<span class="op">.</span><span class="fu">abort</span>()<span class="op">;</span></span></code></pre></div>
+<p>Using an <code>AbortSignal</code> allows bulk listener removal in a
+single call, preventing dangling closures and orphaned event handlers
+from running inside inactive views.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

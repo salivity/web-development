@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Status API Privacy Protections in Web Browsers - web-development</title>
+    <meta name="description" content="The Battery Status API was originally designed to allow web applications to adapt their resource consumption based on a device's remaining charge, but severe privacy concerns have led modern web browsers to aggressively restrict or entirely remove develo">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/battery-status-api-privacy-protections-in-web-browsers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Battery Status API Privacy Protections in Web Browsers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/battery-status-api-privacy-protections-in-web-browsers" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Battery Status API was originally designed to allow web applications to adapt their resource consumption based on a device's remaining charge, but severe privacy concerns have led modern web browsers to aggressively restrict or entirely remove develo" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="battery-status-api-privacy-protections-in-web-browsers">Battery
+Status API Privacy Protections in Web Browsers</h1>
+<p>The Battery Status API was originally designed to allow web
+applications to adapt their resource consumption based on a device's
+remaining charge, but severe privacy concerns have led modern web
+browsers to aggressively restrict or entirely remove developer access to
+it. This article explores the specific privacy and fingerprinting risks
+introduced by the API, the mitigations implemented by modern browser
+engines, and the current landscape of browser support and developer
+restrictions.</p>
+<h3 id="the-privacy-risks-of-the-battery-status-api">The Privacy Risks
+of the Battery Status API</h3>
+<p>The primary driver behind restricting developer access to the Battery
+Status API (<code>navigator.getBattery()</code>) is browser
+fingerprinting and cross-site tracking. Researchers discovered that the
+API exposed four high-precision metrics: the battery level percentage,
+charging status, time until fully charged, and time until fully
+discharged.</p>
+<p>When combined, these values yielded millions of potential
+combinations, creating a highly stable and unique temporary identifier
+for a device. Trackers exploited this data to:</p>
+<ul>
+<li><strong>Bypass Private Browsing Modes:</strong> Trackers could link
+a user's identity between a standard browsing session and a
+private/incognito window by matching identical battery drain rates and
+charge estimates.</li>
+<li><strong>Enable Cross-Site Tracking:</strong> Third-party scripts
+embedded across multiple websites could track users across different
+domains without relying on cookies or local storage.</li>
+<li><strong>Correlate Multiple Browsers:</strong> Because battery state
+is hardware-dependent, trackers could identify the same physical device
+even if the user switched between different browsers.</li>
+</ul>
+<h3 id="modern-browser-protections-and-mitigations">Modern Browser
+Protections and Mitigations</h3>
+<p>In response to these tracking vectors, major browser vendors
+implemented several layers of protection:</p>
+<h4 id="1-complete-removal-and-non-implementation">1. Complete Removal
+and Non-Implementation</h4>
+<p>The most effective privacy protection has been outright
+deprecation:</p>
+<ul>
+<li><strong>Mozilla Firefox:</strong> Removed support for the Battery
+Status API in Firefox 52 (2017) to eliminate the fingerprinting
+vector.</li>
+<li><strong>Apple WebKit (Safari):</strong> Refused to implement the
+standard, citing severe privacy and fingerprinting risks that outweighed
+the functional benefits to web applications.</li>
+</ul>
+<h4 id="2-resolution-reduction-and-value-rounding">2. Resolution
+Reduction and Value Rounding</h4>
+<p>Browsers based on the Chromium engine (such as Google Chrome and
+Microsoft Edge) that still maintain partial support have drastically
+reduced the fidelity of the exposed data:</p>
+<ul>
+<li><strong>Quantizing Battery Levels:</strong> Percentages are rounded
+to coarse intervals rather than high-precision floating-point
+decimals.</li>
+<li><strong>Removal of Time Estimates:</strong> Discharge and charging
+time predictions are either removed, set to fixed values, or rounded to
+substantial time brackets (such as full hours) to prevent
+micro-fluctuation tracking.</li>
+</ul>
+<h4 id="3-secure-context-and-feature-policy-enforcement">3. Secure
+Context and Feature Policy Enforcement</h4>
+<p>Where the API is accessible, modern standards restrict its execution
+environment:</p>
+<ul>
+<li><strong>HTTPS Requirement:</strong> The API is strictly limited to
+secure contexts (<code>https://</code>), preventing man-in-the-middle
+injection of tracking scripts that attempt to read hardware state.</li>
+<li><strong>Permissions-Policy Delegation:</strong> Access can be
+blocked in cross-origin <code>iframe</code> elements using the
+<code>Permissions-Policy: battery</code> header, preventing unauthorized
+third-party trackers and advertisers from querying device state without
+the hosting site's explicit permission.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

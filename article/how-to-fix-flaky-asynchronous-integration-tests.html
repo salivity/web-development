@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Fix Flaky Asynchronous Integration Tests - web-development</title>
+    <meta name="description" content="Flaky asynchronous integration tests undermine continuous integration pipelines by producing intermittent, non-reproducible failures that erode team trust in automated testing. This guide outlines actionable strategies for web development teams to isolat">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-fix-flaky-asynchronous-integration-tests">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Fix Flaky Asynchronous Integration Tests - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-fix-flaky-asynchronous-integration-tests" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Flaky asynchronous integration tests undermine continuous integration pipelines by producing intermittent, non-reproducible failures that erode team trust in automated testing. This guide outlines actionable strategies for web development teams to isolat" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-fix-flaky-asynchronous-integration-tests">How to Fix
+Flaky Asynchronous Integration Tests</h1>
+<p>Flaky asynchronous integration tests undermine continuous integration
+pipelines by producing intermittent, non-reproducible failures that
+erode team trust in automated testing. This guide outlines actionable
+strategies for web development teams to isolate, diagnose, and resolve
+non-deterministic test behavior. By adopting deterministic polling
+mechanisms, quarantining unstable suites, isolating environment states,
+controlling network boundaries, and utilizing targeted stress testing,
+engineering teams can eliminate test flakiness and maintain robust
+delivery workflows.</p>
+<h3 id="1-replace-fixed-sleep-calls-with-deterministic-polling">1.
+Replace Fixed Sleep Calls with Deterministic Polling</h3>
+<p>Hardcoded timeouts (such as <code>sleep(5000)</code>) assume
+operations will always finish within an arbitrary window. In continuous
+integration (CI) environments with fluctuating CPU and memory
+allocations, these static delays inevitably cause race conditions.</p>
+<p>Instead, use conditional waiting strategies:</p>
+<ul>
+<li><strong>Wait for conditions, not time:</strong> Continuously poll
+the state until a specific condition evaluates to true or a maximum
+threshold is reached.</li>
+<li><strong>Leverage framework built-ins:</strong> Modern test
+frameworks provide built-in explicit waits (such as Playwright’s
+auto-waiting or Cypress’s automatic retries).</li>
+<li><strong>Use specialized polling libraries:</strong> In backend or
+multi-tier integration suites, use tools like Awaitility to assert that
+an event, database write, or message queue consumption has finalized
+before proceeding.</li>
+</ul>
+<h3 id="2-implement-a-quarantine-pipeline">2. Implement a Quarantine
+Pipeline</h3>
+<p>When a test displays flaky behavior, it should not be allowed to
+block pull requests or mask genuine regressions in the main deployment
+pipeline.</p>
+<ul>
+<li><strong>Tag and isolate:</strong> Add an annotation or tag (e.g.,
+<code>@quarantine</code> or <code>@flaky</code>) to automatically
+exclude the test from blocking merge gates.</li>
+<li><strong>Run in a background loop:</strong> Direct quarantined tests
+into a dedicated, non-blocking pipeline that executes them dozens or
+hundreds of times against new builds to gather failure data without
+disrupting production deployments.</li>
+<li><strong>Enforce ownership:</strong> Require teams to fix or delete
+quarantined tests within a set sprint cycle to prevent the quarantine
+list from turning into a graveyard for broken tests.</li>
+</ul>
+<h3 id="3-ensure-strict-state-isolation-between-tests">3. Ensure Strict
+State Isolation Between Tests</h3>
+<p>Shared state between asynchronous tests is a frequent root cause of
+false positives and negatives. When tests run concurrently, asynchronous
+operations from one test may alter the database, cache, or file system
+while another test is running.</p>
+<ul>
+<li><strong>Unique tenancy and data generation:</strong> Generate unique
+identifiers (such as UUIDs) for every entity created during a test to
+prevent cross-contamination.</li>
+<li><strong>Ephemeral environments:</strong> Utilize tools like
+Testcontainers to spin up isolated, disposable instances of databases,
+message brokers, and dependent services for each test worker or
+suite.</li>
+<li><strong>Automated cleanup:</strong> Implement transactional
+rollbacks or database truncation after each test lifecycle, ensuring the
+system state returns to a clean baseline.</li>
+</ul>
+<h3 id="4-mock-external-network-dependencies">4. Mock External Network
+Dependencies</h3>
+<p>Asynchronous tests frequently interact with third-party APIs,
+webhooks, or external payment gateways. External network latency, rate
+limits, or transient outages introduce uncontrollable variables into the
+test harness.</p>
+<ul>
+<li><strong>Service virtualization:</strong> Use mock servers such as
+WireMock or Mock Service Worker (MSW) to intercept and stub network
+traffic at the boundaries.</li>
+<li><strong>Deterministic response timing:</strong> Configure mock
+servers to return responses instantly or with precisely simulated
+latencies to evaluate race conditions under controlled
+circumstances.</li>
+</ul>
+<h3 id="5-capture-contextual-telemetry-and-artifacts">5. Capture
+Contextual Telemetry and Artifacts</h3>
+<p>Diagnosing asynchronous failures after the fact requires more than a
+simple stack trace. When an asynchronous operation fails, the original
+triggering context has often already exited.</p>
+<ul>
+<li><strong>Trace correlation IDs:</strong> Pass distributed tracing IDs
+across test requests to tie logs from the test runner, API gateway, and
+backend services together.</li>
+<li><strong>Artifact retention on failure:</strong> Configure test
+runners to capture video recordings, browser console logs, and complete
+network activity traces (HAR files) exclusively when an assertion
+fails.</li>
+<li><strong>State dumps:</strong> Capture the exact state of the local
+database or message queue when a timeout occurs to verify whether the
+expected operation was delayed or never initiated at all.</li>
+</ul>
+<h3 id="6-stress-test-for-local-reproduction">6. Stress-Test for Local
+Reproduction</h3>
+<p>Intermittent race conditions rarely manifest during standard
+single-run executions on a developer’s local machine. Reproducing them
+requires intentionally constraining system resources.</p>
+<ul>
+<li><strong>Repetition runs:</strong> Execute the suspect test locally
+in a loop (e.g., 50 to 100 consecutive iterations) using tools like
+<code>flaky-test-runner</code> or native test runner flags.</li>
+<li><strong>CPU and network throttling:</strong> Simulate
+resource-constrained CI conditions by throttling CPU and network speeds
+through browser automation settings or container resource limits.</li>
+<li><strong>Concurrency stress:</strong> Execute the target test in
+parallel against multiple worker threads to expose hidden
+shared-resource bottlenecks and synchronization errors.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Fetch Priority to Optimize Asset Loading - web-development</title>
+    <meta name="description" content="The fetchpriority attribute is a modern web platform feature that allows developers to signal the relative priority of critical resources directly to the browser. This article explores how fetchpriority works, the problems it solves in resource schedulin">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-fetch-priority-to-optimize-asset-loading">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Fetch Priority to Optimize Asset Loading - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-fetch-priority-to-optimize-asset-loading" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The fetchpriority attribute is a modern web platform feature that allows developers to signal the relative priority of critical resources directly to the browser. This article explores how fetchpriority works, the problems it solves in resource schedulin" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-fetch-priority-to-optimize-asset-loading">Using Fetch
+Priority to Optimize Asset Loading</h1>
+<p>The <code>fetchpriority</code> attribute is a modern web platform
+feature that allows developers to signal the relative priority of
+critical resources directly to the browser. This article explores how
+<code>fetchpriority</code> works, the problems it solves in resource
+scheduling, its direct impact on performance metrics like Largest
+Contentful Paint (LCP), and practical strategies for implementing it
+effectively in web applications.</p>
+<h3 id="the-challenge-of-browser-resource-scheduling">The Challenge of
+Browser Resource Scheduling</h3>
+<p>Browsers follow complex internal heuristics to determine the order
+and priority in which assets—such as scripts, stylesheets, fonts, and
+images—are downloaded. Typically, render-blocking CSS and fonts are
+treated as high priority, while images and asynchronously loaded scripts
+receive lower priority.</p>
+<p>However, the browser's preload scanner cannot always infer human
+intent or immediate visual importance. For instance, a critical hero
+image required for the Largest Contentful Paint (LCP) may be assigned
+the same low default priority as an off-screen footer image, leading to
+network contention and delayed rendering.</p>
+<h3 id="what-the-fetchpriority-attribute-does">What the
+<code>fetchpriority</code> Attribute Does</h3>
+<p>The <code>fetchpriority</code> attribute provides an explicit hint to
+the browser’s network stack regarding how urgently a specific resource
+should be fetched relative to other assets of the same type. It accepts
+three possible values:</p>
+<ul>
+<li><code>high</code>: Signals that the asset should be prioritized
+ahead of other resources of the same type.</li>
+<li><code>low</code>: Signals that the asset can be deferred or fetched
+with lower urgency.</li>
+<li><code>auto</code>: The default state, which relies on the browser's
+standard prioritization logic.</li>
+</ul>
+<p>This attribute works across various HTML elements, including
+<code>&lt;img&gt;</code>, <code>&lt;link&gt;</code>,
+<code>&lt;script&gt;</code>, and within the JavaScript
+<code>fetch()</code> API.</p>
+<h3 id="core-use-cases">Core Use Cases</h3>
+<h4 id="1-accelerating-the-largest-contentful-paint-lcp-image">1.
+Accelerating the Largest Contentful Paint (LCP) Image</h4>
+<p>The most impactful application of <code>fetchpriority</code> is
+boosting the LCP element. By adding <code>fetchpriority="high"</code> to
+an above-the-fold hero image, the browser requests it concurrently with
+critical CSS or scripts rather than queuing it behind them:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">img</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;hero-banner.jpg&quot;</span><span class="ot"> alt</span><span class="op">=</span><span class="st">&quot;Featured Product&quot;</span><span class="ot"> fetchpriority</span><span class="op">=</span><span class="st">&quot;high&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<h4 id="2-deprioritizing-non-critical-assets">2. Deprioritizing
+Non-Critical Assets</h4>
+<p>Network bandwidth is finite. Demoting non-essential resources
+prevents them from competing with critical rendering assets. Adding
+<code>fetchpriority="low"</code> to secondary elements, such as image
+carousel slides or low-priority background scripts, preserves bandwidth
+for essential page components:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">img</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;carousel-slide-2.jpg&quot;</span><span class="ot"> alt</span><span class="op">=</span><span class="st">&quot;Secondary item&quot;</span><span class="ot"> fetchpriority</span><span class="op">=</span><span class="st">&quot;low&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;analytics.js&quot;</span><span class="ot"> async fetchpriority</span><span class="op">=</span><span class="st">&quot;low&quot;</span><span class="dt">&gt;&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span></code></pre></div>
+<h4 id="3-tuning-preloaded-resources">3. Tuning Preloaded Resources</h4>
+<p>When using <code>&lt;link rel="preload"&gt;</code>, the browser
+automatically assigns high priority. However, if multiple resources are
+preloaded simultaneously, they can contend with one another. Using
+<code>fetchpriority="low"</code> inside a preload tag allows the browser
+to discover an asset early without letting it bottleneck more critical
+resources:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">link</span><span class="ot"> rel</span><span class="op">=</span><span class="st">&quot;preload&quot;</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;supplemental-font.woff2&quot;</span><span class="ot"> as</span><span class="op">=</span><span class="st">&quot;font&quot;</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;font/woff2&quot;</span><span class="ot"> crossorigin fetchpriority</span><span class="op">=</span><span class="st">&quot;low&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<h3 id="how-fetchpriority-differs-from-other-directives">How
+<code>fetchpriority</code> Differs From Other Directives</h3>
+<ul>
+<li><strong>Compared to <code>loading="lazy"</code>:</strong> Lazy
+loading stops a download completely until the element nears the
+viewport. In contrast, <code>fetchpriority</code> adjusts download
+urgency but does not prevent the fetch from starting.</li>
+<li><strong>Compared to <code>async</code> and
+<code>defer</code>:</strong> The <code>async</code> and
+<code>defer</code> attributes dictate execution timing and
+render-blocking behavior for scripts. The <code>fetchpriority</code>
+attribute specifically influences network download ordering.</li>
+</ul>
+<h3 id="best-practices">Best Practices</h3>
+<p>To achieve optimal performance, reserve
+<code>fetchpriority="high"</code> for only one or two critical assets
+per page, typically the primary hero image or an essential modular
+script. Overusing <code>high</code> eliminates prioritization benefits
+by recreating network congestion, effectively returning the browser to
+an unmanaged state.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

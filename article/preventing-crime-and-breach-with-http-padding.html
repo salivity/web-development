@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing CRIME and BREACH with HTTP Padding - web-development</title>
+    <meta name="description" content="Compression side-channel attacks, notably CRIME and BREACH, exploit the way data compression algorithms reduce the size of redundant information, allowing attackers to deduce secret tokens byte by byte. HTTP padding serves as a crucial defense mechanism">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/preventing-crime-and-breach-with-http-padding">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing CRIME and BREACH with HTTP Padding - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/preventing-crime-and-breach-with-http-padding" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Compression side-channel attacks, notably CRIME and BREACH, exploit the way data compression algorithms reduce the size of redundant information, allowing attackers to deduce secret tokens byte by byte. HTTP padding serves as a crucial defense mechanism" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="preventing-crime-and-breach-with-http-padding">Preventing CRIME
+and BREACH with HTTP Padding</h1>
+<p>Compression side-channel attacks, notably CRIME and BREACH, exploit
+the way data compression algorithms reduce the size of redundant
+information, allowing attackers to deduce secret tokens byte by byte.
+HTTP padding serves as a crucial defense mechanism by injecting
+randomized, variable-length data into headers or payloads. This article
+explains the mechanics of compression-based exploits, how padding
+disrupts the side-channel leakage, and how secure web development
+leverages this technique to maintain transport security.</p>
+<h3 id="the-mechanics-of-crime-and-breach">The Mechanics of CRIME and
+BREACH</h3>
+<p>Both CRIME (Compression Ratio Info-leak Made Easy) and BREACH
+(Browser Reconnaissance and Exfiltration via Adaptive Compression of
+Hypertext) are side-channel attacks targeting data compression
+algorithms such as DEFLATE.</p>
+<ul>
+<li><strong>CRIME</strong> focuses on transport-layer compression (such
+as TLS compression) and early application protocols like SPDY. It
+targets secrets such as HTTP cookies.</li>
+<li><strong>BREACH</strong> bypasses TLS-level mitigations by attacking
+HTTP-level response compression (like gzip or Brotli), extracting
+secrets such as CSRF tokens directly from the response body.</li>
+</ul>
+<p>These attacks rely on a chosen-plaintext strategy. An attacker
+injects controlled input alongside a secret value (like an
+authentication token) within the same compression context. If the
+attacker's guess matches a portion of the secret, the compression
+algorithm replaces the duplicate string with a pointer, resulting in a
+noticeably smaller payload size. By iteratively measuring ciphertext
+size differences across multiple requests, the attacker can reconstruct
+secrets character by character.</p>
+<h3 id="how-padding-neutralizes-the-attack">How Padding Neutralizes the
+Attack</h3>
+<p>Compression exploits require a direct, measurable correlation between
+plaintext redundancy and the resulting ciphertext size. Padding breaks
+this deterministic relationship.</p>
+<p>When HTTP padding is applied, the server (or client) appends a
+randomized amount of arbitrary data to the headers or the response body.
+This alters the payload size in unpredictable increments:</p>
+<ol type="1">
+<li><strong>Masking Compression Gains:</strong> Under normal
+circumstances, a correct character guess reduces the compressed output
+by a measurable fraction. Introducing random padding causes the output
+length to fluctuate regardless of whether a character matched, creating
+significant noise.</li>
+<li><strong>Disrupting the Length Oracle:</strong> Because the attacker
+cannot distinguish between a size decrease caused by a successful match
+and a size decrease caused by a shorter padding block, the side-channel
+"oracle" becomes unreliable.</li>
+<li><strong>Increasing Work Factor:</strong> While small amounts of
+padding can theoretically be averaged out over vast numbers of
+statistical samples, sufficiently randomized padding drastically
+increases the number of requests required to conduct an attack,
+rendering practical exploitation unfeasible before sessions expire or
+rate limits trigger.</li>
+</ol>
+<h3 id="implementation-in-modern-web-protocols">Implementation in Modern
+Web Protocols</h3>
+<p>Mitigating these attacks through padding is implemented at various
+levels of the web stack:</p>
+<ul>
+<li><strong>HTTP/2 and HTTP/3 Protocol Padding:</strong> Both HTTP/2
+(RFC 7540) and HTTP/3 (RFC 9114) feature native padding support for
+<code>DATA</code> and <code>HEADERS</code> frames. Developers and web
+servers can set a 1-byte to 256-byte random padding field on individual
+frames to disguise the exact payload length without altering application
+logic.</li>
+<li><strong>Application-Layer Response Padding:</strong> For BREACH
+mitigation on HTTP/1.1 or legacy architectures, applications can inject
+randomized, hidden HTML comments, dummy JSON fields, or arbitrary custom
+HTTP headers of varying lengths.</li>
+<li><strong>Complementary Defenses:</strong> While padding provides
+defense-in-depth, robust web architectures typically pair padding with
+secret masking (such as XOR-masking CSRF tokens per request) and the
+strict disabling of TLS-level compression.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

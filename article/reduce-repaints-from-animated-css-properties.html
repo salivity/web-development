@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reduce Repaints from Animated CSS Properties - web-development</title>
+    <meta name="description" content="Unnecessary repaints during CSS animations degrade frame rates, consume excess battery, and introduce visible jank across devices. This article outlines the primary strategies web engineers use to eliminate redundant paint cycles, focusing on compositor-">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/reduce-repaints-from-animated-css-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Reduce Repaints from Animated CSS Properties - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/reduce-repaints-from-animated-css-properties" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Unnecessary repaints during CSS animations degrade frame rates, consume excess battery, and introduce visible jank across devices. This article outlines the primary strategies web engineers use to eliminate redundant paint cycles, focusing on compositor-" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="reduce-repaints-from-animated-css-properties">Reduce Repaints
+from Animated CSS Properties</h1>
+<p>Unnecessary repaints during CSS animations degrade frame rates,
+consume excess battery, and introduce visible jank across devices. This
+article outlines the primary strategies web engineers use to eliminate
+redundant paint cycles, focusing on compositor-only properties, layer
+promotion techniques, CSS containment, and performance profiling
+workflows designed to maintain a consistent 60 or 120 frames per
+second.</p>
+<h2 id="stick-to-transform-and-opacity">Stick to Transform and
+Opacity</h2>
+<p>Browsers render updates through three sequential stages: Layout,
+Paint, and Composite. Animating geometric properties such as
+<code>width</code>, <code>height</code>, <code>top</code>,
+<code>left</code>, or <code>margin</code> forces the browser to
+recalculate element geometry (layout) and redraw pixels across affected
+surfaces (paint). Animating visual properties like <code>color</code> or
+<code>background-color</code> skips layout but still forces a repaint on
+every frame.</p>
+<p>To bypass both layout and paint entirely, animate only
+<code>transform</code> (including <code>translate</code>,
+<code>scale</code>, and <code>rotate</code>) and <code>opacity</code>.
+These properties are handled entirely by the compositor thread on the
+GPU, allowing visual changes to occur without requiring the CPU to
+rasterize new pixels.</p>
+<h2 id="promote-animated-elements-with-will-change">Promote Animated
+Elements with <code>will-change</code></h2>
+<p>When an element animates on the standard render tree, its movement
+can dirty the entire layer, forcing surrounding elements to repaint.
+Promoting the moving element to its own compositor layer isolates its
+visual changes.</p>
+<p>Apply the <code>will-change</code> property to signal this
+requirement to the browser in advance:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.animated-box</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">will-change</span><span class="ch">:</span> <span class="dv">transform</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Use <code>will-change</code> deliberately and sparingly. Creating too
+many compositor layers consumes substantial GPU memory and introduces
+compositor overhead that can paradoxically reduce performance. Remove or
+reset the property when an animation concludes.</p>
+<h2 id="isolate-dom-subtrees-using-css-contain">Isolate DOM Subtrees
+Using CSS <code>contain</code></h2>
+<p>The <code>contain</code> property informs the browser that an
+element's internal styling and layout do not impact the rest of the
+document. Applying containment prevents repaint events inside a
+container from triggering cascading repaints outside of it:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card-container</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">contain</span><span class="ch">:</span> <span class="dv">paint</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Using <code>contain: paint</code> ensures that descendant elements
+cannot draw outside the container bounds. If an offscreen or clipped
+child element repaints, the browser ignores rendering passes outside the
+designated bounding box.</p>
+<h2 id="avoid-inadvertent-layout-thrashing">Avoid Inadvertent Layout
+Thrashing</h2>
+<p>CSS animations interacting with JavaScript-driven logic often trigger
+unintentional repaints through layout thrashing. If script logic reads
+layout metrics (such as <code>getBoundingClientRect()</code>,
+<code>offsetWidth</code>, or <code>scrollTop</code>) immediately after
+mutating styles, the browser is forced to run synchronous layout and
+repaint passes mid-frame.</p>
+<p>To prevent this, batch all DOM style mutations separately from DOM
+read operations, or rely on <code>requestAnimationFrame()</code> to sync
+visual updates with browser refresh cycles.</p>
+<h2 id="audit-paint-rectangles-using-browser-devtools">Audit Paint
+Rectangles Using Browser DevTools</h2>
+<p>Identifying rogue repaints requires continuous runtime profiling:</p>
+<ol type="1">
+<li>Open DevTools in Chrome or Chromium-based browsers.</li>
+<li>Open the <strong>Rendering</strong> tab via the <strong>More
+tools</strong> menu.</li>
+<li>Enable <strong>Paint Flashing</strong>.</li>
+</ol>
+<p>With Paint Flashing active, any repainted region flashes green on
+screen. A well-optimized animation should show zero green flashes during
+movement; the animated element should move smoothly across the screen
+without triggering any repaint borders.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

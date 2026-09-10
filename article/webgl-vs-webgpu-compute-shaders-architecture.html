@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL vs WebGPU Compute Shaders Architecture - web-development</title>
+    <meta name="description" content="This article examines the core architectural differences between traditional graphics-bound shaders in WebGL and modern compute shaders in WebGPU. While WebGL forces general-purpose computing through the constraints of the rasterization pipeline, WebGPU">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/webgl-vs-webgpu-compute-shaders-architecture">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WebGL vs WebGPU Compute Shaders Architecture - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/webgl-vs-webgpu-compute-shaders-architecture" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines the core architectural differences between traditional graphics-bound shaders in WebGL and modern compute shaders in WebGPU. While WebGL forces general-purpose computing through the constraints of the rasterization pipeline, WebGPU" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="webgl-vs-webgpu-compute-shaders-architecture">WebGL vs WebGPU
+Compute Shaders Architecture</h1>
+<p>This article examines the core architectural differences between
+traditional graphics-bound shaders in WebGL and modern compute shaders
+in WebGPU. While WebGL forces general-purpose computing through the
+constraints of the rasterization pipeline, WebGPU introduces a dedicated
+compute pipeline designed for parallel data processing. Below is a
+direct comparison of their execution models, memory hierarchies,
+dispatch mechanisms, and synchronization capabilities.</p>
+<h3 id="pipeline-coupling-and-execution-model">Pipeline Coupling and
+Execution Model</h3>
+<p>WebGL is built on top of OpenGL ES, meaning all programmable
+operations must flow through a rigid graphics pipeline. To run
+non-graphical calculations in WebGL (GPGPU), developers must encode data
+into textures, bind them as inputs, render a full-screen quad, and use
+fragment shaders to write the results to a Framebuffer Object (FBO).
+This model introduces unnecessary overhead from the rasterizer, depth
+testing, and primitive assembly stages.</p>
+<p>WebGPU decouples computation from rendering entirely. It provides a
+distinct <code>GPUComputePipeline</code> that operates independently of
+screen coordinates, triangles, or framebuffers. Compute shaders are
+written in WGSL (WebGPU Shading Language) and are invoked directly on
+raw memory buffers without touching the graphics pipeline.</p>
+<h3 id="thread-dispatch-and-workgroup-organization">Thread Dispatch and
+Workgroup Organization</h3>
+<p>WebGL fragment shaders process fragments (pixels) on an implicit grid
+determined by the viewport resolution and geometry coverage. Developers
+have no control over how individual shader invocations are scheduled,
+grouped, or mapped onto the GPU's hardware execution units (Streaming
+Multiprocessors or Compute Units).</p>
+<p>WebGPU compute shaders utilize an explicit thread hierarchy:</p>
+<ul>
+<li><strong>Invocations:</strong> The smallest unit of execution,
+representing a single thread.</li>
+<li><strong>Workgroups:</strong> A 3D grid of invocations (defined via
+<code>@workgroup_size(x, y, z)</code> in WGSL) that run concurrently on
+the same compute unit.</li>
+<li><strong>Dispatch Grid:</strong> A 3D grid of workgroups dispatched
+via <code>dispatchWorkgroups(x, y, z)</code>.</li>
+</ul>
+<p>This layout gives developers direct control over data locality and
+parallel scaling, matching the physical compute hardware of modern
+desktop and mobile GPUs.</p>
+<h3 id="memory-hierarchy-and-data-access">Memory Hierarchy and Data
+Access</h3>
+<p>In WebGL, memory access is strictly asymmetrical:</p>
+<ul>
+<li>Shaders can read from 2D/3D textures and uniform arrays.</li>
+<li>Shaders can only write by outputting values to assigned render
+targets (draw buffers).</li>
+<li>Threads cannot share data with neighboring threads during execution;
+inter-thread communication requires completing a draw call and reading
+the resulting texture in a subsequent pass.</li>
+</ul>
+<p>WebGPU provides a multi-tiered memory model:</p>
+<ul>
+<li><strong>Storage Buffers:</strong> Structured, arbitrary-sized memory
+buffers that can be both read and written directly by compute
+invocations using standard pointers and array indices.</li>
+<li><strong>Workgroup Shared Memory:</strong> A fast, on-chip memory
+space (<code>var&lt;workgroup&gt;</code>) shared exclusively among all
+invocations within a single workgroup. This acts like software-managed
+L1 cache, allowing threads to collaborate on shared data tiles without
+round-tripping to global VRAM.</li>
+</ul>
+<h3 id="synchronization-and-atomic-operations">Synchronization and
+Atomic Operations</h3>
+<p>WebGL does not support inter-invocation synchronization or atomic
+operations. Race conditions cannot be avoided natively, which makes
+operations like histogram generation, parallel prefix sums, or custom
+sorting algorithms either inefficient or impossible in a single
+pass.</p>
+<p>WebGPU compute shaders support:</p>
+<ul>
+<li><strong>Barrier Synchronization:</strong> Functions like
+<code>workgroupBarrier()</code> and <code>storageBarrier()</code> ensure
+all threads in a workgroup reach the same execution point and all memory
+writes are committed before proceeding.</li>
+<li><strong>Atomic Primitives:</strong> Native atomic types
+(<code>atomic&lt;u32&gt;</code>, <code>atomic&lt;i32&gt;</code>) and
+atomic operations (<code>atomicAdd</code>, <code>atomicExchange</code>,
+<code>atomicCompareExchangeWeak</code>) allow threads to safely update
+global and shared memory without race conditions.</li>
+</ul>
+<h3 id="architectural-summary">Architectural Summary</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">WebGL (Fragment GPGPU)</th>
+<th style="text-align: left;">WebGPU Compute Shaders</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Pipeline Target</strong></td>
+<td style="text-align: left;">Graphics (Vertex/Fragment)</td>
+<td style="text-align: left;">Dedicated Compute Pipeline</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Primary Data
+Primitive</strong></td>
+<td style="text-align: left;">Textures and Framebuffers</td>
+<td style="text-align: left;">Raw Buffers and Storage Textures</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Execution Topology</strong></td>
+<td style="text-align: left;">Fixed to 2D viewports / render
+targets</td>
+<td style="text-align: left;">User-defined 3D workgroups and grids</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Inter-Thread Sharing</strong></td>
+<td style="text-align: left;">None (requires a new render pass)</td>
+<td style="text-align: left;">Workgroup shared memory</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Synchronization</strong></td>
+<td style="text-align: left;">None within a pass</td>
+<td style="text-align: left;">Workgroup barriers and memory
+barriers</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Atomics</strong></td>
+<td style="text-align: left;">Unsupported</td>
+<td style="text-align: left;">Supported on storage and workgroup
+memory</td>
+</tr>
+</tbody>
+</table></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

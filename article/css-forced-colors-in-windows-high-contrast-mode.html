@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS forced-colors in Windows High Contrast Mode - web-development</title>
+    <meta name="description" content="The CSS forced-colors media feature is a standardized web development tool that detects whether a user's operating system has enabled a restricted, high-contrast color palette, such as Windows High Contrast Mode (now called Contrast Themes). When active,">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-forced-colors-in-windows-high-contrast-mode">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS forced-colors in Windows High Contrast Mode - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-forced-colors-in-windows-high-contrast-mode" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS forced-colors media feature is a standardized web development tool that detects whether a user's operating system has enabled a restricted, high-contrast color palette, such as Windows High Contrast Mode (now called Contrast Themes). When active," />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="css-forced-colors-in-windows-high-contrast-mode">CSS
+forced-colors in Windows High Contrast Mode</h1>
+<p>The CSS <code>forced-colors</code> media feature is a standardized
+web development tool that detects whether a user's operating system has
+enabled a restricted, high-contrast color palette, such as Windows High
+Contrast Mode (now called Contrast Themes). When active, the operating
+system overrides author-defined colors—including text, backgrounds, and
+borders—with a user-selected high-contrast system palette. By leveraging
+<code>@media (forced-colors: active)</code>, developers can identify
+this mode to adjust visual affordances, restore critical UI boundaries,
+and ensure complete accessibility without conflicting with user
+preferences.</p>
+<p>Historically, supporting Windows High Contrast Mode required
+proprietary, non-standard Microsoft vendor prefixes like
+<code>@media (-ms-high-contrast: active)</code>. The W3C standardized
+this functionality in the CSS Color Adjustment Module Level 1 through
+the <code>forced-colors</code> media feature. Modern browsers, including
+Microsoft Edge, Google Chrome, and Mozilla Firefox, fully support this
+standard, providing a cross-browser mechanism to detect system-level
+color constraints.</p>
+<p>When Windows High Contrast Mode is active, the browser automatically
+modifies several CSS properties to maintain legibility. Properties such
+as <code>color</code>, <code>background-color</code>,
+<code>border-color</code>, and <code>text-decoration-color</code> are
+mapped to system color keywords (such as <code>Canvas</code>,
+<code>CanvasText</code>, <code>LinkText</code>, and
+<code>ButtonText</code>). Furthermore, properties that could obscure
+text legibility—such as <code>box-shadow</code>,
+<code>text-shadow</code>, and certain <code>background-image</code>
+declarations—are stripped away by default.</p>
+<p>While these automatic overrides resolve most contrast issues, they
+can inadvertently break user interfaces that rely on subtle styling
+rather than semantic borders. Common issues and developer remedies using
+<code>forced-colors</code> include:</p>
+<ul>
+<li><strong>Restoring Lost Boundaries:</strong> Buttons, cards, or form
+inputs that rely entirely on background color differences or box shadows
+become invisible against the canvas once those styles are stripped.
+Developers use <code>@media (forced-colors: active)</code> to explicitly
+add solid borders or transparent outlines
+(<code>outline: 1px solid transparent</code>), which the browser
+converts to visible high-contrast system colors in forced-colors
+mode.</li>
+<li><strong>Managing Vector Graphics and Icons:</strong> Inline SVGs and
+icon fonts may disappear or remain unreadable if their fill or stroke
+colors do not inherit properly. Setting <code>fill: currentColor</code>
+or <code>stroke: currentColor</code> ensures icons automatically inherit
+the user's forced text color.</li>
+<li><strong>Preserving Critical Color Elements:</strong> In specific
+instances where color conveys essential information—such as a color
+picker, status indicator, or data visualization—developers can use the
+<code>forced-color-adjust: none;</code> CSS property. This selectively
+exempts designated elements from system color overrides, preserving the
+authored colors where necessary.</li>
+<li><strong>Aligning Custom Controls with System Palettes:</strong>
+Developers creating custom UI components (like bespoke checkboxes,
+sliders, or select menus) can use standard CSS system color keywords
+(<code>Highlight</code>, <code>HighlightText</code>,
+<code>Canvas</code>, <code>CanvasText</code>) within forced-colors media
+blocks to ensure custom elements match the rest of the native operating
+system environment.</li>
+</ul>
+<p>The <code>forced-colors</code> media query shifts accessibility
+design from guessing custom contrast values to respecting operating
+system defaults. By using it to restore structure and selectively
+preserve critical graphical elements, web developers can guarantee that
+their applications remain fully functional, intuitive, and accessible to
+users relying on Windows High Contrast Mode.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

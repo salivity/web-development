@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Securely Isolate Untrusted Iframe Widgets - web-development</title>
+    <meta name="description" content="Embedding third-party iframe widgets exposes web applications to significant security risks, including cross-site scripting (XSS), data theft, clickjacking, and unauthorized host DOM manipulation. To protect host application data, web development teams m">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-securely-isolate-untrusted-iframe-widgets">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Securely Isolate Untrusted Iframe Widgets - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-securely-isolate-untrusted-iframe-widgets" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Embedding third-party iframe widgets exposes web applications to significant security risks, including cross-site scripting (XSS), data theft, clickjacking, and unauthorized host DOM manipulation. To protect host application data, web development teams m" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-securely-isolate-untrusted-iframe-widgets">How to
+Securely Isolate Untrusted Iframe Widgets</h1>
+<p>Embedding third-party iframe widgets exposes web applications to
+significant security risks, including cross-site scripting (XSS), data
+theft, clickjacking, and unauthorized host DOM manipulation. To protect
+host application data, web development teams must employ a
+defense-in-depth strategy that strictly enforces boundaries between the
+parent window and untrusted embedded content. This guide outlines the
+key technical controls—such as HTML5 sandboxing, origin isolation,
+restricted communication protocols, and modern browser security
+headers—required to safely integrate untrusted iframes.</p>
+<h3 id="1-apply-the-html5-sandbox-attribute">1. Apply the HTML5
+<code>sandbox</code> Attribute</h3>
+<p>The <code>sandbox</code> attribute applies an extra layer of
+restrictions to the content within an iframe. By default, adding an
+empty <code>sandbox</code> attribute restricts the iframe to an opaque
+origin, disables script execution, blocks form submissions, prevents
+popups, and stops plugins from running.</p>
+<p>When functionality requires certain features, enable only the minimal
+set of required tokens:</p>
+<ul>
+<li><strong><code>allow-scripts</code></strong>: Permits the iframe to
+execute JavaScript.</li>
+<li><strong><code>allow-forms</code></strong>: Allows form submissions
+within the iframe.</li>
+<li><strong><code>allow-popups</code></strong>: Enables
+<code>window.open</code> calls without compromising the parent
+context.</li>
+</ul>
+<p><strong>Critical Rule:</strong> Never combine
+<code>allow-scripts</code> and <code>allow-same-origin</code> on an
+untrusted iframe. Doing so allows the framed document to bypass the
+sandbox entirely by removing the sandbox attribute through DOM access if
+served from the same domain.</p>
+<h3 id="2-isolate-origins-on-separate-domains">2. Isolate Origins on
+Separate Domains</h3>
+<p>To guarantee isolation under the Same-Origin Policy (SOP), untrusted
+content must be hosted on an entirely separate domain (for example,
+<code>example-cdn.com</code> instead of <code>example.com</code>).</p>
+<p>Using a separate domain ensures:</p>
+<ul>
+<li>The iframe cannot access <code>localStorage</code>,
+<code>sessionStorage</code>, or IndexedDB belonging to the primary
+application.</li>
+<li>Host application cookies with the <code>SameSite</code> attribute
+set to <code>Lax</code> or <code>Strict</code> are automatically
+protected from being transmitted in requests made by the iframe.</li>
+<li>Even if the iframe executes arbitrary JavaScript, the browser will
+block access to <code>window.parent</code> properties and DOM
+nodes.</li>
+</ul>
+<h3 id="3-secure-cross-document-communication-via-postmessage">3. Secure
+Cross-Document Communication via <code>postMessage</code></h3>
+<p>Untrusted iframes often require communication with the host
+application. Never expose direct global functions to child frames;
+instead, use the asynchronous <code>window.postMessage</code> API with
+strict validation:</p>
+<ul>
+<li><strong>Explicit Target Origins:</strong> Always define the
+recipient origin explicitly when sending messages via
+<code>targetWindow.postMessage(message, targetOrigin)</code>. Never use
+<code>*</code> as the <code>targetOrigin</code>.</li>
+<li><strong>Origin Verification:</strong> When receiving messages via
+the <code>message</code> event listener on the host, always check
+<code>event.origin</code> against an allowlist of trusted domains before
+processing the payload:
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;message&#39;</span><span class="op">,</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="bu">event</span><span class="op">.</span><span class="at">origin</span> <span class="op">!==</span> <span class="st">&#39;https://trusted-widget-provider.com&#39;</span>) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Process payload</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div></li>
+<li><strong>Payload Validation:</strong> Treat all incoming message data
+as untrusted input. Validate data structure, types, and schema (e.g.,
+using JSON Schema or Zod) to prevent injection vulnerabilities.</li>
+</ul>
+<h3 id="4-restrict-hardware-and-browser-apis-with-permissions-policy">4.
+Restrict Hardware and Browser APIs with
+<code>Permissions-Policy</code></h3>
+<p>Modern browsers provide the <code>Permissions-Policy</code> (formerly
+<code>Feature-Policy</code>) attribute to grant or deny access to
+sensitive browser features inside an iframe.</p>
+<p>Set the <code>allow</code> attribute on the iframe element to
+explicitly deny or scope hardware access:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">iframe</span><span class="ot"> </span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  src</span><span class="op">=</span><span class="st">&quot;https://untrusted-widget.com&quot;</span><span class="ot"> </span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  sandbox</span><span class="op">=</span><span class="st">&quot;allow-scripts&quot;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  allow</span><span class="op">=</span><span class="st">&quot;camera &#39;none&#39;; microphone &#39;none&#39;; geolocation &#39;none&#39;; payment &#39;none&#39;&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">iframe</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Disabling access to media capture, payments, and location tracking
+reduces the attack surface if the untrusted widget is compromised.</p>
+<h3 id="5-enforce-content-security-policy-csp-directives">5. Enforce
+Content Security Policy (CSP) Directives</h3>
+<p>The host application must define a robust Content Security Policy via
+HTTP response headers to limit which sources can be embedded and where
+the host itself can be framed:</p>
+<ul>
+<li><strong><code>frame-src</code> / <code>child-src</code></strong>:
+Restricts the origins that can be loaded within
+<code>&lt;iframe&gt;</code> elements. This prevents unauthorized scripts
+from injecting rogue frames.
+<pre class="http"><code>Content-Security-Policy: frame-src &#39;self&#39; https://untrusted-widget.com;</code></pre></li>
+<li><strong><code>frame-ancestors</code></strong>: Protects the host
+application against clickjacking by restricting which sites can embed
+the host. Setting <code>frame-ancestors 'none'</code> or
+<code>frame-ancestors 'self'</code> prevents attackers from framing the
+parent page.</li>
+</ul>
+<h3 id="6-partition-cookies-and-session-tokens">6. Partition Cookies and
+Session Tokens</h3>
+<p>Ensure that no sensitive user state leaks into untrusted
+contexts:</p>
+<ul>
+<li>Do not include authentication tokens, API keys, or session
+identifiers in the iframe <code>src</code> URL query parameters, as they
+can leak via HTTP <code>Referer</code> headers and browser history.</li>
+<li>Rely on Cookies Having Independent Partitioned State (CHIPS) or
+ensure standard session cookies are marked <code>HttpOnly</code>,
+<code>Secure</code>, and <code>SameSite=Strict</code> to prevent child
+frames from interacting with parent sessions.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

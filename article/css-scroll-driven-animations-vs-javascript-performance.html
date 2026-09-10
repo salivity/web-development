@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Scroll-Driven Animations vs JavaScript Performance - web-development</title>
+    <meta name="description" content="CSS scroll-driven animations represent a fundamental shift in web design by allowing developers to link keyframe animations directly to scroll progress using pure CSS. Historically, scroll-based effects required JavaScript to listen to scroll events, cal">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-scroll-driven-animations-vs-javascript-performance">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS Scroll-Driven Animations vs JavaScript Performance - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-scroll-driven-animations-vs-javascript-performance" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="CSS scroll-driven animations represent a fundamental shift in web design by allowing developers to link keyframe animations directly to scroll progress using pure CSS. Historically, scroll-based effects required JavaScript to listen to scroll events, cal" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="css-scroll-driven-animations-vs-javascript-performance">CSS
+Scroll-Driven Animations vs JavaScript Performance</h1>
+<p>CSS scroll-driven animations represent a fundamental shift in web
+design by allowing developers to link keyframe animations directly to
+scroll progress using pure CSS. Historically, scroll-based effects
+required JavaScript to listen to scroll events, calculate scroll
+offsets, and update the DOM manually. This modern CSS feature natively
+offloads timeline calculations to the browser's compositor thread,
+eliminating common performance bottlenecks like main-thread blocking,
+frame drops, and layout thrashing.</p>
+<h3 id="the-javascript-scroll-bottleneck">The JavaScript Scroll
+Bottleneck</h3>
+<p>Traditionally, scroll-linked interactions rely on JavaScript event
+listeners attached to the <code>window</code> or specific scrollable
+containers. Whenever a user scrolls, the browser dispatches rapid bursts
+of <code>scroll</code> events. Handling these events in JavaScript
+introduces several structural inefficiencies:</p>
+<ul>
+<li><strong>Main Thread Contention:</strong> JavaScript runs on the
+browser’s single main thread. When heavy scripts run concurrently—such
+as data parsing, framework reconciliation, or third-party
+trackers—scroll event callbacks are queued, resulting in delayed
+execution and visible animation stutter (jank).</li>
+<li><strong>Layout Thrashing (Forced Reflow):</strong> JavaScript
+animations often read element geometry using APIs like
+<code>getBoundingClientRect()</code> or <code>scrollTop</code> and
+immediately write back styles like <code>style.transform</code> or
+<code>style.top</code>. Reading layout immediately after writing forces
+the browser into expensive recalculations during the frame cycle.</li>
+<li><strong>Overhead from Libraries:</strong> Developers often import
+heavy third-party animation libraries to manage scroll physics and
+timing calculations, bloating the initial bundle size and negatively
+impacting Core Web Vitals metrics like Interaction to Next Paint (INP)
+and Total Blocking Time (TBT).</li>
+</ul>
+<p>Using <code>requestAnimationFrame()</code> or the
+<code>IntersectionObserver</code> API provides partial mitigation, but
+neither completely separates animation synchronization from the
+JavaScript execution environment.</p>
+<h3 id="how-css-scroll-driven-animations-solve-the-problem">How CSS
+Scroll-Driven Animations Solve the Problem</h3>
+<p>The CSS Scroll-Driven Animations specification introduces native
+timeline primitives: <code>scroll()</code> and <code>view()</code>.
+Instead of advancing based on wall-clock time, animations progress
+according to the scroll position of a container or the visibility of an
+element within a viewport.</p>
+<p>Because the browser engine manages these timelines natively, it can
+decouple scroll-driven effects entirely from the main JavaScript
+thread:</p>
+<ol type="1">
+<li><strong>Compositor-Thread Execution:</strong> When animations target
+compositor-friendly properties (such as <code>transform</code> and
+<code>opacity</code>), the browser computes and renders frames directly
+on the compositor thread or GPU. Even if the main thread is completely
+frozen by a long-running JavaScript task, the scroll animation continues
+to render smoothly at 60 or 120 frames per second.</li>
+<li><strong>Zero Script Evaluation:</strong> Eliminating JavaScript
+callbacks removes the overhead of repeatedly calling functions,
+recalculating math, and managing animation state machines. The browser
+natively calculates the percentage of the scroll range and maps it
+directly to the declared <code>@keyframes</code>.</li>
+<li><strong>Reduced Bundle Footprint:</strong> Native implementation
+removes the need for external scroll libraries. Eliminating dependencies
+reduces JavaScript payload sizes, speeding up initial page load times
+and reducing memory consumption on lower-end mobile devices.</li>
+</ol>
+<h3 id="practical-impact-on-modern-web-development">Practical Impact on
+Modern Web Development</h3>
+<p>By moving scroll calculations from JavaScript runtime logic to
+declarative CSS, web applications achieve fluid, responsive user
+interfaces with substantially lower CPU utilization. Tasks like
+reading-progress bars, parallax layers, image reveals, and shrinkable
+headers can now run at peak hardware capability without degrading input
+responsiveness or battery life.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

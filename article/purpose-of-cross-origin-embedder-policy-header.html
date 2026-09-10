@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purpose of Cross-Origin Embedder Policy Header - web-development</title>
+    <meta name="description" content="The Cross-Origin Embedder Policy (COEP) is a security-focused HTTP response header that prevents a document from loading cross-origin resources that have not explicitly granted permission. By enforcing strict resource-loading rules, COEP protects sensiti">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/purpose-of-cross-origin-embedder-policy-header">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Purpose of Cross-Origin Embedder Policy Header - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/purpose-of-cross-origin-embedder-policy-header" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Cross-Origin Embedder Policy (COEP) is a security-focused HTTP response header that prevents a document from loading cross-origin resources that have not explicitly granted permission. By enforcing strict resource-loading rules, COEP protects sensiti" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="purpose-of-cross-origin-embedder-policy-header">Purpose of
+Cross-Origin Embedder Policy Header</h1>
+<p>The Cross-Origin Embedder Policy (COEP) is a security-focused HTTP
+response header that prevents a document from loading cross-origin
+resources that have not explicitly granted permission. By enforcing
+strict resource-loading rules, COEP protects sensitive data from being
+leaked through side-channel attacks and allows browsers to safely grant
+web applications access to powerful, high-performance web platform
+features.</p>
+<h3 id="mitigating-side-channel-attacks">Mitigating Side-Channel
+Attacks</h3>
+<p>Modern processors are vulnerable to speculative execution
+side-channel attacks, such as Spectre. In a web environment, an attacker
+can use high-precision timers to measure execution times and infer the
+contents of memory belonging to another origin loaded in the same
+process. COEP neutralizes this threat by ensuring that a page cannot
+load cross-origin assets—such as images, scripts, stylesheets, or
+iframes—unless those resources explicitly authorize the embedding
+origin, preventing sensitive external data from entering the process's
+address space.</p>
+<h3 id="unlocking-cross-origin-isolation">Unlocking Cross-Origin
+Isolation</h3>
+<p>To protect users, modern browsers restrict access to certain powerful
+APIs by default. COEP works in tandem with the Cross-Origin Opener
+Policy (COOP) header to achieve a security state known as "cross-origin
+isolation." When a site sets both headers, the browser places the page
+in a dedicated, isolated execution environment.</p>
+<p>Achieving cross-origin isolation is required to access advanced
+browser capabilities, including:</p>
+<ul>
+<li><strong><code>SharedArrayBuffer</code></strong>: Enables
+multi-threaded processing and shared memory across Web Workers.</li>
+<li><strong>High-precision timers</strong>: Provides microsecond-level
+accuracy via <code>performance.now()</code>, essential for gaming, audio
+processing, and benchmarking.</li>
+<li><strong>WebAssembly SIMD and Threads</strong>: Accelerates
+computationally intensive applications running in the browser.</li>
+<li><strong><code>performance.measureUserAgentSpecificMemory()</code></strong>:
+Allows developers to monitor and profile precise memory usage.</li>
+</ul>
+<h3 id="available-coep-directives">Available COEP Directives</h3>
+<p>The COEP header provides three main configurations:</p>
+<ul>
+<li><strong><code>require-corp</code></strong>: The strictest policy.
+The document can only load resources that explicitly provide a
+<code>Cross-Origin-Resource-Policy</code> (CORP) header or are loaded
+using Cross-Origin Resource Sharing (CORS).</li>
+<li><strong><code>credentialless</code></strong>: A flexible alternative
+where cross-origin requests made without explicit CORS or CORP are
+loaded without credentials (such as cookies or client certificates).
+This allows embedding legacy cross-origin assets while still achieving
+isolation.</li>
+<li><strong><code>Cross-Origin-Embedder-Policy-Report-Only</code></strong>:
+A monitoring header that reports potential blocking violations to a
+specified reporting endpoint without actually breaking or blocking
+resource loading, ideal for staging environments.</li>
+</ul>
+<h3 id="practical-impact-on-web-applications">Practical Impact on Web
+Applications</h3>
+<p>Implementing COEP requires careful audit of all embedded third-party
+dependencies. If an external service—such as an analytics tracker, ad
+network, or media host—does not configure CORS or return a
+<code>Cross-Origin-Resource-Policy: cross-origin</code> header, the
+browser will block the resource entirely. Consequently, developers must
+ensure all external dependencies are properly configured to support
+explicit cross-origin permissions before enforcing COEP in
+production.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

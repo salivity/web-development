@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo-Distributed A/B Testing with CDN Edge Workers - web-development</title>
+    <meta name="description" content="This article outlines how modern engineering teams configure CDN edge workers to conduct geo-distributed A/B testing at scale. By moving experimentation logic from the origin server or client-side JavaScript to edge compute nodes, teams eliminate the vis">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/geo-distributed-a-b-testing-with-cdn-edge-workers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Geo-Distributed A/B Testing with CDN Edge Workers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/geo-distributed-a-b-testing-with-cdn-edge-workers" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article outlines how modern engineering teams configure CDN edge workers to conduct geo-distributed A/B testing at scale. By moving experimentation logic from the origin server or client-side JavaScript to edge compute nodes, teams eliminate the vis" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="geo-distributed-ab-testing-with-cdn-edge-workers">Geo-Distributed
+A/B Testing with CDN Edge Workers</h1>
+<p>This article outlines how modern engineering teams configure CDN edge
+workers to conduct geo-distributed A/B testing at scale. By moving
+experimentation logic from the origin server or client-side JavaScript
+to edge compute nodes, teams eliminate the visual flicker typical of
+client-side tools and prevent the latency penalties of origin-based
+routing. The following sections detail the complete workflow, from
+extracting edge geolocation metadata and assigning deterministic
+variants to manipulating requests and streaming telemetry.</p>
+<h3 id="1-intercepting-requests-at-the-edge">1. Intercepting Requests at
+the Edge</h3>
+<p>Edge workers (such as Cloudflare Workers, AWS CloudFront Functions,
+or Fastly Compute) execute serverless logic inside Points of Presence
+(PoPs) closest to the user. Teams configure these workers to intercept
+incoming <code>GET</code> requests before the CDN cache lookup or origin
+fetch occurs. This allows the edge worker to inspect headers, cookies,
+and network-level metadata to make routing decisions in single-digit
+milliseconds.</p>
+<h3 id="2-reading-geolocation-metadata">2. Reading Geolocation
+Metadata</h3>
+<p>CDNs automatically enrich incoming requests with geographic data
+derived from the client's IP address. Teams extract these properties
+directly from the runtime context or platform-specific headers:</p>
+<ul>
+<li><strong>Cloudflare:</strong> <code>request.cf.country</code>,
+<code>request.cf.region</code>, or <code>request.cf.city</code></li>
+<li><strong>AWS CloudFront:</strong> Headers such as
+<code>CloudFront-Viewer-Country</code>,
+<code>CloudFront-Viewer-Country-Region</code>, and
+<code>CloudFront-Viewer-Postal-Code</code></li>
+<li><strong>Fastly:</strong> Functions like
+<code>client.geo.country_code</code> and
+<code>client.geo.city</code></li>
+</ul>
+<p>By reading these values, teams establish audience targeting rules.
+For example, a test might run exclusively in the United Kingdom or split
+variants based on regional latency boundaries.</p>
+<h3 id="3-implementing-variant-assignment-and-persistence">3.
+Implementing Variant Assignment and Persistence</h3>
+<p>To ensure a consistent user experience, edge workers must assign
+users to a variant (control vs. experiment) and persist that assignment
+across future visits.</p>
+<ol type="1">
+<li><strong>Cookie Inspection:</strong> The worker checks the
+<code>Cookie</code> header for an existing test identifier (e.g.,
+<code>ab_test_geo=B</code>). If found, the user continues to receive
+that assigned variant.</li>
+<li><strong>Deterministic Hashing:</strong> If no cookie exists, the
+worker generates an assignment. Rather than purely random selection,
+teams often hash a unique user ID (or a newly generated UUID) combined
+with the experiment name using an algorithm like MurmurHash or SHA-256:
+<pre><code>bucket = hash(userID + experimentID) % 100</code></pre>
+This guarantees uniform distribution according to the team's defined
+allocation weights (e.g., a 50/50 split).</li>
+<li><strong>Setting Persistence:</strong> The worker appends a
+<code>Set-Cookie</code> header to the outgoing response, locking the
+client to that variant for the duration of the test.</li>
+</ol>
+<h3 id="4-modifying-routing-and-html-at-the-edge">4. Modifying Routing
+and HTML at the Edge</h3>
+<p>Once the variant is determined, teams serve the appropriate content
+using one of two primary patterns:</p>
+<ul>
+<li><strong>Subrequest Rewriting:</strong> The edge worker alters the
+upstream origin path or query parameter. For variant B, the worker
+fetches <code>/experiments/v2/index.html</code> from the origin while
+the user's browser URL remains <code>/</code>. This completely avoids
+external redirects (HTTP 301/302) and eliminates page flicker.</li>
+<li><strong>In-Flight HTML Rewriting:</strong> For localized content
+modifications (such as changing a headline, currency, or CTA button
+based on region), teams use an edge-native HTML parser (e.g.,
+Cloudflare’s <code>HTMLRewriter</code>). The worker streams the original
+HTML from the origin, modifies specific DOM elements on the fly, and
+streams the modified response to the client with negligible
+overhead.</li>
+</ul>
+<h3 id="5-logging-and-analytics-at-the-edge">5. Logging and Analytics at
+the Edge</h3>
+<p>A/B testing requires strict tracking of impressions and conversions.
+Because the routing happens at the edge, client-side analytics might
+miss initial variant exposures or experience ad-blocker drop-offs.</p>
+<p>Teams solve this by decoupling analytics logging from the response
+path:</p>
+<ul>
+<li><strong>Asynchronous Contexts:</strong> Workers use execution
+lifecycle hooks (such as <code>event.waitUntil()</code> or background
+tasks) to dispatch impression payloads to analytics endpoints, data
+warehouses, or edge key-value stores.</li>
+<li><strong>Log Streaming:</strong> Alternatively, workers annotate
+custom request headers (e.g., <code>X-Experiment-Variant: B</code>) that
+are captured by CDN real-time log streaming systems (like Datadog,
+BigQuery, or Amazon Kinesis), avoiding extra network calls during
+request execution.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

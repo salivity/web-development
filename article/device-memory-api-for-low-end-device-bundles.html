@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Memory API for Low-End Device Bundles - web-development</title>
+    <meta name="description" content="The Device Memory API enables web development teams to detect the approximate amount of random-access memory (RAM) available on a user's device, allowing them to dynamically serve lighter, performance-optimized code bundles to low-end hardware. By identi">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/device-memory-api-for-low-end-device-bundles">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Device Memory API for Low-End Device Bundles - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/device-memory-api-for-low-end-device-bundles" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Device Memory API enables web development teams to detect the approximate amount of random-access memory (RAM) available on a user's device, allowing them to dynamically serve lighter, performance-optimized code bundles to low-end hardware. By identi" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="device-memory-api-for-low-end-device-bundles">Device Memory API
+for Low-End Device Bundles</h1>
+<p>The Device Memory API enables web development teams to detect the
+approximate amount of random-access memory (RAM) available on a user's
+device, allowing them to dynamically serve lighter,
+performance-optimized code bundles to low-end hardware. By identifying
+memory-constrained environments either during the initial HTTP request
+via Client Hints or client-side through JavaScript, teams can
+selectively disable non-essential features, reduce script execution
+overhead, and prevent browser crashes on resource-limited devices while
+still offering rich experiences to more capable systems.</p>
+<h3 id="understanding-the-device-memory-api">Understanding the Device
+Memory API</h3>
+<p>The Device Memory API exposes capabilities through two mechanisms: a
+JavaScript property (<code>navigator.deviceMemory</code>) and an HTTP
+Client Hint header (<code>Device-Memory</code>). To protect user privacy
+and avoid device fingerprinting, the API rounds memory values to powers
+of two (e.g., 0.25, 0.5, 1, 2, 4, 8), representing the device's
+gigabytes of RAM.</p>
+<h3 id="server-side-bundle-splitting-with-client-hints">Server-Side
+Bundle Splitting with Client Hints</h3>
+<p>When the browser sends the <code>Device-Memory</code> header in its
+initial request, the web server can determine the hardware tier before
+serving any assets:</p>
+<ul>
+<li><strong>Variant Selection:</strong> Servers can serve different base
+HTML templates containing script tags tailored to specific hardware
+profiles.</li>
+<li><strong>Asset Negotiation:</strong> High-end devices receive
+standard bundles with full functionality, while devices with low RAM
+(e.g., less than 2 GB) receive an ultra-lightweight entry point
+containing only core dependencies.</li>
+<li><strong>Zero Client Latency:</strong> Because the determination
+happens during the initial request, low-end devices do not waste network
+bandwidth downloading client-side detection scripts before fetching the
+correct bundle.</li>
+</ul>
+<h3 id="dynamic-code-splitting-on-the-client-side">Dynamic Code
+Splitting on the Client Side</h3>
+<p>For setups relying on client-side routing and single-page
+applications, <code>navigator.deviceMemory</code> works seamlessly with
+dynamic <code>import()</code> statements to implement adaptive
+loading:</p>
+<ul>
+<li><strong>Conditional Feature Loading:</strong> Heavy features—such as
+3D graphics, intensive charting libraries, or complex animation
+engines—can be deferred or swapped for static alternatives if
+<code>navigator.deviceMemory &lt; 4</code>.</li>
+<li><strong>Reduced Dependency Footprint:</strong> Applications can load
+stripped-down polyfills, standard CSS transitions instead of JavaScript
+physics engines, and lower-resolution media assets based on memory
+thresholds.</li>
+<li><strong>Component-Level Degradation:</strong> UI frameworks can
+render simplified component variants that require fewer virtual DOM
+nodes and lighter state management.</li>
+</ul>
+<h3 id="mitigating-memory-related-performance-issues">Mitigating
+Memory-Related Performance Issues</h3>
+<p>Low-end devices suffer disproportionately from memory pressure. Heavy
+JavaScript execution causes aggressive garbage collection pauses,
+sluggish input response, and browser tab crashes known as Out-Of-Memory
+(OOM) events.</p>
+<p>By utilizing the Device Memory API to reduce the overall bundle
+size:</p>
+<ul>
+<li><strong>Parse and Compile Times Drop:</strong> Lower script volume
+directly correlates to faster main-thread execution on slower CPUs,
+which are typically paired with low RAM.</li>
+<li><strong>Garbage Collection Overhead Decreases:</strong> Smaller
+codebases allocate fewer objects, significantly reducing main-thread
+blocking caused by memory clean-up cycles.</li>
+<li><strong>Interaction to Next Paint (INP) Improves:</strong> The main
+thread remains responsive because it is not monopolized by processing
+bloated JavaScript bundles.</li>
+</ul>
+<p>Using the Device Memory API allows engineering teams to stop treating
+all users as if they possess desktop-grade hardware, establishing a
+structured, automated strategy for progressive enhancement and graceful
+degradation.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

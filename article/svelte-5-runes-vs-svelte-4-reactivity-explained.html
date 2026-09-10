@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Svelte 5 Runes vs Svelte 4 Reactivity Explained - web-development</title>
+    <meta name="description" content="Svelte 5 introduces a fundamental shift in how reactivity is managed by moving from a purely compiler-driven model to an explicit, signal-based system powered by "runes." While Svelte 4 relied on implicit compiler transformations and syntax overloading (">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/svelte-5-runes-vs-svelte-4-reactivity-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Svelte 5 Runes vs Svelte 4 Reactivity Explained - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/svelte-5-runes-vs-svelte-4-reactivity-explained" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Svelte 5 introduces a fundamental shift in how reactivity is managed by moving from a purely compiler-driven model to an explicit, signal-based system powered by "runes." While Svelte 4 relied on implicit compiler transformations and syntax overloading (" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="svelte-5-runes-vs-svelte-4-reactivity-explained">Svelte 5 Runes
+vs Svelte 4 Reactivity Explained</h1>
+<p>Svelte 5 introduces a fundamental shift in how reactivity is managed
+by moving from a purely compiler-driven model to an explicit,
+signal-based system powered by "runes." While Svelte 4 relied on
+implicit compiler transformations and syntax overloading (such as
+<code>let</code> declarations and <code>$:</code> labels) scoped
+strictly to <code>.svelte</code> files, Svelte 5 provides explicit
+primitives like <code>$state</code>, <code>$derived</code>, and
+<code>$effect</code>. This transition eliminates historical edge cases,
+standardizes reactivity across components and external JavaScript
+modules, and improves runtime performance through fine-grained
+updates.</p>
+<h3 id="the-svelte-4-approach-implicit-compiler-magic">The Svelte 4
+Approach: Implicit Compiler Magic</h3>
+<p>In Svelte 4, reactivity was governed entirely by the compiler parsing
+standard JavaScript declarations within single-file components:</p>
+<ul>
+<li><strong>Variable Declarations:</strong> Simple
+<code>let count = 0</code> assignments became reactive state.
+Re-rendering was triggered exclusively through reassignment
+(<code>count += 1</code>).</li>
+<li><strong>Reactive Statements:</strong> The JavaScript label syntax
+<code>$: doubled = count * 2</code> was hijacked to declare derived
+values and manage side effects.</li>
+<li><strong>Component-Bound Scope:</strong> Reactivity was tied strictly
+to the <code>.svelte</code> file markup. To share reactive state outside
+of components, developers had to switch paradigms and use Svelte stores
+(<code>writable</code>, <code>derived</code>,
+<code>readable</code>).</li>
+</ul>
+<p>While intuitive for beginners, this approach created limitations.
+Mutating deep object properties often failed to trigger updates without
+explicit reassignments (e.g., <code>arr = arr</code>). Furthermore, the
+<code>$:</code> label combined derived values and side effects into a
+single overloaded syntax, making execution order and dependency tracking
+complex in large codebases.</p>
+<h3 id="svelte-5s-runes-explicit-signals">Svelte 5's Runes: Explicit
+Signals</h3>
+<p>Svelte 5 replaces implicit compiler magic with "runes"—function-like
+language extensions that tell the compiler how to handle reactivity
+using a modern signal-based engine.</p>
+<h4 id="1-defining-state-with-state">1. Defining State with
+<code>$state</code></h4>
+<p>Instead of treating every top-level <code>let</code> as reactive,
+Svelte 5 uses <code>$state</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> count <span class="op">=</span> <span class="fu">$state</span>(<span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> user <span class="op">=</span> <span class="fu">$state</span>({ <span class="dt">name</span><span class="op">:</span> <span class="st">&#39;Alice&#39;</span> })<span class="op">;</span></span></code></pre></div>
+<p>Unlike Svelte 4, <code>$state</code> provides deep reactivity via
+JavaScript proxies. Mutating a nested property (e.g.,
+<code>user.name = 'Bob'</code>) automatically triggers a reactive update
+without requiring reassignments or immutable clones.</p>
+<h4 id="2-computed-values-with-derived">2. Computed Values with
+<code>$derived</code></h4>
+<p>The ambiguous <code>$:</code> label is replaced with
+<code>$derived</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> doubled <span class="op">=</span> <span class="fu">$derived</span>(count <span class="op">*</span> <span class="dv">2</span>)<span class="op">;</span></span></code></pre></div>
+<p><code>$derived</code> makes pure computations explicit and separates
+them from side effects. Dependencies are tracked dynamically at runtime,
+ensuring computations only recalculate when their specific dependencies
+change.</p>
+<h4 id="3-managing-side-effects-with-effect">3. Managing Side Effects
+with <code>$effect</code></h4>
+<p>Side effects are decoupled from derived calculations using the
+<code>$effect</code> rune:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">$effect</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`The count is now </span><span class="sc">${</span>count<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Cleanup logic runs before the next execution&#39;</span>)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p><code>$effect</code> runs exclusively in the browser after the DOM
+has updated, providing built-in cleanup phases and preventing unexpected
+execution during server-side rendering.</p>
+<h4 id="4-standardized-props-with-props">4. Standardized Props with
+<code>$props</code></h4>
+<p>Passing data between components in Svelte 4 relied on the
+<code>export let</code> pattern. Svelte 5 replaces this with
+<code>$props</code>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> { title<span class="op">,</span> count <span class="op">=</span> <span class="dv">0</span> } <span class="op">=</span> <span class="fu">$props</span>()<span class="op">;</span></span></code></pre></div>
+<p>This syntax aligns directly with modern JavaScript destructuring,
+supports default values cleanly, and allows type definitions to map
+directly to standard TypeScript interfaces.</p>
+<h3 id="universal-reactivity-outside-components">Universal Reactivity
+Outside Components</h3>
+<p>The most practical distinction between the two versions is universal
+reactivity. In Svelte 4, standard reactivity ceased to function once
+logic was moved out of a <code>.svelte</code> file, forcing the use of
+Svelte stores with manual subscriptions (<code>$store</code>).</p>
+<p>In Svelte 5, runes function identically inside <code>.svelte</code>
+components and standard <code>.svelte.js</code> or
+<code>.svelte.ts</code> files. Developers can encapsulate complex,
+fine-grained reactive state and logic inside vanilla functions without
+changing APIs or managing store subscriptions.</p>
+<h3
+id="architectural-difference-compile-time-vs-runtime-signals">Architectural
+Difference: Compile-Time vs. Runtime Signals</h3>
+<p>Under the hood, Svelte 4 relied on compile-time dirty-checking: the
+compiler identified which variables were modified, flagged components as
+"dirty," and scheduled component-level reconciliations.</p>
+<p>Svelte 5 utilizes runtime signals. The compiler still optimizes the
+output, but the runtime tracks direct dependencies between state and the
+specific DOM nodes that display it. When a value changes, only the
+affected DOM node updates, eliminating unnecessary re-evaluations and
+significantly improving performance in data-heavy applications.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

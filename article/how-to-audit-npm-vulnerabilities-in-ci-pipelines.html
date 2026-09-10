@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Audit NPM Vulnerabilities in CI Pipelines - web-development</title>
+    <meta name="description" content="Securing modern web applications requires continuous monitoring of third-party dependencies to catch security flaws before code reaches production. This article provides a direct overview of how web development engineers automate npm package vulnerabilit">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-audit-npm-vulnerabilities-in-ci-pipelines">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Audit NPM Vulnerabilities in CI Pipelines - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-audit-npm-vulnerabilities-in-ci-pipelines" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Securing modern web applications requires continuous monitoring of third-party dependencies to catch security flaws before code reaches production. This article provides a direct overview of how web development engineers automate npm package vulnerabilit" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-audit-npm-vulnerabilities-in-ci-pipelines">How to Audit
+NPM Vulnerabilities in CI Pipelines</h1>
+<p>Securing modern web applications requires continuous monitoring of
+third-party dependencies to catch security flaws before code reaches
+production. This article provides a direct overview of how web
+development engineers automate npm package vulnerability audits within
+Continuous Integration (CI) pipelines, detailing native tooling,
+third-party Software Composition Analysis (SCA) solutions, actionable
+pipeline configurations, and best practices for managing dependency risk
+without breaking build stability.</p>
+<h3 id="the-mechanism-native-tools-vs-dedicated-sca-platforms">The
+Mechanism: Native Tools vs. Dedicated SCA Platforms</h3>
+<p>Engineers typically audit dependencies in CI environments using two
+primary methods: native package manager commands or specialized Software
+Composition Analysis (SCA) tools.</p>
+<ul>
+<li><strong>Native CLI Commands (<code>npm audit</code>):</strong> The
+built-in <code>npm audit</code> command cross-references the project's
+<code>package-lock.json</code> against the GitHub Advisory Database. In
+CI, engineers configure this command to fail builds when vulnerabilities
+meet specific severity thresholds. For example, running
+<code>npm audit --audit-level=high</code> ensures that only high and
+critical vulnerabilities exit with a non-zero status code, preventing
+false alarms from trivial issues.</li>
+<li><strong>Specialized SCA Platforms:</strong> Tools like Snyk, OWASP
+Dependency-Check, Trivy, Socket, and GitHub Dependency Review provide
+deeper coverage than basic lockfile analysis. These tools detect
+zero-day exploits, malicious packages, license compliance violations,
+and transitive dependency risks. They often provide richer remediation
+advice and direct PR patching capabilities.</li>
+</ul>
+<h3 id="implementing-an-automated-ci-scan">Implementing an Automated CI
+Scan</h3>
+<p>Integrating an audit step typically occurs during the test or static
+analysis stage of the CI pipeline. Below is an example of implementing
+an automated npm audit using GitHub Actions:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> Security Audit</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">on</span><span class="kw">:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">pull_request</span><span class="kw">:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">]</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">push</span><span class="kw">:</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">branches</span><span class="kw">:</span><span class="at"> </span><span class="kw">[</span><span class="at">main</span><span class="kw">]</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">jobs</span><span class="kw">:</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">audit</span><span class="kw">:</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">runs-on</span><span class="kw">:</span><span class="at"> ubuntu-latest</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">steps</span><span class="kw">:</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Check out repository</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/checkout@v4</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Set up Node.js</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/setup-node@v4</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">node-version</span><span class="kw">:</span><span class="at"> </span><span class="dv">20</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="at">          </span><span class="fu">cache</span><span class="kw">:</span><span class="at"> </span><span class="st">&#39;npm&#39;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Install dependencies</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> npm ci</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> Run dependency audit</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="at">        </span><span class="fu">run</span><span class="kw">:</span><span class="at"> npm audit --audit-level=high</span></span></code></pre></div>
+<p>In this setup, <code>npm ci</code> ensures a deterministic, pristine
+installation based strictly on the lockfile, while the audit step
+immediately evaluates installed packages and fails the workflow if any
+high- or critical-risk vulnerabilities are found.</p>
+<h3 id="managing-severity-thresholds-and-build-failures">Managing
+Severity Thresholds and Build Failures</h3>
+<p>A strict blocking policy on all vulnerabilities often leads to alert
+fatigue and blocked deployments for low-impact issues. Engineers balance
+security with velocity through the following practices:</p>
+<ul>
+<li><strong>Threshold Gating:</strong> Configure CI jobs to fail builds
+only on <code>high</code> or <code>critical</code> Common Vulnerability
+Scoring System (CVSS) scores. Lower-severity warnings are routed to
+dashboards or issue trackers for scheduled reviews.</li>
+<li><strong>Handling Unpatched Vulnerabilities:</strong> When an
+upstream package has no immediate patch available, engineers use utility
+tools like <code>audit-ci</code> or custom <code>.nsprc</code>
+allowlists. These allow teams to temporarily suppress specific Advisory
+IDs with expiration dates while documenting the accepted risk.</li>
+<li><strong>Dependency Pinning:</strong> Engineers enforce the use of
+<code>package-lock.json</code> to prevent arbitrary version changes from
+slipping into the build, ensuring scans accurately reflect the exact
+code executing in production.</li>
+</ul>
+<h3 id="automating-fixes-and-upgrades">Automating Fixes and
+Upgrades</h3>
+<p>Automated audits are most effective when paired with automated
+remediation:</p>
+<ul>
+<li><strong>Automated Pull Requests:</strong> Tools like Dependabot and
+Renovate automatically monitor dependency registries and open pull
+requests when security patches are released.</li>
+<li><strong>Scheduled Scans:</strong> Vulnerabilities are regularly
+discovered in existing, unchanged code. Running CI scans on a daily or
+weekly schedule against the main branch guarantees that newly disclosed
+Common Vulnerabilities and Exposures (CVEs) are caught even when no
+active development is taking place.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Third-Party Script Deferral and Total Blocking Time - web-development</title>
+    <meta name="description" content="Deferring third-party scripts is one of the most effective strategies for minimizing Total Blocking Time (TBT) in modern web development. Third-party scripts—such as analytics, ad networks, chat widgets, and tracking pixels—often execute heavy JavaSc">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/third-party-script-deferral-and-total-blocking-time">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Third-Party Script Deferral and Total Blocking Time - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/third-party-script-deferral-and-total-blocking-time" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Deferring third-party scripts is one of the most effective strategies for minimizing Total Blocking Time (TBT) in modern web development. Third-party scripts—such as analytics, ad networks, chat widgets, and tracking pixels—often execute heavy JavaSc" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="third-party-script-deferral-and-total-blocking-time">Third-Party
+Script Deferral and Total Blocking Time</h1>
+<p>Deferring third-party scripts is one of the most effective strategies
+for minimizing Total Blocking Time (TBT) in modern web development.
+Third-party scripts—such as analytics, ad networks, chat widgets, and
+tracking pixels—often execute heavy JavaScript tasks that monopolize the
+browser's main thread during initial page load. By deferring the loading
+and execution of these non-essential resources, developers prevent
+long-running tasks from blocking user input, significantly lowering TBT
+and enhancing overall site responsiveness.</p>
+<p>Total Blocking Time measures the total amount of time between First
+Contentful Paint (FCP) and Time to Interactive (TTI) where the main
+thread is blocked by tasks taking longer than 50 milliseconds. When a
+script runs for 120 milliseconds, it contributes 70 milliseconds of
+blocking time to the metric. Because third-party libraries are often
+unoptimized, bloated, or dependent on complex parsing, synchronous
+loading causes a cascade of these "Long Tasks," directly inflating TBT
+and degrading Core Web Vitals scores.</p>
+<p>When third-party scripts are deferred using the <code>defer</code>
+attribute or loaded dynamically after key milestones, their execution is
+shifted away from the critical rendering path. Unlike standard
+synchronous scripts, deferred scripts download in parallel with HTML
+parsing and only execute after the Document Object Model (DOM) is fully
+constructed. This prevents the main thread from stalling during critical
+rendering stages, drastically reducing the frequency and duration of
+Long Tasks.</p>
+<p>The measurable impact of script deferral on TBT is substantial:</p>
+<ul>
+<li><strong>Elimination of Critical-Path Bottlenecks:</strong> The
+browser can parse HTML, construct the DOM, and render primary visual
+content without pausing to fetch or evaluate third-party code.</li>
+<li><strong>Reduction of Cumulative Task Duration:</strong> Spreading
+the execution of non-critical JavaScript to moments when the main thread
+is idle prevents long queues of blocking tasks, directly reducing the
+aggregate blocking time measured by Lighthouse and field monitoring
+tools.</li>
+<li><strong>Improved Input Responsiveness:</strong> By freeing the main
+thread during the initial load window, the page can respond immediately
+to user clicks, taps, and keyboard inputs, preventing the perceived
+unresponsiveness often associated with heavy tracking tags.</li>
+</ul>
+<p>For maximal reduction of TBT, deferral should be combined with
+strategic loading techniques. Facades can replace heavy third-party
+embeds (such as YouTube players or customer support widgets) with
+lightweight static placeholders until user interaction occurs.
+Additionally, tag managers should be configured to fire marketing and
+analytics pixels only after the main thread is idle or after the primary
+content has rendered. Implementing these deferral strategies directly
+minimizes Total Blocking Time and ensures a faster, more reliable user
+experience.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

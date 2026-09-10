@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benefits of Branded Types in Web Development - web-development</title>
+    <meta name="description" content="Branded types provide a mechanism in structurally typed languages like TypeScript to simulate nominal typing, allowing developers to enforce domain-specific constraints at compile time. This article explores how branded types prevent common logical bugs,">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/benefits-of-branded-types-in-web-development">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Benefits of Branded Types in Web Development - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/benefits-of-branded-types-in-web-development" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Branded types provide a mechanism in structurally typed languages like TypeScript to simulate nominal typing, allowing developers to enforce domain-specific constraints at compile time. This article explores how branded types prevent common logical bugs," />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="benefits-of-branded-types-in-web-development">Benefits of
+Branded Types in Web Development</h1>
+<p>Branded types provide a mechanism in structurally typed languages
+like TypeScript to simulate nominal typing, allowing developers to
+enforce domain-specific constraints at compile time. This article
+explores how branded types prevent common logical bugs, enforce data
+validation workflows, eliminate runtime performance penalties, and
+significantly improve domain modeling across web applications.</p>
+<h3 id="eliminating-primitive-obsession">Eliminating Primitive
+Obsession</h3>
+<p>Modern web applications rely heavily on primitive types such as
+<code>string</code>, <code>number</code>, and <code>boolean</code>. A
+common anti-pattern is primitive obsession, where distinct domain
+concepts share the same base type. For example, a function signature
+accepting <code>(userId: string, accountId: string)</code> can easily be
+called with swapped arguments because both parameters are plain
+strings.</p>
+<p>Branded types solve this by attaching unique compile-time
+metadata—often called a "brand" or "tag"—to a primitive. While the
+underlying runtime value remains a standard primitive, the type checker
+treats <code>UserId</code> and <code>AccountId</code> as distinct,
+incompatible types. Swapping them triggers an immediate compile-time
+error, preventing subtle business logic defects.</p>
+<h3 id="enforcing-parse-dont-validate-workflows">Enforcing
+Parse-Don't-Validate Workflows</h3>
+<p>Web applications constantly ingest untrusted data from forms, URL
+query strings, and third-party APIs. A standard validation function
+might verify that a string matches an email format, but it typically
+leaves the type as a generic <code>string</code>, allowing unvalidated
+strings to slip into downstream functions.</p>
+<p>By pairing branded types with validation functions or smart
+constructors, developers can establish strict type boundaries. A string
+can only be cast to a branded type like <code>SanitizedHtml</code> or
+<code>ValidatedEmail</code> after passing through a dedicated validation
+or parsing routine. Functions that require validated data can then
+demand the branded type in their parameter list, guaranteeing that
+unparsed or unsafe inputs cannot reach core business logic.</p>
+<h3 id="zero-runtime-overhead">Zero Runtime Overhead</h3>
+<p>A major advantage of branded types over traditional object-oriented
+solutions (such as wrapping primitives in classes) is performance. Class
+wrappers introduce memory overhead, garbage collection pressure, and
+serialization complexity when sending data over the network or storing
+it in state stores.</p>
+<p>Branded types leverage phantom types that exist purely within the
+static type system. When TypeScript or a similar compiler transpiles
+code to JavaScript, the branding mechanics disappear entirely. The
+result is pure, highly performant primitive operations at runtime with
+the safety of nominal types during development.</p>
+<h3 id="self-documenting-domain-models">Self-Documenting Domain
+Models</h3>
+<p>Codebases become significantly easier to navigate when domain rules
+are encoded into type definitions. Instead of relying on variable names
+or external documentation to explain whether a <code>number</code>
+represents cents, dollars, or a percentage, branded types make the unit
+explicit:</p>
+<ul>
+<li><code>type USDAmount = number &amp; { readonly __brand: unique symbol };</code></li>
+<li><code>type Percentage = number &amp; { readonly __brand: unique symbol };</code></li>
+</ul>
+<p>Developers reading function signatures immediately understand the
+expected domain units and constraints, reducing the cognitive load
+required to maintain and refactor complex calculations.</p>
+<h3 id="safer-api-and-database-boundaries">Safer API and Database
+Boundaries</h3>
+<p>Web architectures frequently handle various database identifiers,
+external resource tokens, and sanitized strings. Accidentally querying a
+user database table with a product ID or rendering an unescaped string
+into the DOM leads to data leakage and security vulnerabilities like
+Cross-Site Scripting (XSS). Branded types create rigid boundaries
+between raw, sanitized, and distinct identifier types, ensuring that
+values are explicitly handled, sanitized, and verified before being
+consumed by sensitive APIs.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

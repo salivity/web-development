@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Use CSS @property for Typed Custom Properties - web-development</title>
+    <meta name="description" content="The CSS @property rule, part of the CSS Houdini family of APIs, allows developers to explicitly define CSS custom properties with strict data types, inheritance behavior, and initial default values. This article explains how @property works, breaks down">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-use-css-property-for-typed-custom-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Use CSS @property for Typed Custom Properties - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-use-css-property-for-typed-custom-properties" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS @property rule, part of the CSS Houdini family of APIs, allows developers to explicitly define CSS custom properties with strict data types, inheritance behavior, and initial default values. This article explains how @property works, breaks down" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-use-css-property-for-typed-custom-properties">How to Use
+CSS @property for Typed Custom Properties</h1>
+<p>The CSS <code>@property</code> rule, part of the CSS Houdini family
+of APIs, allows developers to explicitly define CSS custom properties
+with strict data types, inheritance behavior, and initial default
+values. This article explains how <code>@property</code> works, breaks
+down its core descriptors, and demonstrates how it enhances type safety,
+fallback handling, and animations in modern web development.</p>
+<h2 id="the-limitation-of-standard-css-variables">The Limitation of
+Standard CSS Variables</h2>
+<p>Standard CSS custom properties behave essentially as untyped tokens
+or strings. A variable such as <code>--primary-size: 16px;</code> can be
+reassigned to any value, including an invalid one like
+<code>--primary-size: red;</code>. In these cases, the browser cannot
+infer the intended data type. This limitation causes two major
+issues:</p>
+<ol type="1">
+<li><strong>Lack of Fallback Protection</strong>: If an invalid value is
+supplied, the browser falls back to standard inheritance rather than a
+designated default value, potentially breaking layouts.</li>
+<li><strong>Animation Limitations</strong>: The browser cannot
+interpolate between values if it does not know the underlying type. For
+example, standard CSS variables cannot smoothly transition colors within
+gradients or custom numeric values.</li>
+</ol>
+<h2 id="anatomy-of-the-property-rule">Anatomy of the
+<code>@property</code> Rule</h2>
+<p>The <code>@property</code> at-rule registers a custom property
+directly in the stylesheet. It requires three core descriptors:</p>
+<ul>
+<li><strong><code>syntax</code></strong>: A string defining the expected
+data type using standard CSS syntax types (such as
+<code>&lt;color&gt;</code>, <code>&lt;length&gt;</code>,
+<code>&lt;percentage&gt;</code>, <code>&lt;integer&gt;</code>, or
+<code>&lt;angle&gt;</code>).</li>
+<li><strong><code>inherits</code></strong>: A boolean (<code>true</code>
+or <code>false</code>) that dictates whether the property cascades down
+to child elements.</li>
+<li><strong><code>initial-value</code></strong>: The default fallback
+value. This descriptor is mandatory if <code>syntax</code> is anything
+other than universal (<code>*</code>).</li>
+</ul>
+<h3 id="basic-syntax-example">Basic Syntax Example</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">@property</span> --brand-color {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">syntax</span><span class="ch">:</span> <span class="st">&#39;&lt;color&gt;&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inherits</span><span class="ch">:</span> <span class="dv">true</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">initial-value</span><span class="ch">:</span> <span class="cn">#0066cc</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">@property</span> --gradient-angle {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">syntax</span><span class="ch">:</span> <span class="st">&#39;&lt;angle&gt;&#39;</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inherits</span><span class="ch">:</span> <span class="dv">false</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">initial-value</span><span class="ch">:</span> <span class="dv">0</span><span class="dt">deg</span><span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="how-typed-properties-function">How Typed Properties
+Function</h2>
+<h3 id="1-enforcing-types-and-applying-defaults">1. Enforcing Types and
+Applying Defaults</h3>
+<p>When a custom property is registered with <code>@property</code>, the
+browser validates any assigned value against the declared
+<code>syntax</code>. If an author or dynamic script assigns an invalid
+value, the browser discards it and applies the
+<code>initial-value</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">/* Invalid assignment for a &lt;color&gt; syntax */</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">--brand-color</span><span class="ch">:</span> <span class="dv">24</span><span class="dt">px</span><span class="op">;</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">/* Resolves to the initial-value: #0066cc */</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">background-color</span><span class="ch">:</span> <span class="fu">var(</span><span class="va">--brand-color</span><span class="fu">)</span><span class="op">;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This prevents style failures caused by typos or malformed values
+passed via JavaScript.</p>
+<h3 id="2-controlling-style-leakage-with-inherits">2. Controlling Style
+Leakage with <code>inherits</code></h3>
+<p>Standard CSS variables always inherit down the DOM tree. By setting
+<code>inherits: false</code>, developers can scope custom properties
+strictly to the elements where they are declared. This stops parent
+variables from unintentionally cascading into nested components.</p>
+<h3 id="3-enabling-complex-transitions-and-animations">3. Enabling
+Complex Transitions and Animations</h3>
+<p>Because the browser knows the exact mathematical type of the
+property, it can interpolate between values across keyframes or
+transitions. This makes it possible to animate properties that were
+previously impossible to transition directly, such as CSS gradients:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">@property</span> --stop-position {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">syntax</span><span class="ch">:</span> <span class="st">&#39;&lt;percentage&gt;&#39;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inherits</span><span class="ch">:</span> <span class="dv">false</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">initial-value</span><span class="ch">:</span> <span class="dv">0</span><span class="dt">%</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">.gradient-box</span> {</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">background</span><span class="ch">:</span> <span class="fu">linear-gradient(</span><span class="dv">to right</span><span class="op">,</span> <span class="cn">#0066cc</span> <span class="fu">var(</span><span class="va">--stop-position</span><span class="fu">)</span><span class="op">,</span> <span class="cn">#ff3366</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transition</span><span class="ch">:</span> <span class="dv">--stop-position 0.5</span><span class="dt">s</span> <span class="dv">ease-in-out</span><span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">.gradient-box</span><span class="in">:hover</span> {</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="va">--stop-position</span><span class="ch">:</span> <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In this scenario, the rendering engine smoothly steps through
+intermediate percentage values, producing a continuous gradient
+animation.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>The <code>@property</code> rule transforms CSS variables from simple
+string replacements into robust, predictable styling primitives. By
+enforcing data types, providing dependable fallbacks, managing
+inheritance, and enabling complex transitions, it provides greater
+control over dynamic styling in modern web applications.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

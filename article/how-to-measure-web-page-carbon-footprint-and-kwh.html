@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Measure Web Page Carbon Footprint and kWh - web-development</title>
+    <meta name="description" content="This article outlines the primary techniques and methodologies web development teams use to quantify the energy consumption (in kilowatt-hours) and greenhouse gas emissions of web pages. By combining page-weight telemetry, operational energy models, clie">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-measure-web-page-carbon-footprint-and-kwh">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Measure Web Page Carbon Footprint and kWh - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-measure-web-page-carbon-footprint-and-kwh" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article outlines the primary techniques and methodologies web development teams use to quantify the energy consumption (in kilowatt-hours) and greenhouse gas emissions of web pages. By combining page-weight telemetry, operational energy models, clie" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-measure-web-page-carbon-footprint-and-kwh">How to Measure
+Web Page Carbon Footprint and kWh</h1>
+<p>This article outlines the primary techniques and methodologies web
+development teams use to quantify the energy consumption (in
+kilowatt-hours) and greenhouse gas emissions of web pages. By combining
+page-weight telemetry, operational energy models, client-side profiling,
+and regional grid carbon intensity data, engineering teams can
+accurately measure environmental impact, identify carbon hotspots, and
+integrate sustainability metrics into their development workflows.</p>
+<h2 id="the-sustainable-web-design-swd-model">The Sustainable Web Design
+(SWD) Model</h2>
+<p>The most common method for estimating web page emissions is the
+Sustainable Web Design (SWD) model, developed by Wholegrain Digital,
+Mightybytes, and Medicom International. This approach calculates energy
+consumption based on the data transferred (page weight) during a page
+view.</p>
+<p>The calculation workflow involves:</p>
+<ol type="1">
+<li><strong>Measuring Data Transfer:</strong> Gathering total bytes
+transferred during a complete page load using tools like Google
+Lighthouse, WebPageTest, or standard browser network logs.</li>
+<li><strong>Applying Energy Factors:</strong> Multiplying the total data
+transferred (in gigabytes) by a standardized energy coefficient
+(typically around 0.81 kWh/GB for operational and embodied energy across
+the network, data centers, and user devices).</li>
+<li><strong>Accounting for Caching:</strong> Segmenting traffic into
+first-time visits (full transfer) and returning visits (cached assets,
+typically assumed to use around 25% of the initial load's data).</li>
+<li><strong>Converting to Carbon:</strong> Multiplying the total
+kilowatt-hours by the global average carbon intensity factor
+(approximately 442 gCO2e/kWh) or regional grid data to produce grams of
+CO2 equivalent per page load.</li>
+</ol>
+<h2 id="real-time-hardware-profiling">Real-Time Hardware Profiling</h2>
+<p>For higher accuracy than data-transfer estimates, teams measure
+direct hardware resource consumption on client devices and servers.</p>
+<ul>
+<li><strong>Browser Profiling:</strong> Tools such as the Firefox
+Profiler track CPU wakeups, thread activity, and power consumption
+directly during rendering and JavaScript execution.</li>
+<li><strong>Running Kernel-Level Profilers:</strong> On the server side,
+teams use tools like Scaphandre or Kepler (Kubernetes Efficient Power
+Level Exporter), which read Intel Running Average Power Limit (RAPL)
+interfaces. These tools monitor the exact milliwatt-hours consumed by
+the CPU and memory during page generation and API processing.</li>
+<li><strong>Device Testing Labs:</strong> Development teams run physical
+test benches with connected power meters to capture the empirical
+electrical draw (watts) of mobile and desktop devices rendering specific
+web applications under sustained loads.</li>
+</ul>
+<h2 id="api-integration-and-continuous-integration-auditing">API
+Integration and Continuous Integration Auditing</h2>
+<p>Development teams automate carbon audits by integrating measurement
+tools directly into continuous integration and deployment (CI/CD)
+pipelines.</p>
+<ul>
+<li><strong>Automated APIs:</strong> Using programmatic interfaces such
+as the Website Carbon API or the EcoIndex API allows teams to test
+staging URLs automatically during builds.</li>
+<li><strong>Lighthouse and CLI Tools:</strong> Integrating tools like
+the GreenIT CLI or <code>@size-limit</code> allows teams to set
+automated performance and carbon budgets. If a pull request introduces
+uncompressed assets, complex scripts, or heavy DOM structures that push
+page weight or estimated emissions past a defined threshold, the build
+fails.</li>
+</ul>
+<h2 id="grid-carbon-intensity-and-hosting-verification">Grid Carbon
+Intensity and Hosting Verification</h2>
+<p>To convert kilowatt-hour estimates into accurate carbon footprint
+figures, teams integrate contextual energy grid metrics:</p>
+<ul>
+<li><strong>Host Verification:</strong> Using the Green Web Foundation's
+dataset and API, teams verify whether the hosting provider runs on 100%
+renewable energy or relies on green tariffs.</li>
+<li><strong>Marginal Carbon Intensity Feeds:</strong> By connecting to
+real-time grid APIs such as Electricity Maps or CO2Signal, applications
+track the marginal carbon intensity (gCO2eq/kWh) of the electricity grid
+powering the origin server and the end-user's device location at any
+given hour. This enables accurate emissions modeling based on when and
+where the page is actually served.</li>
+</ul>
+<h2 id="embodied-carbon-and-full-lifecycle-analysis">Embodied Carbon and
+Full Lifecycle Analysis</h2>
+<p>Comprehensive assessments extend beyond operational electricity to
+include embodied emissions—the energy used to manufacture, transport,
+and dispose of the hardware supporting the web page. Teams allocate a
+fractional share of device and server lifecycle emissions to every page
+request based on the duration the user's processor is occupied and the
+volume of network infrastructure utilized. This approach ensures that
+client-side script execution that degrades battery life or forces device
+upgrades is factored into the total carbon calculation.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

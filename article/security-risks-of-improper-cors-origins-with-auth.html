@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Risks of Improper CORS Origins with Auth - web-development</title>
+    <meta name="description" content="Cross-Origin Resource Sharing (CORS) is a critical browser mechanism that governs cross-domain data exchanges, but misconfiguring its origin policies alongside authentication credentials exposes web applications to severe vulnerabilities. This article ex">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/security-risks-of-improper-cors-origins-with-auth">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Security Risks of Improper CORS Origins with Auth - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/security-risks-of-improper-cors-origins-with-auth" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Cross-Origin Resource Sharing (CORS) is a critical browser mechanism that governs cross-domain data exchanges, but misconfiguring its origin policies alongside authentication credentials exposes web applications to severe vulnerabilities. This article ex" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="security-risks-of-improper-cors-origins-with-auth">Security
+Risks of Improper CORS Origins with Auth</h1>
+<p>Cross-Origin Resource Sharing (CORS) is a critical browser mechanism
+that governs cross-domain data exchanges, but misconfiguring its origin
+policies alongside authentication credentials exposes web applications
+to severe vulnerabilities. This article examines the primary security
+risks tied to improper CORS origins—such as wildcard workarounds,
+dynamic origin reflection, and flawed regex validation—when credentials
+like cookies or authorization headers are enabled, and explains how
+attackers exploit these weaknesses to compromise sensitive user
+data.</p>
+<h3 id="the-role-of-credentials-in-cors">The Role of Credentials in
+CORS</h3>
+<p>When a web application sets the response header
+<code>Access-Control-Allow-Credentials: true</code>, it instructs the
+browser to expose the response of a cross-origin request to the calling
+JavaScript, even when the request carries ambient credentials such as
+HTTP cookies, TLS client certificates, or <code>Authorization</code>
+headers.</p>
+<p>Because of the high risk of cross-origin data theft, web standards
+strictly forbid browsers from honoring a wildcard (<code>*</code>) for
+the <code>Access-Control-Allow-Origin</code> header when credentials are
+true. However, developers seeking to support multiple domains often
+implement custom workarounds that inadvertently undermine this
+safeguard.</p>
+<h3 id="dynamic-origin-reflection">Dynamic Origin Reflection</h3>
+<p>The most common and severe vulnerability occurs when a backend server
+blindly copies the incoming <code>Origin</code> request header into the
+response's <code>Access-Control-Allow-Origin</code> header while setting
+<code>Access-Control-Allow-Credentials: true</code>.</p>
+<p>This effectively re-enables a global wildcard for authenticated
+requests. If an authenticated user visits an attacker-controlled site,
+the malicious domain can issue an <code>XMLHttpRequest</code> or
+<code>fetch</code> call to the vulnerable application. Because
+credentials are sent automatically, the server processes the request
+within the victim's session, mirrors the attacker's origin in the
+response, and permits the attacker's script to read the full response
+body.</p>
+<h3 id="sensitive-data-theft-and-reconnaissance">Sensitive Data Theft
+and Reconnaissance</h3>
+<p>Unlike standard Cross-Site Request Forgery (CSRF)—which traditionally
+allows an attacker to execute state-changing actions without directly
+viewing the result—improper CORS credentials allow full two-way
+communication. Attackers can extract:</p>
+<ul>
+<li>Personally Identifiable Information (PII)</li>
+<li>Financial and payment records</li>
+<li>Proprietary enterprise data</li>
+<li>Anti-CSRF tokens, which can subsequently be used to execute
+state-changing exploits that would otherwise be blocked</li>
+</ul>
+<h3 id="whitelisting-the-null-origin">Whitelisting the "null"
+Origin</h3>
+<p>Developers often add the <code>null</code> origin to their CORS
+whitelist to accommodate local file requests (<code>file://</code>) or
+requests generated from sandboxed <code>&lt;iframe&gt;</code>
+elements.</p>
+<p>Attackers can easily generate an origin of <code>null</code> by
+embedding malicious JavaScript inside a sandboxed iframe
+(<code>&lt;iframe sandbox="allow-scripts allow-top-navigation" src="..."&gt;</code>).
+If the target server allows <code>null</code> alongside credentials, the
+sandboxed iframe can read confidential API responses just as effectively
+as a fully qualified domain.</p>
+<h3 id="insecure-regular-expression-parsing">Insecure Regular Expression
+Parsing</h3>
+<p>When attempting to whitelist multiple subdomains or partner domains,
+developers frequently rely on flawed regular expressions. Common
+mistakes include:</p>
+<ul>
+<li><strong>Unescaped periods:</strong> A regex intended to match
+<code>api.example.com</code> written as <code>/api.example.com/</code>
+treats the dot as a wildcard, allowing <code>api-example.com</code> or
+<code>apiXexample.com</code>.</li>
+<li><strong>Missing anchors:</strong> A pattern lacking start
+(<code>^</code>) or end (<code>$</code>) anchors, such as
+<code>/example.com/</code>, allows rogue domains like
+<code>example.com.attacker.com</code> or
+<code>attacker-example.com</code> to pass validation.</li>
+</ul>
+<p>In each scenario, an attacker simply registers the matching domain to
+pass the origin check, receive the reflected CORS headers, and extract
+authenticated response payloads.</p>
+<h3 id="intranet-and-localhost-exploitation">Intranet and Localhost
+Exploitation</h3>
+<p>Applications frequently trust <code>http://localhost</code> or
+internal subdomains for development convenience. If internal services or
+public APIs blindly allow access from local or internal origins with
+credentials, an attacker running malicious code inside a public webpage
+can issue requests to the user's loopback interface
+(<code>127.0.0.1</code>) or private corporate intranet, bridging the gap
+between the public internet and protected internal assets.</p>
+<h3 id="mitigation-requirements">Mitigation Requirements</h3>
+<p>Securing CORS when authentication credentials are required involves
+strict access controls:</p>
+<ul>
+<li><strong>Maintain an Explicit Allowlist:</strong> Match the incoming
+<code>Origin</code> header against an exact, hardcoded list of fully
+qualified domain names rather than dynamically reflecting every
+request.</li>
+<li><strong>Avoid <code>null</code>:</strong> Never include
+<code>null</code> in the list of allowed origins for authenticated
+resources.</li>
+<li><strong>Anchor Regular Expressions:</strong> If domain matching
+requires patterns, strictly anchor the beginning and end of the string,
+and explicitly escape all domain delimiters.</li>
+<li><strong>Implement Defense-in-Depth:</strong> Configure the
+<code>SameSite</code> attribute on sensitive session cookies to
+<code>Lax</code> or <code>Strict</code> to prevent the browser from
+attaching cookies to cross-site requests by default, significantly
+reducing the attack surface.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

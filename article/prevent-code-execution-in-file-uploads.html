@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent Code Execution in File Uploads - web-development</title>
+    <meta name="description" content="Unrestricted file uploads present a critical security risk in web development, often enabling attackers to upload malicious scripts and achieve remote code execution on the server. To defend against these attacks, developers must implement layered defens">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-code-execution-in-file-uploads">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent Code Execution in File Uploads - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-code-execution-in-file-uploads" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Unrestricted file uploads present a critical security risk in web development, often enabling attackers to upload malicious scripts and achieve remote code execution on the server. To defend against these attacks, developers must implement layered defens" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="prevent-code-execution-in-file-uploads">Prevent Code Execution
+in File Uploads</h1>
+<p>Unrestricted file uploads present a critical security risk in web
+development, often enabling attackers to upload malicious scripts and
+achieve remote code execution on the server. To defend against these
+attacks, developers must implement layered defenses across the
+application, file system, and web server architecture. This article
+outlines the essential security controls required to prevent server-side
+code execution via file upload vulnerabilities.</p>
+<h3 id="1-enforce-strict-extension-allowlists">1. Enforce Strict
+Extension Allowlists</h3>
+<p>Never rely on a blocklist of forbidden extensions (such as
+<code>.php</code>, <code>.exe</code>, or <code>.jsp</code>), as
+attackers routinely bypass them using alternative extensions (such as
+<code>.phtml</code>, <code>.php5</code>, or <code>.phar</code>) or
+casing tricks. Instead, implement a strict allowlist containing only the
+specific extensions your application requires, such as
+<code>.jpg</code>, <code>.png</code>, or <code>.pdf</code>. Reject any
+file that does not strictly match the approved list.</p>
+<h3 id="2-randomize-filenames-and-paths">2. Randomize Filenames and
+Paths</h3>
+<p>User-supplied filenames can contain path traversal characters (such
+as <code>../</code>), null bytes, or double extensions that trick the
+server into running malicious code. Discard the original filename upon
+upload and generate a unique, cryptographically secure identifier—such
+as a UUID (Universally Unique Identifier)—paired with the validated
+extension. Store the original filename in a secure database if it must
+be retrieved later.</p>
+<h3 id="3-store-files-outside-the-web-root">3. Store Files Outside the
+Web Root</h3>
+<p>The most reliable defense against server-side execution is preventing
+the web server from directly mapping a URL to an uploaded file. Store
+uploaded files in a directory located completely outside the web
+application's document root, or offload them to an isolated object
+storage service like Amazon S3, Google Cloud Storage, or Azure Blob
+Storage. When users request a file, deliver it through an application
+handler that streams the data rather than providing a direct URL
+path.</p>
+<h3 id="4-strip-execution-permissions">4. Strip Execution
+Permissions</h3>
+<p>Ensure that the operating system permissions on upload directories
+prevent file execution. On Linux/Unix environments, configure
+directories containing user-uploaded files with permissions that deny
+the execute bit (for example, applying <code>chmod 644</code> to files
+and mounting the filesystem with the <code>noexec</code> flag).</p>
+<h3 id="5-disable-script-handling-on-the-web-server">5. Disable Script
+Handling on the Web Server</h3>
+<p>If files must be served from the local web server, explicitly
+configure the server to treat all files in the upload directory as
+static content and refuse to process scripts.</p>
+<ul>
+<li><strong>Nginx:</strong> Ensure the location block for uploads does
+not pass requests to PHP-FPM or any other CGI processor.</li>
+<li><strong>Apache:</strong> Use directives such as
+<code>RemoveHandler</code> and <code>SetHandler None</code> in the
+directory configuration to prevent the execution of scripts, and ensure
+<code>AllowOverride None</code> is enabled to prevent users from
+overriding rules with custom <code>.htaccess</code> files.</li>
+<li><strong>IIS:</strong> Disable the "Execute" and "Script" permissions
+on the upload virtual directory.</li>
+</ul>
+<h3 id="6-validate-file-signatures-and-re-encode-content">6. Validate
+File Signatures and Re-encode Content</h3>
+<p>Attackers can disguise executable scripts as valid images by spoofing
+the <code>Content-Type</code> header. Validate the file's "magic bytes"
+(the initial byte sequence identifying the true file format) on the
+server. For image uploads, use secure image processing libraries to
+re-encode or redraw the image. Re-encoding strips embedded metadata,
+comments, and malicious code snippets injected into file headers.</p>
+<h3 id="7-implement-antivirus-and-malware-scanning">7. Implement
+Antivirus and Malware Scanning</h3>
+<p>Integrate automated scanning into the upload pipeline. Run uploaded
+files through an updated antivirus engine or sandbox analysis tool
+before making them available to users or other internal systems to catch
+known webshells and exploits.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

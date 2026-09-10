@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CSS text-wrap: pretty Eliminates Orphan Words - web-development</title>
+    <meta name="description" content="The modern CSS property text-wrap: pretty provides a native, layout-friendly solution to typographic orphans—single words isolated on the final line of a text block. Historically, web designers and developers relied on manual non-breaking spaces (&nbsp">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-css-text-wrap-pretty-eliminates-orphan-words">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CSS text-wrap: pretty Eliminates Orphan Words - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-css-text-wrap-pretty-eliminates-orphan-words" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The modern CSS property text-wrap: pretty provides a native, layout-friendly solution to typographic orphans—single words isolated on the final line of a text block. Historically, web designers and developers relied on manual non-breaking spaces (&nbsp" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-css-text-wrap-pretty-eliminates-orphan-words">How CSS
+text-wrap: pretty Eliminates Orphan Words</h1>
+<p>The modern CSS property <code>text-wrap: pretty</code> provides a
+native, layout-friendly solution to typographic orphans—single words
+isolated on the final line of a text block. Historically, web designers
+and developers relied on manual non-breaking spaces
+(<code>&amp;nbsp;</code>) or brittle JavaScript algorithms to prevent
+awkward line breaks. With <code>text-wrap: pretty</code>, web browsers
+automatically optimize paragraph line breaks to ensure that the trailing
+line contains multiple words, dramatically improving readability and
+visual polish across dynamic screen widths.</p>
+<h3 id="the-problem-with-typographic-orphans">The Problem with
+Typographic Orphans</h3>
+<p>In editorial design, an "orphan" occurs when the last line of a
+paragraph contains only a single word or short string of text. Orphans
+disrupt the visual flow of a page, creating uneven blocks of white space
+that draw the reader's eye unnecessarily.</p>
+<p>In responsive web design, avoiding orphans has always been difficult.
+Viewport sizes, font loading variations, user text zoom, and dynamic
+content alter layout geometry unpredictably. Past workarounds—such as
+inserting <code>&amp;nbsp;</code> between the last two words—often
+failed across multiple screen sizes, occasionally introducing awkward
+breaks higher up in the paragraph.</p>
+<h3 id="how-text-wrap-pretty-solves-the-issue">How
+<code>text-wrap: pretty</code> Solves the Issue</h3>
+<p>Part of the CSS Text Module Level 4, <code>text-wrap: pretty</code>
+instructs the browser’s layout engine to prioritize aesthetic balance
+over the fastest possible rendering method when wrapping lines.</p>
+<p>Standard line-breaking algorithms evaluate text greedily, filling
+each line to maximum capacity before breaking to the next line. This
+approach is computationally cheap but frequently leaves a lone word
+pushed to the final line.</p>
+<p>When <code>text-wrap: pretty</code> is applied, the layout engine
+evaluates the final four lines of a text block. If it detects that the
+final line will contain only a single word, it recalculates the breaks
+of the preceding lines to bring an additional word down to the last
+line. This ensures at least two words share the closing line of the
+paragraph.</p>
+<h3 id="implementation-and-usage">Implementation and Usage</h3>
+<p>Implementing <code>text-wrap: pretty</code> requires a single
+declaration on text-containing elements:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>p<span class="op">,</span> li<span class="op">,</span> blockquote {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  text-wrap<span class="ch">:</span> <span class="dv">pretty</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because the algorithm targets body copy specifically, it differs
+fundamentally from <code>text-wrap: balance</code>:</p>
+<ul>
+<li><strong><code>text-wrap: balance</code></strong>: Balances text
+evenly across all lines. It is designed for short blocks such as
+headings, subheadings, and blockquotes (typically limited by browser
+engines to six lines or fewer) to avoid heavy performance overhead.</li>
+<li><strong><code>text-wrap: pretty</code></strong>: Designed
+specifically for body text. It only evaluates and adjusts the end of the
+paragraph, making it performant enough to use on longer bodies of
+copy.</li>
+</ul>
+<h3 id="progressive-enhancement-and-performance">Progressive Enhancement
+and Performance</h3>
+<p>The computational cost of <code>text-wrap: pretty</code> is low
+because the browser limits its backtracking to the end of the block.
+Browsers that do not support the property simply ignore it and fall back
+to default line-breaking (<code>text-wrap: wrap</code>), making
+<code>text-wrap: pretty</code> a zero-risk enhancement that elevates web
+typography without external dependencies or layout shifts.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

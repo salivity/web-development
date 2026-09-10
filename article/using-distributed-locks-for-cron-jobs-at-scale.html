@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Distributed Locks for Cron Jobs at Scale - web-development</title>
+    <meta name="description" content="In modern horizontally scaled web environments, running scheduled tasks—such as sending daily summaries, processing billing queues, or syncing external data—presents a major concurrency challenge. Because applications are deployed across multiple con">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-distributed-locks-for-cron-jobs-at-scale">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Distributed Locks for Cron Jobs at Scale - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-distributed-locks-for-cron-jobs-at-scale" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In modern horizontally scaled web environments, running scheduled tasks—such as sending daily summaries, processing billing queues, or syncing external data—presents a major concurrency challenge. Because applications are deployed across multiple con" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-distributed-locks-for-cron-jobs-at-scale">Using
+Distributed Locks for Cron Jobs at Scale</h1>
+<p>In modern horizontally scaled web environments, running scheduled
+tasks—such as sending daily summaries, processing billing queues, or
+syncing external data—presents a major concurrency challenge. Because
+applications are deployed across multiple containers, virtual machines,
+or serverless instances, identical schedulers run simultaneously on
+every node. Distributed locks solve this fundamental problem by
+establishing a single point of truth across the cluster, ensuring that
+scheduled tasks execute exactly once per cycle while preserving high
+availability, fault tolerance, and data integrity.</p>
+<h3 id="the-concurrency-dilemma-in-clustered-environments">The
+Concurrency Dilemma in Clustered Environments</h3>
+<p>In a single-server deployment, a standard OS-level crontab or
+in-process scheduler works reliably. However, scaling an application
+horizontally means every instance runs identical code, including the
+task scheduler. Without coordination, an hourly cron job designed to
+charge subscriptions or generate invoices will fire concurrently on
+every active instance.</p>
+<p>This duplicate execution leads to:</p>
+<ul>
+<li><strong>Race conditions:</strong> Simultaneous writes to databases
+causing inconsistent state or deadlocks.</li>
+<li><strong>Redundant processing:</strong> Wasted CPU, memory, and
+database connections.</li>
+<li><strong>External side effects:</strong> Duplicate emails sent to
+users, duplicate charges processed through payment gateways, or
+rate-limit violations with third-party APIs.</li>
+</ul>
+<p>Dedicated single-instance cron servers avoid duplicates but introduce
+a single point of failure. If that node crashes, scheduled jobs halt
+entirely.</p>
+<h3 id="how-distributed-locks-coordinate-scheduled-tasks">How
+Distributed Locks Coordinate Scheduled Tasks</h3>
+<p>Distributed locking coordinates scheduled jobs without sacrificing
+horizontal elasticity. Instead of designating a permanent leader, the
+system allows any available worker node to attempt execution, using a
+shared coordination layer to decide who wins.</p>
+<p>The coordination follows a straightforward lifecycle:</p>
+<ol type="1">
+<li><strong>Lock Acquisition:</strong> When a scheduled trigger fires,
+the instance attempts to acquire a uniquely named lock (e.g.,
+<code>locks:daily_billing:2024-03-30</code>) from a distributed
+datastore such as Redis, PostgreSQL (using advisory locks), etcd, or
+Consul.</li>
+<li><strong>Atomic Confirmation:</strong> The underlying store uses
+atomic operations (such as Redis <code>SET key value NX PX</code>) to
+grant the lock to the first instance that requests it.</li>
+<li><strong>Task Execution:</strong> The winning instance acquires the
+lock and proceeds to run the task. All competing instances fail to
+acquire the lock and exit the job immediately without running any
+business logic.</li>
+<li><strong>Lock Release and TTL Expiration:</strong> Once the task
+finishes, the worker releases the lock. A Time-To-Live (TTL) is always
+enforced as a safety fallback, ensuring the lock automatically expires
+if the worker process abruptly crashes during execution.</li>
+</ol>
+<h3 id="core-architectural-advantages">Core Architectural
+Advantages</h3>
+<p>Distributed locks provide specific operational benefits to scaled
+systems:</p>
+<ul>
+<li><strong>Elimination of Single Points of Failure:</strong> Workloads
+remain decentralized. Any healthy node can pick up the job during its
+execution window; if one worker is offline, another handles the
+workload.</li>
+<li><strong>Dynamic Scalability:</strong> The scheduling logic scales
+seamlessly alongside the application instances. Autoscaling groups can
+add or terminate instances without requiring manual reconfiguration of
+cron schedules.</li>
+<li><strong>Resource Efficiency:</strong> Compute-intensive batch
+processes run on existing compute capacity without requiring isolated,
+underutilized scheduling infrastructure.</li>
+</ul>
+<h3 id="implementation-considerations">Implementation
+Considerations</h3>
+<p>To implement distributed locks reliably, engineering teams must
+account for critical edge cases:</p>
+<ul>
+<li><strong>Lock Timeouts and Drifts:</strong> If a job runs longer than
+the lock's TTL, the lock may release prematurely, allowing a second
+instance to acquire it while the first is still processing. Solutions
+include background lock-extension threads ("heartbeats") or breaking
+massive jobs into smaller, distinct subtasks.</li>
+<li><strong>Split-Brain and Network Partitions:</strong> In heavily
+distributed databases, network partitions can cause two separate nodes
+to believe they hold the lock. Using consensus algorithms (like Raft in
+etcd or Redlock in distributed Redis setups) mitigates split-brain
+execution risks.</li>
+<li><strong>Idempotency as a Secondary Defense:</strong> Distributed
+locks should not be the sole safeguard against duplicate actions.
+Underlying database writes and API calls within the cron job should
+remain idempotent so that, even if an unexpected failure bypasses the
+lock, the system state remains consistent.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

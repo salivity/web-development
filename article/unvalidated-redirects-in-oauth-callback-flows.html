@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unvalidated Redirects in OAuth Callback Flows - web-development</title>
+    <meta name="description" content="OAuth 2.0 relies on redirection to pass authorization codes and access tokens between identity providers and client applications. When applications fail to properly validate the redirecturi parameter during the authorization callback flow, malicious acto">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/unvalidated-redirects-in-oauth-callback-flows">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Unvalidated Redirects in OAuth Callback Flows - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/unvalidated-redirects-in-oauth-callback-flows" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="OAuth 2.0 relies on redirection to pass authorization codes and access tokens between identity providers and client applications. When applications fail to properly validate the redirecturi parameter during the authorization callback flow, malicious acto" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="unvalidated-redirects-in-oauth-callback-flows">Unvalidated
+Redirects in OAuth Callback Flows</h1>
+<p>OAuth 2.0 relies on redirection to pass authorization codes and
+access tokens between identity providers and client applications. When
+applications fail to properly validate the <code>redirect_uri</code>
+parameter during the authorization callback flow, malicious actors can
+manipulate the destination endpoint. This article examines the critical
+risks associated with unvalidated OAuth redirect URLs—including
+authorization code theft, account hijacking, and phishing—and outlines
+the essential defensive measures developers must implement to secure
+their authentication architecture.</p>
+<h2 id="how-unvalidated-oauth-callbacks-occur">How Unvalidated OAuth
+Callbacks Occur</h2>
+<p>During the standard OAuth authorization code flow, the client
+application directs the user to an authorization server with a query
+parameter such as
+<code>redirect_uri=https://example.com/callback</code>. Once the user
+authenticates and grants consent, the authorization server sends the
+user’s browser back to that URI with a temporary authorization code
+appended to the query string.</p>
+<p>Vulnerabilities arise when the authorization server or client
+application performs weak or incomplete validation on this parameter.
+Common implementation flaws include:</p>
+<ul>
+<li><strong>Wildcard Matching:</strong> Allowing loose patterns such as
+<code>https://*.example.com/callback</code> or
+<code>https://example.com/*</code>, enabling attackers to redirect to
+arbitrary subdomains or open redirect paths.</li>
+<li><strong>Permissive Regular Expressions:</strong> Using flawed regex
+that permits domain spoofing, such as matching
+<code>https://example.com.attacker.com</code> or
+<code>https://attacker.com/?example.com</code>.</li>
+<li><strong>Path Traversal:</strong> Accepting relative paths that
+bypass intended callback directories (e.g.,
+<code>https://example.com/oauth/callback/../../logout</code>).</li>
+<li><strong>Missing Whitelists:</strong> Relying entirely on
+user-supplied parameters without comparing them against pre-registered,
+static endpoints.</li>
+</ul>
+<h2 id="major-dangers-of-weak-redirect-validation">Major Dangers of Weak
+Redirect Validation</h2>
+<h3 id="1-account-takeover-via-authorization-code-theft">1. Account
+Takeover via Authorization Code Theft</h3>
+<p>The most severe outcome of an unvalidated redirect is full account
+takeover. If an attacker crafts a malicious authorization link with a
+controlled destination (e.g.,
+<code>redirect_uri=https://attacker.com/log</code>), and an
+authenticated user follows it, the identity provider sends the
+authorization code directly to the attacker’s server.</p>
+<p>In flows where the client secret is not required or public clients
+are used without PKCE, the attacker can immediately exchange this code
+for an access token and refresh token, fully compromising the user's
+session.</p>
+<h3 id="2-credential-leakage-via-open-redirect-chains">2. Credential
+Leakage via Open Redirect Chains</h3>
+<p>Even if the authorization server enforces strict domain matching, an
+internal open redirect anywhere on that allowed domain can be chained to
+leak credentials.</p>
+<p>For instance, if the allowed URI is
+<code>https://example.com/oauth/callback</code>, but that endpoint
+redirects to a secondary URL controlled by a query parameter (such as
+<code>https://example.com/oauth/callback?next=https://attacker.com</code>),
+the authorization code or access token fragment can be forwarded to the
+attacker via the HTTP <code>Referer</code> header or direct URL
+forwarding.</p>
+<h3 id="3-advanced-phishing-campaigns">3. Advanced Phishing
+Campaigns</h3>
+<p>OAuth-based phishing attacks exploit the implicit trust users place
+in reputable identity providers like Google, GitHub, or Microsoft.
+Because the initial login and consent prompt appear on the legitimate
+provider's domain, security warnings are not triggered. Once consent is
+granted, the user is redirected to a malicious clone of the application
+hosted on the attacker's server, making subsequent data harvesting
+highly effective.</p>
+<h3 id="4-bypassing-cross-site-request-forgery-csrf-defenses">4.
+Bypassing Cross-Site Request Forgery (CSRF) Defenses</h3>
+<p>Unvalidated redirects can compromise the integrity of the OAuth
+<code>state</code> parameter. Attackers can bind a victim's external
+account to the attacker's local account profile by manipulating redirect
+flows and injecting authorization codes, leading to persistent account
+access and session fixation vulnerabilities.</p>
+<h2 id="best-practices-for-mitigation">Best Practices for
+Mitigation</h2>
+<p>To eliminate the risks of unvalidated redirect URLs in OAuth
+implementations, follow these requirements:</p>
+<ul>
+<li><strong>Enforce Exact String Matching:</strong> Avoid wildcards,
+subdomains, and regex matching. The authorization server should match
+the supplied <code>redirect_uri</code> character-by-character against a
+pre-registered whitelist of full URIs.</li>
+<li><strong>Mandate PKCE (Proof Key for Code Exchange):</strong>
+Implement PKCE (RFC 7636) across all clients, not just mobile or
+single-page applications. Even if an authorization code is intercepted
+via an open redirect, an attacker cannot exchange it without the
+cryptographically generated code verifier.</li>
+<li><strong>Eliminate Secondary Open Redirects:</strong> Audit client
+callback endpoints to ensure they do not process unvalidated internal
+redirects (e.g., dynamic <code>return_to</code> or <code>next</code>
+parameters) after authentication completes.</li>
+<li><strong>Utilize the <code>state</code> Parameter:</strong> Always
+generate and validate a unique, cryptographically secure, session-bound
+<code>state</code> token to verify that the response corresponds to an
+authorization request initiated by the same browser session.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

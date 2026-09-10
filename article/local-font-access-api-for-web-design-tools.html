@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Font Access API for Web Design Tools - web-development</title>
+    <meta name="description" content="The Local Font Access API bridges the gap between desktop typography software and web-based applications by granting browsers granular access to locally installed system fonts. This article explores how the API enables web-based design platforms to query">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/local-font-access-api-for-web-design-tools">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Local Font Access API for Web Design Tools - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/local-font-access-api-for-web-design-tools" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Local Font Access API bridges the gap between desktop typography software and web-based applications by granting browsers granular access to locally installed system fonts. This article explores how the API enables web-based design platforms to query" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="local-font-access-api-for-web-design-tools">Local Font Access
+API for Web Design Tools</h1>
+<p>The Local Font Access API bridges the gap between desktop typography
+software and web-based applications by granting browsers granular access
+to locally installed system fonts. This article explores how the API
+enables web-based design platforms to query font metadata, retrieve raw
+font data tables for custom rendering, eliminate reliance on local
+helper software, and maintain strict user privacy standards through
+explicit permission models.</p>
+<p>Historically, web browsers treated local fonts as a passive rendering
+dependency. A web designer could specify a font family in CSS, but the
+web application had no programmatic way to discover what fonts were
+actually installed on the client machine without guessing. Because of
+this limitation, professional browser-based design platforms (such as
+Figma or Canva) previously required users to install native background
+daemons—such as local font helper applications—simply to read the
+operating system's font directory and pass that data back to the web app
+via a local WebSocket.</p>
+<p>The Local Font Access API solves this fundamental limitation by
+introducing the <code>window.queryLocalFonts()</code> method. When
+invoked, this method requests permission from the user to enumerate the
+fonts installed on their system. Once permission is granted, the API
+returns a list of <code>FontData</code> objects representing each font
+file available on the host machine.</p>
+<p>Each <code>FontData</code> object provides direct access to critical
+typographic metadata, including:</p>
+<ul>
+<li><strong><code>family</code></strong>: The overall font family name
+(e.g., "Helvetica Neue").</li>
+<li><strong><code>fullName</code></strong>: The human-readable name of
+the specific face (e.g., "Helvetica Neue Bold").</li>
+<li><strong><code>postscriptName</code></strong>: The unique PostScript
+identifier often used in PDF generation, print workflows, and font
+caching.</li>
+<li><strong><code>style</code></strong>: The font style, such as
+"Regular", "Italic", or "Bold".</li>
+</ul>
+<p>Beyond simple enumeration, advanced design suites require raw binary
+font data to achieve pixel-perfect, platform-independent text shaping.
+Web engines typically render text using the host operating system's
+native text stack, which causes identical text to render with slight
+differences across macOS, Windows, and Linux. Professional design tools
+overcome this by compiling native rendering engines like HarfBuzz or
+FreeType directly to WebAssembly. The Local Font Access API supports
+these custom pipelines via the <code>FontData.blob()</code> method,
+which streams the raw SFNT data (OpenType or TrueType format) directly
+to the application. This enables in-browser layout engines to read glyph
+tables, calculate precise kerning, apply complex OpenType features (such
+as ligatures and swashes), and render identical vector paths across all
+client platforms.</p>
+<p>Because font enumeration presents a potential vector for browser
+fingerprinting, the API enforces strong security boundaries. It is
+restricted to secure contexts (HTTPS), cannot be triggered within
+cross-origin <code>iframe</code> elements without explicit Permissions
+Policy delegation, and requires active user consent through a browser
+permission prompt before any font data is revealed. Through this
+structured permission model, the Local Font Access API delivers
+desktop-class typographic capabilities to the web while safeguarding
+user privacy.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

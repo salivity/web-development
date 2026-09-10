@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing Layout Shifts with Suspense Boundaries - web-development</title>
+    <meta name="description" content="Suspense boundaries prevent layout shifts during asynchronous streaming by orchestrating fallbacks, out-of-order HTML delivery, and DOM replacements within strictly isolated containers. By reserving geometric space through carefully dimensioned skeleton">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/preventing-layout-shifts-with-suspense-boundaries">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing Layout Shifts with Suspense Boundaries - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/preventing-layout-shifts-with-suspense-boundaries" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Suspense boundaries prevent layout shifts during asynchronous streaming by orchestrating fallbacks, out-of-order HTML delivery, and DOM replacements within strictly isolated containers. By reserving geometric space through carefully dimensioned skeleton" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="preventing-layout-shifts-with-suspense-boundaries">Preventing
+Layout Shifts with Suspense Boundaries</h1>
+<p>Suspense boundaries prevent layout shifts during asynchronous
+streaming by orchestrating fallbacks, out-of-order HTML delivery, and
+DOM replacements within strictly isolated containers. By reserving
+geometric space through carefully dimensioned skeleton states and
+holding previous UI in place during updates, Suspense ensures that
+incoming dynamic chunks do not recalculate or displace surrounding page
+geometry. This mechanism bridges server-side rendering and client-side
+hydration, delivering content progressively while maintaining visual
+stability.</p>
+<h3 id="the-role-of-fallbacks-in-layout-reservation">The Role of
+Fallbacks in Layout Reservation</h3>
+<p>At the core of Suspense is the <code>fallback</code> prop, which
+renders an intermediate UI while child components resolve their
+asynchronous operations. To prevent Cumulative Layout Shift (CLS),
+developers configure these fallbacks as skeleton screens or placeholders
+that match the exact rendered dimensions—height, width, and margins—of
+the final resolved content.</p>
+<p>Because the browser renders the fallback immediately in the layout
+tree, the space is reserved upfront. Surrounding elements anchor to this
+reserved block. When the asynchronous data finishes loading, the
+framework swaps the fallback for the actual component in-place,
+eliminating the sudden expansion or repositioning of surrounding
+content.</p>
+<h3 id="out-of-order-html-streaming">Out-of-Order HTML Streaming</h3>
+<p>Modern web frameworks (such as React 18+ and modern meta-frameworks)
+use HTTP chunked transfer encoding to stream content incrementally.
+Suspense boundaries segment this process into isolated chunks:</p>
+<ol type="1">
+<li><strong>Initial Shell Delivery:</strong> The server immediately
+renders and streams the document shell along with the Suspense fallback
+markup.</li>
+<li><strong>Deferred Content Generation:</strong> The server continues
+processing the suspended component asynchronously in the
+background.</li>
+<li><strong>Appended Payload:</strong> Once the data resolves, the
+server flushes the rendered HTML down the existing connection inside a
+hidden <code>&lt;template&gt;</code> element, paired with a minimal
+inline <code>&lt;script&gt;</code>.</li>
+<li><strong>Targeted In-Place Replacement:</strong> The injected script
+finds the corresponding Suspense boundary markers in the DOM, swaps the
+fallback with the deferred HTML, and deletes the temporary
+template.</li>
+</ol>
+<p>Because the replacement occurs directly within the boundary's
+established footprint, the layout flow of the rest of the document
+remains undisturbed.</p>
+<h3 id="preventing-shifts-during-client-side-transitions">Preventing
+Shifts During Client-Side Transitions</h3>
+<p>Layout shifts can also occur during client-side navigation when a
+screen suddenly reverts to a blank state or a jarring loading spinner.
+Suspense manages this via concurrent transition primitives, such as
+<code>useTransition</code>.</p>
+<p>When an asynchronous navigation or state update is wrapped in a
+transition:</p>
+<ul>
+<li><strong>Stale-While-Revalidate Behavior:</strong> The browser delays
+rendering the new Suspense fallback if the update is marked as
+non-urgent. Instead, it continues displaying the current, fully
+interactive UI while rendering the pending state in memory.</li>
+<li><strong>Coordinated Rendering:</strong> The new view only commits to
+the real DOM once the incoming components have resolved or once a
+predefined timeout elapses, avoiding the rapid, jumpy unmounting and
+remounting of content areas.</li>
+</ul>
+<h3 id="css-sizing-and-containment">CSS Sizing and Containment</h3>
+<p>Suspense relies on complementary CSS design patterns to guarantee
+zero layout shifts:</p>
+<ul>
+<li><strong>Aspect Ratio and Intrinsic Sizing:</strong> Using CSS
+properties like <code>aspect-ratio</code>, <code>min-height</code>, and
+<code>contain-intrinsic-size</code> ensures that both the fallback and
+the dynamic component adhere to identical bounding constraints.</li>
+<li><strong>Layout Containment:</strong> Applying
+<code>contain: layout</code> or <code>content-visibility: auto</code> to
+boundary wrappers isolates internal recalculations. If the streamed
+content inside the boundary causes an internal reflow, the containment
+guarantees the reflow does not escape to affect the broader page
+structure.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

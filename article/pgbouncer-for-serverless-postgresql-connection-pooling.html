@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PgBouncer for Serverless PostgreSQL Connection Pooling - web-development</title>
+    <meta name="description" content="This article explores how PgBouncer functions as a critical connection pooler for serverless web applications querying PostgreSQL databases. In serverless environments, stateless compute functions scale rapidly and independently, often overwhelming tradi">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/pgbouncer-for-serverless-postgresql-connection-pooling">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PgBouncer for Serverless PostgreSQL Connection Pooling - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/pgbouncer-for-serverless-postgresql-connection-pooling" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how PgBouncer functions as a critical connection pooler for serverless web applications querying PostgreSQL databases. In serverless environments, stateless compute functions scale rapidly and independently, often overwhelming tradi" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="pgbouncer-for-serverless-postgresql-connection-pooling">PgBouncer
+for Serverless PostgreSQL Connection Pooling</h1>
+<p>This article explores how PgBouncer functions as a critical
+connection pooler for serverless web applications querying PostgreSQL
+databases. In serverless environments, stateless compute functions scale
+rapidly and independently, often overwhelming traditional relational
+databases with too many concurrent connections. PgBouncer addresses this
+fundamental bottleneck by sitting between the serverless functions and
+the database, queueing requests, dramatically lowering connection
+latency, and ensuring stable database performance without exhausting
+PostgreSQL's strict resource limits.</p>
+<h3 id="the-connection-problem-in-serverless-architectures">The
+Connection Problem in Serverless Architectures</h3>
+<p>Serverless architectures—such as AWS Lambda, Google Cloud Functions,
+and Vercel Functions—are designed to scale horizontally by instantiating
+new, stateless runtime containers in response to incoming traffic
+spikes. Each newly created function instance opens its own independent
+TCP and SSL connection to the target database.</p>
+<p>PostgreSQL handles client connections by forking a dedicated OS-level
+process for each client. Each process can consume between 2 MB and 10 MB
+of RAM, in addition to CPU overhead. Because PostgreSQL is typically
+configured to handle a modest <code>max_connections</code> limit (often
+between 100 and 500 connections), a sudden surge in serverless
+invocations can exhaust available connections within seconds. This leads
+to connection timeouts, "too many clients" errors, and severe database
+degradation.</p>
+<h3 id="what-is-pgbouncer">What Is PgBouncer?</h3>
+<p>PgBouncer is a lightweight, open-source connection pooler designed
+specifically for PostgreSQL. It acts as an intermediary proxy.
+Applications connect directly to PgBouncer as if it were the PostgreSQL
+server itself, and PgBouncer maintains a relatively small, persistent
+pool of actual connections to the real database.</p>
+<p>Because PgBouncer uses an event-driven, non-blocking architecture, it
+requires very little memory and CPU to maintain tens of thousands of
+open incoming client connections while utilizing only a handful of
+outgoing connections to PostgreSQL.</p>
+<h3 id="key-roles-of-pgbouncer-in-serverless-web-development">Key Roles
+of PgBouncer in Serverless Web Development</h3>
+<h4 id="1-connection-multiplexing-transaction-pooling">1. Connection
+Multiplexing (Transaction Pooling)</h4>
+<p>PgBouncer operates in three modes: Session, Transaction, and
+Statement pooling. For serverless applications, <strong>Transaction
+Pooling</strong> is the most effective and commonly used
+configuration.</p>
+<p>In transaction pooling, PgBouncer assigns a server connection to a
+client only for the duration of a single database transaction. As soon
+as the transaction commits or rolls back, PgBouncer returns the
+connection to the pool, making it available for an entirely different
+serverless function invocation. This allows thousands of intermittent
+serverless requests to share a pool of just 20 to 50 actual database
+connections.</p>
+<h4 id="2-reducing-latency-and-handshake-overhead">2. Reducing Latency
+and Handshake Overhead</h4>
+<p>Establishing a fresh connection to a PostgreSQL database involves a
+TCP three-way handshake, TLS/SSL negotiation, authentication, and
+backend process forking. In serverless apps with "cold starts," this
+setup sequence can add hundreds of milliseconds to an execution cycle.
+By retaining pre-warmed connections to PostgreSQL, PgBouncer reduces
+this overhead, allowing incoming requests to execute queries almost
+instantly once attached to an active worker.</p>
+<h4 id="3-traffic-smoothing-and-request-queuing">3. Traffic Smoothing
+and Request Queuing</h4>
+<p>When traffic exceeds the database's capacity, a native PostgreSQL
+setup refuses new connections outright. PgBouncer, by contrast, holds
+incoming queries in an internal queue until a database connection
+becomes free. This queuing mechanism prevents connection spikes from
+crashing the database and enables the application to weather traffic
+spikes with minor latency increases rather than hard application
+failures.</p>
+<h4 id="4-protecting-database-resources">4. Protecting Database
+Resources</h4>
+<p>By capping the number of direct connections to the database engine,
+PgBouncer keeps PostgreSQL's memory usage stable and predictable.
+Relational database engines execute queries faster when they are not
+constantly thrashing CPU caches and context-switching between hundreds
+of competing backend processes.</p>
+<h3 id="considerations-when-using-pgbouncer">Considerations When Using
+PgBouncer</h3>
+<p>While PgBouncer resolves connection scaling in serverless setups,
+developers must be mindful of limitations introduced by transaction
+pooling:</p>
+<ul>
+<li><strong>Session-Level Features:</strong> Features that rely on
+persistent session state—such as prepared statements,
+<code>LISTEN</code>/<code>NOTIFY</code>, and temporary tables—do not
+work by default in transaction pooling mode because subsequent queries
+in the same function may use different backend connections.</li>
+<li><strong>Placement:</strong> PgBouncer should be deployed close to
+the database (often inside the same virtual private network or cloud
+region) to minimize the latency between the pooler and the database
+instances.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using the Web Locks API to Coordinate Browser Tabs - web-development</title>
+    <meta name="description" content="The Web Locks API provides a standard mechanism for web applications running across multiple browsing contexts—such as tabs, windows, iframes, and Web Workers—to synchronize access to shared resources. This article explores how the API functions, the">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-the-web-locks-api-to-coordinate-browser-tabs">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using the Web Locks API to Coordinate Browser Tabs - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-the-web-locks-api-to-coordinate-browser-tabs" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Web Locks API provides a standard mechanism for web applications running across multiple browsing contexts—such as tabs, windows, iframes, and Web Workers—to synchronize access to shared resources. This article explores how the API functions, the" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-the-web-locks-api-to-coordinate-browser-tabs">Using the
+Web Locks API to Coordinate Browser Tabs</h1>
+<p>The Web Locks API provides a standard mechanism for web applications
+running across multiple browsing contexts—such as tabs, windows,
+iframes, and Web Workers—to synchronize access to shared resources. This
+article explores how the API functions, the concurrency problems it
+solves, and its specific role in enabling multi-tab coordination, leader
+election, and safe data management in advanced web development.</p>
+<h2 id="the-challenge-of-multi-tab-concurrency">The Challenge of
+Multi-Tab Concurrency</h2>
+<p>Modern web applications often run simultaneously in multiple browser
+tabs. When these instances share state—typically stored in IndexedDB,
+CacheStorage, or <code>localStorage</code>—uncoordinated concurrent
+access introduces severe operational issues:</p>
+<ul>
+<li><strong>Race Conditions:</strong> Two tabs attempting to read,
+modify, and write the same database record at the same time can
+overwrite each other's changes.</li>
+<li><strong>Duplicate Network Traffic:</strong> Multiple tabs detecting
+an expired authentication token or stale cache might all trigger
+identical refresh requests simultaneously.</li>
+<li><strong>Resource Waste:</strong> Running heavy background tasks,
+polling loops, or WebSocket connections in every open tab consumes
+unnecessary CPU, memory, and network bandwidth.</li>
+</ul>
+<p>Historically, developers addressed these problems using hacky
+workarounds, such as <code>localStorage</code> polling or
+<code>BroadcastChannel</code> messaging paired with timers. These
+solutions are fragile; if a tab holding a custom "lock" crashes or is
+abruptly closed, the lock often remains orphaned, stalling the entire
+application.</p>
+<h2 id="how-the-web-locks-api-works">How the Web Locks API Works</h2>
+<p>The Web Locks API (<code>navigator.locks</code>) solves these
+coordination challenges at the browser level. It allows a script to
+request a named lock, execute an asynchronous task while holding it, and
+automatically release it when the task finishes.</p>
+<p>The basic syntax relies on <code>navigator.locks.request</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(<span class="st">&#39;my_resource_lock&#39;</span><span class="op">,</span> <span class="kw">async</span> (lock) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Critical section: only one tab runs this code at a time</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> <span class="fu">updateSharedDatabase</span>()<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Lock is automatically released here</span></span></code></pre></div>
+<p>Because the lock lifecycle is tied to the completion of the returned
+Promise, release is guaranteed. Furthermore, if a tab terminates
+unexpectedly or navigates away, the browser immediately frees the held
+lock, preventing deadlock scenarios.</p>
+<h2 id="key-roles-in-multi-tab-coordination">Key Roles in Multi-Tab
+Coordination</h2>
+<h3 id="1-leader-election">1. Leader Election</h3>
+<p>In many applications, only one tab needs to be "active" for
+background operations, such as maintaining a live WebSocket connection
+or scheduling background synchronization.</p>
+<p>Using the Web Locks API, tabs can compete for a long-lived leader
+lock:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(<span class="st">&#39;app_leader&#39;</span><span class="op">,</span> { <span class="dt">mode</span><span class="op">:</span> <span class="st">&#39;exclusive&#39;</span> }<span class="op">,</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// This tab is now the designated leader</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">initializeWebSocket</span>()<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Keep the lock held indefinitely until this tab closes</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> <span class="kw">new</span> <span class="bu">Promise</span>(() <span class="kw">=&gt;</span> {})<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>All other tabs will wait in a queue. If the leader tab closes, the
+browser automatically grants the lock to the next tab in line, creating
+a seamless failover system without complex heartbeat logic.</p>
+<h3 id="2-atomic-storage-mutations">2. Atomic Storage Mutations</h3>
+<p>While IndexedDB provides transactions, they are limited in scope and
+cannot span multiple asynchronous operations that involve external
+services (such as fetching data and then updating the store). The Web
+Locks API acts as a higher-level mutex around multi-step persistence
+routines, ensuring that only one tab mutates state at a time.</p>
+<h3 id="3-non-blocking-opportunistic-execution">3. Non-Blocking
+Opportunistic Execution</h3>
+<p>Applications often need to run a task only if no other tab is
+currently handling it. By passing the <code>ifAvailable: true</code>
+option, a tab can attempt to acquire a lock without waiting in a
+queue:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(<span class="st">&#39;sync_cache&#39;</span><span class="op">,</span> { <span class="dt">ifAvailable</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span> <span class="kw">async</span> (lock) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>lock) {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Another tab is already syncing; skip this cycle</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> <span class="fu">performCacheSync</span>()<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>This pattern eliminates redundant network requests and prevents
+multiple tabs from simultaneously refreshing shared credentials.</p>
+<h3 id="4-shared-vs-exclusive-access">4. Shared vs. Exclusive
+Access</h3>
+<p>The API supports both <code>exclusive</code> (default) and
+<code>shared</code> lock modes, mirroring classic reader-writer locks.
+Multiple tabs can acquire a <code>shared</code> lock concurrently to
+perform read-only tasks, but an <code>exclusive</code> lock will wait
+until all shared locks are released before allowing a write operation to
+proceed.</p>
+<h2 id="summary">Summary</h2>
+<p>The Web Locks API transforms multi-tab management from an error-prone
+synchronization problem into an efficient, platform-native architecture.
+By delegating mutual exclusion and lifecycle tracking to the browser
+engine, developers can safely manage shared state, elect primary tabs,
+and optimize client-side resource utilization across complex web
+applications.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

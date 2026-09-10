@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOM Clobbering Risks in Single-Page Applications - web-development</title>
+    <meta name="description" content="DOM clobbering is an injection technique where an attacker embeds malicious HTML markup to overwrite or "clobber" global JavaScript variables and document properties. In Single-Page Applications (SPAs), which rely heavily on client-side state management,">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/dom-clobbering-risks-in-single-page-applications">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="DOM Clobbering Risks in Single-Page Applications - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/dom-clobbering-risks-in-single-page-applications" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="DOM clobbering is an injection technique where an attacker embeds malicious HTML markup to overwrite or "clobber" global JavaScript variables and document properties. In Single-Page Applications (SPAs), which rely heavily on client-side state management," />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="dom-clobbering-risks-in-single-page-applications">DOM Clobbering
+Risks in Single-Page Applications</h1>
+<p>DOM clobbering is an injection technique where an attacker embeds
+malicious HTML markup to overwrite or "clobber" global JavaScript
+variables and document properties. In Single-Page Applications (SPAs),
+which rely heavily on client-side state management, dynamic DOM
+rendering, and complex routing, DOM clobbering presents severe security
+hazards. This article examines the primary risks of DOM clobbering in
+SPAs, including Cross-Site Scripting (XSS), client-side routing
+manipulation, application logic corruption, and denial-of-service
+conditions.</p>
+<h3 id="understanding-dom-clobbering-in-modern-web-apps">Understanding
+DOM Clobbering in Modern Web Apps</h3>
+<p>Browsers naturally expose named HTML elements (using <code>id</code>
+or <code>name</code> attributes) as properties of the global
+<code>window</code> object or the <code>document</code> object. If an
+application relies on global variables that are not explicitly defined
+before access, an attacker who can inject sanitized HTML (via a comment
+system, profile input, or rich-text field) can define those variables
+using elements like <code>&lt;a&gt;</code>, <code>&lt;form&gt;</code>,
+or <code>&lt;input&gt;</code>.</p>
+<p>Because SPAs rely extensively on JavaScript to manage the entire
+application lifecycle, clobbering these properties creates far-reaching
+consequences compared to traditional multi-page architectures.</p>
+<h3 id="escalation-to-cross-site-scripting-xss">Escalation to Cross-Site
+Scripting (XSS)</h3>
+<p>The most severe consequence of DOM clobbering is its ability to turn
+benign HTML injection into arbitrary JavaScript execution. In SPAs,
+developers frequently load scripts, web workers, or asynchronous modules
+dynamically:</p>
+<ul>
+<li><strong>Manipulating Script Sources:</strong> If an SPA dynamically
+imports modules using a path derived from a global object (e.g.,
+<code>window.config.modulePath</code>), an attacker can clobber
+<code>window.config</code> using nested HTML elements, redirecting the
+script import to an attacker-controlled external host.</li>
+<li><strong>Clobbering Sanitizer Configurations:</strong> Many
+client-side sanitization routines check configuration objects before
+processing user content. Overriding these settings via clobbering can
+disable security filters, allowing raw script tags or malicious event
+handlers to bypass checks and execute.</li>
+</ul>
+<h3 id="client-side-routing-hijacking">Client-Side Routing
+Hijacking</h3>
+<p>SPAs handle navigation internally through JavaScript routers rather
+than server-side redirects. Routing libraries often check global
+properties or document elements to resolve paths, base URLs, and route
+definitions:</p>
+<ul>
+<li><strong>Open Redirection:</strong> Clobbering base URI values (such
+as <code>document.baseURI</code> via an injected
+<code>&lt;base&gt;</code> tag or clobbered objects) can force dynamic
+link-generation logic to point users to phishing domains.</li>
+<li><strong>Route Alteration:</strong> Overwriting the internal state or
+history configurations used by client routers can lock users out of
+administrative paths or redirect them to unauthorized application
+views.</li>
+</ul>
+<h3 id="application-logic-and-state-manipulation">Application Logic and
+State Manipulation</h3>
+<p>SPAs maintain dynamic client-side state to control feature flags,
+user roles, and data flow:</p>
+<ul>
+<li><strong>Bypassing Access Controls:</strong> If authorization checks
+implicitly read uninitialized or loosely scoped variables (such as
+checking <code>if (window.userRole)</code> without proper fallback
+validation), clobbered objects can evaluate to truthy values, granting
+unauthorized UI access.</li>
+<li><strong>API Endpoint Redirection:</strong> Clobbering properties
+that define base API URLs allows attackers to direct data fetching
+methods (<code>fetch()</code> or <code>axios</code>) to external
+endpoints, exfiltrating sensitive authentication tokens or user data
+contained in request headers.</li>
+</ul>
+<h3 id="client-side-denial-of-service-dos">Client-Side Denial of Service
+(DoS)</h3>
+<p>SPAs depend on a continuous execution loop to update the Virtual DOM
+and synchronize state. Injecting clobbered properties can systematically
+crash the application:</p>
+<ul>
+<li><strong>Type Confusion and Property Lookup Failures:</strong> If an
+application expects <code>window.settings</code> to be an object with
+functions, replacing it with an HTML element causes calls like
+<code>window.settings.load()</code> to throw a
+<code>TypeError: window.settings.load is not a function</code>.</li>
+<li><strong>Rendering Loop Termination:</strong> Unhandled exceptions
+caused by clobbered objects often crash frameworks like React, Vue, or
+Angular entirely. This tears down the component tree and renders a blank
+screen, permanently disabling the application for the user until local
+storage or caches are cleared.</li>
+</ul>
+<h3 id="mitigating-dom-clobbering-risks">Mitigating DOM Clobbering
+Risks</h3>
+<p>Securing SPAs against DOM clobbering requires proactive architectural
+controls:</p>
+<ul>
+<li><strong>Explicit Variable Declaration:</strong> Always define
+variables with <code>const</code>, <code>let</code>, or <code>var</code>
+to prevent fallback to <code>window</code> or <code>document</code>
+lookups.</li>
+<li><strong>Object Freezing:</strong> Apply <code>Object.freeze()</code>
+to critical global namespaces and configuration objects immediately upon
+initialization.</li>
+<li><strong>Strict Sanitization:</strong> Use sanitization libraries
+configured with explicit DOM clobbering defenses (such as DOMPurify with
+the <code>SANITAZE_DOM</code> option enabled) to strip risky
+<code>id</code> and <code>name</code> attributes from untrusted user
+content.</li>
+<li><strong>Content Security Policy (CSP):</strong> Enforce strict
+script execution rules using a robust CSP
+(<code>require-trusted-types-for 'script'</code> and nonce-based
+loading) to prevent clobbered variables from successfully loading
+external malicious scripts.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

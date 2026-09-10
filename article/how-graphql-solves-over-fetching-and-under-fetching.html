@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How GraphQL Solves Over-Fetching and Under-Fetching - web-development</title>
+    <meta name="description" content="Modern web applications require fast, reliable, and precise data delivery, yet traditional REST architectures frequently lead to over-fetching or under-fetching of API data. GraphQL solves these inefficiencies by providing a declarative query language an">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-graphql-solves-over-fetching-and-under-fetching">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How GraphQL Solves Over-Fetching and Under-Fetching - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-graphql-solves-over-fetching-and-under-fetching" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern web applications require fast, reliable, and precise data delivery, yet traditional REST architectures frequently lead to over-fetching or under-fetching of API data. GraphQL solves these inefficiencies by providing a declarative query language an" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-graphql-solves-over-fetching-and-under-fetching">How GraphQL
+Solves Over-Fetching and Under-Fetching</h1>
+<p>Modern web applications require fast, reliable, and precise data
+delivery, yet traditional REST architectures frequently lead to
+over-fetching or under-fetching of API data. GraphQL solves these
+inefficiencies by providing a declarative query language and runtime
+that allows client applications to request precisely the data they need
+and nothing more. This article explores how GraphQL fundamentally
+restructures API communication, eliminating unnecessary network
+payloads, reducing round trips, and optimizing data retrieval for modern
+web and mobile clients.</p>
+<p>In conventional REST APIs, endpoints are resource-based and return
+fixed data structures defined by the server. When a client requests
+data, the server responds with the complete representation of that
+resource. This architecture naturally produces two major performance
+bottlenecks:</p>
+<p><strong>Over-fetching</strong> occurs when the client receives more
+data than is required for the current view or operation. For example,
+rendering a user profile badge might only require a user's name and
+avatar URL. In a REST system, calling the <code>/users/1</code> endpoint
+might return twenty additional fields, including billing addresses,
+phone numbers, and account creation dates. This excess payload consumes
+unnecessary bandwidth, increases parsing time on low-powered mobile
+devices, and strains network resources.</p>
+<p>GraphQL prevents over-fetching by shifting control of the data shape
+from the server to the client. Clients define their exact requirements
+within a single query document. If the client queries:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode graphql"><code class="sourceCode graphql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">query</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  user(id: <span class="st">&quot;1&quot;</span>) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    name</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    avatarUrl</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The GraphQL server executes the query and returns a JSON payload
+containing solely the <code>name</code> and <code>avatarUrl</code>
+fields. No superfluous attributes are transmitted over the network.</p>
+<p><strong>Under-fetching</strong> happens when a single endpoint does
+not provide sufficient data to render a complete view, forcing the
+client to issue multiple sequential or parallel network requests. To
+render a dashboard showing a user, their recent orders, and the shipping
+status of those orders, a REST client might need to make three distinct
+calls: first to <code>/users/1</code>, then to
+<code>/users/1/orders</code>, and finally to
+<code>/orders/99/shipping</code>. This chained request pattern increases
+network latency, degrades user experience on high-latency connections,
+and introduces the client-side N+1 request problem.</p>
+<p>GraphQL eliminates under-fetching by supporting nested queries via a
+unified graph schema. Because the server schema defines relationships
+between types, the client can fetch complex, interconnected datasets in
+a single network round trip. A single request can traverse from the user
+down to their orders and shipping details:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode graphql"><code class="sourceCode graphql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">query</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  user(id: <span class="st">&quot;1&quot;</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    name</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    orders(limit: <span class="dv">5</span>) {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      id</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>      total</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      shipping {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        status</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        trackingNumber</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The server resolves this relational hierarchy internally, aggregates
+the requested data, and responds in a single, perfectly matched JSON
+object.</p>
+<p>By enabling precise, single-request data retrieval, GraphQL optimizes
+client-server communication. Frontend developers gain the flexibility to
+adapt UI components without requiring backend endpoint revisions, while
+network overhead, battery usage, and latency are significantly reduced
+across all platforms.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

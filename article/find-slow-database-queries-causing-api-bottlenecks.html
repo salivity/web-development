@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Slow Database Queries Causing API Bottlenecks - web-development</title>
+    <meta name="description" content="Application Programming Interfaces (APIs) frequently experience severe latency issues driven by inefficient database interactions rather than application code itself. To eliminate these performance bottlenecks, web development engineers must systematical">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/find-slow-database-queries-causing-api-bottlenecks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Find Slow Database Queries Causing API Bottlenecks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/find-slow-database-queries-causing-api-bottlenecks" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Application Programming Interfaces (APIs) frequently experience severe latency issues driven by inefficient database interactions rather than application code itself. To eliminate these performance bottlenecks, web development engineers must systematical" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="find-slow-database-queries-causing-api-bottlenecks">Find Slow
+Database Queries Causing API Bottlenecks</h1>
+<p>Application Programming Interfaces (APIs) frequently experience
+severe latency issues driven by inefficient database interactions rather
+than application code itself. To eliminate these performance
+bottlenecks, web development engineers must systematically detect,
+isolate, and evaluate sluggish queries across both the application and
+database layers. This article covers the essential techniques used to
+pinpoint slow queries, including slow query logging, Application
+Performance Monitoring (APM), execution plan analysis, in-memory
+database statistics, and ORM profiling.</p>
+<h2 id="enable-database-slow-query-logs">Enable Database Slow Query
+Logs</h2>
+<p>Most relational databases include native logging mechanisms
+specifically designed to capture queries that exceed a predefined
+execution threshold. Configuring these logs is the most direct way to
+capture heavy queries at the database engine level.</p>
+<ul>
+<li><strong>PostgreSQL:</strong> Configure the
+<code>log_min_duration_statement</code> setting in
+<code>postgresql.conf</code> (e.g., setting it to <code>200ms</code>
+will log any query taking longer than 200 milliseconds to
+complete).</li>
+<li><strong>MySQL:</strong> Set <code>slow_query_log = 1</code> and
+specify a threshold using <code>long_query_time</code> (e.g.,
+<code>long_query_time = 0.5</code> for 500 milliseconds).</li>
+<li><strong>Automated Log Parsers:</strong> Use tools like
+<code>pt-query-digest</code> (Percona Toolkit) or <code>pgBadger</code>
+to parse raw log files and aggregate queries by total execution time,
+execution count, and locking overhead.</li>
+</ul>
+<h2
+id="implement-application-performance-monitoring-apm-and-distributed-tracing">Implement
+Application Performance Monitoring (APM) and Distributed Tracing</h2>
+<p>While database logs identify the query, APM tools contextualize the
+query within the user request lifecycle, mapping a slow query directly
+to an API endpoint.</p>
+<ul>
+<li><strong>Span Breakdown:</strong> Platforms such as Datadog, New
+Relic, Dynatrace, or open-source OpenTelemetry instrument API calls to
+display waterfall charts. Engineers can see exact time allocation
+between API routing, business logic, and individual database calls.</li>
+<li><strong>Metadata Tagging:</strong> Modern instrumentation attaches
+SQL statements, table names, and parameters directly to the trace span,
+revealing which specific payload triggered the bottleneck.</li>
+<li><strong>Service Dependency Mapping:</strong> Tracing tracks calls
+across microservices, distinguishing whether an API delay is caused by
+database contention or an upstream network hop.</li>
+</ul>
+<h2 id="inspect-execution-plans-with-explain-and-analyze">Inspect
+Execution Plans with EXPLAIN and ANALYZE</h2>
+<p>Identifying a slow query is only the first step; engineers must
+determine <em>why</em> it is slow by inspecting the query execution plan
+generated by the database optimizer.</p>
+<ul>
+<li><strong>Syntax:</strong> Run
+<code>EXPLAIN ANALYZE &lt;query&gt;</code> in PostgreSQL or
+<code>EXPLAIN FORMAT=JSON &lt;query&gt;</code> in MySQL.</li>
+<li><strong>Scan Types:</strong> Look for <code>Seq Scan</code>
+(Sequential/Full Table Scans) instead of <code>Index Scan</code> or
+<code>Index Seek</code>. Full table scans force the database to read
+every block on disk, drastically degrading performance on growing
+datasets.</li>
+<li><strong>Cardinality Mismatches:</strong> Compare the estimated
+number of rows to the actual rows returned. Significant discrepancies
+point to outdated table statistics or missing indexes.</li>
+<li><strong>Cost Bottlenecks:</strong> Identify resource-heavy
+operations like nested loops, unindexed joins, or disk-based temporary
+sorts (<code>Sort Method: external merge Disk</code>).</li>
+</ul>
+<h2 id="query-in-memory-performance-views">Query In-Memory Performance
+Views</h2>
+<p>Modern database management systems track query performance
+continuously in dynamic system views without requiring persistent disk
+logging.</p>
+<ul>
+<li><strong>PostgreSQL (<code>pg_stat_statements</code>):</strong> This
+extension tracks statistics for all executed statements. Querying this
+view highlights normalized queries with the highest
+<code>total_exec_time</code>, highest <code>mean_exec_time</code>, or
+the highest number of disk buffer reads.</li>
+<li><strong>MySQL (<code>sys</code> schema and
+<code>performance_schema</code>):</strong> Views such as
+<code>sys.statement_analysis</code> summarize execution counts, runtime
+latency, rows examined versus rows sent, and full table scans per
+statement pattern.</li>
+<li><strong>SQL Server (<code>sys.dm_exec_query_stats</code>):</strong>
+Dynamic Management Views (DMVs) provide cumulative CPU, I/O, and
+execution time statistics for cached plans.</li>
+</ul>
+<h2
+id="profile-object-relational-mappers-orms-to-detect-n1-problems">Profile
+Object-Relational Mappers (ORMs) to Detect N+1 Problems</h2>
+<p>In modern web development, slow API endpoints often stem from how
+ORMs (e.g., Prisma, Hibernate, Entity Framework, Django ORM) generate
+queries rather than a single poorly constructed SQL statement.</p>
+<ul>
+<li><strong>N+1 Query Detection:</strong> An API endpoint fetching a
+list of records might execute one query to fetch the parent items,
+followed by <span class="math inline">\(N\)</span> individual queries to
+fetch associated relational data. Detect this by using application-level
+query loggers or automated linters (such as Bullet for Ruby on Rails or
+django-debug-toolbar).</li>
+<li><strong>Over-Fetching:</strong> Check if the ORM generates
+<code>SELECT *</code> across large text columns or joins large
+collections unnecessary for the API response. Profile the generated SQL
+to ensure queries fetch only required columns via projection.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

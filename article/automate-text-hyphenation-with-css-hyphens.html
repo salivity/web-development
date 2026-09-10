@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automate Text Hyphenation with CSS Hyphens - web-development</title>
+    <meta name="description" content="The CSS hyphens property provides a native, automated solution for breaking words across lines to maintain clean, readable text layouts in responsive web design. By dynamically inserting hyphenation points based on language-specific dictionaries, it prev">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/automate-text-hyphenation-with-css-hyphens">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Automate Text Hyphenation with CSS Hyphens - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/automate-text-hyphenation-with-css-hyphens" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS hyphens property provides a native, automated solution for breaking words across lines to maintain clean, readable text layouts in responsive web design. By dynamically inserting hyphenation points based on language-specific dictionaries, it prev" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="automate-text-hyphenation-with-css-hyphens">Automate Text
+Hyphenation with CSS Hyphens</h1>
+<p>The CSS <code>hyphens</code> property provides a native, automated
+solution for breaking words across lines to maintain clean, readable
+text layouts in responsive web design. By dynamically inserting
+hyphenation points based on language-specific dictionaries, it prevents
+awkward whitespace gaps and horizontal overflow in narrow containers.
+This article explores how <code>hyphens: auto</code> functions across
+different languages, the role of the HTML <code>lang</code> attribute,
+and how modern browser implementations eliminate the need for manual
+hyphenation hacks.</p>
+<h2 id="the-responsive-typography-challenge">The Responsive Typography
+Challenge</h2>
+<p>Responsive web layouts often require text to fit into fluid, narrow
+columns—such as mobile viewports, multi-column layouts, or sidebar
+cards. Without hyphenation, long words either overflow their containers
+or force premature line breaks, creating ragged edges in left-aligned
+text or unsightly rivers of whitespace in justified text.</p>
+<p>Historically, developers addressed this by manually inserting soft
+hyphens (<code>&amp;shy;</code>) into markup or relying on heavy
+JavaScript libraries to calculate word breaks. These manual methods
+clutter HTML, complicate content management, and fail to scale across
+internationalized applications.</p>
+<h2 id="how-the-hyphens-property-works">How the <code>hyphens</code>
+Property Works</h2>
+<p>The <code>hyphens</code> property controls how words should be broken
+when wrapping across lines. It accepts three primary values:</p>
+<ul>
+<li><code>none</code>: Prevents word breaking; words will not be
+hyphenated even if characters like <code>&amp;shy;</code> exist in the
+source code.</li>
+<li><code>manual</code>: The default behavior. Words are only broken
+where characters explicitly suggest hyphenation opportunities (such as
+the soft hyphen <code>&amp;shy;</code>).</li>
+<li><code>auto</code>: The browser automatically breaks words at
+appropriate hyphenation points determined by an internal
+dictionary.</li>
+</ul>
+<p>When set to <code>auto</code>, the browser handles hyphen insertion
+programmatically:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>p {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">hyphens</span><span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="language-sensitivity-and-the-lang-attribute">Language
+Sensitivity and the <code>lang</code> Attribute</h2>
+<p>Hyphenation rules are strictly linguistic and vary dramatically from
+one language to another. For example, German frequently uses long
+compound words requiring multiple hyphenation opportunities, while
+English follows distinct syllable and morphological rules.</p>
+<p>The browser cannot determine how to hyphenate a word without knowing
+its language. Therefore, <code>hyphens: auto</code> relies directly on
+the HTML <code>lang</code> attribute:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- English text hyphenated via English dictionary rules --&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">p</span><span class="ot"> lang</span><span class="op">=</span><span class="st">&quot;en&quot;</span><span class="dt">&gt;</span>The internationalization of responsive interfaces requires scalable typographic solutions.<span class="dt">&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- German text hyphenated via German dictionary rules --&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">p</span><span class="ot"> lang</span><span class="op">=</span><span class="st">&quot;de&quot;</span><span class="dt">&gt;</span>Barrierefreiheitsanforderungen müssen im Entwicklungsprozess berücksichtigt werden.<span class="dt">&lt;/</span><span class="kw">p</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>If the <code>lang</code> attribute is omitted or improperly defined,
+the browser will fall back to default behavior—often disabling automatic
+hyphenation entirely to avoid incorrect word breaks. Declaring
+<code>&lt;html lang="..."&gt;</code> at the root, or using the
+<code>lang</code> attribute on specific sub-elements for multilingual
+pages, is mandatory for reliable hyphenation.</p>
+<h2 id="fine-tuning-hyphenation-behavior">Fine-Tuning Hyphenation
+Behavior</h2>
+<p>Modern CSS provides companion properties to prevent excessive or
+visually disruptive hyphenation:</p>
+<ul>
+<li><strong><code>hyphenate-limit-chars</code></strong>: Controls the
+minimum word length eligible for hyphenation, as well as the minimum
+number of characters required before and after the hyphen.
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>p {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">hyphens</span><span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">hyphenate-limit-chars</span><span class="ch">:</span> <span class="dv">6</span> <span class="dv">3</span> <span class="dv">3</span><span class="op">;</span> <span class="co">/* Minimum word length: 6; min before: 3; min after: 3 */</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div></li>
+<li><strong><code>hyphenate-character</code></strong>: Allows developers
+to specify the string used for the hyphen symbol instead of the standard
+hyphen-minus (<code>-</code>).</li>
+</ul>
+<h2 id="implementation-best-practices">Implementation Best
+Practices</h2>
+<ol type="1">
+<li><strong>Always declare the language</strong>: Ensure valid BCP 47
+language tags are present on the <code>&lt;html&gt;</code> element or
+parent containers.</li>
+<li><strong>Target narrow containers</strong>: Apply
+<code>hyphens: auto</code> selectively to elements prone to overflow,
+such as headings in mobile viewports, table cells, justified paragraphs,
+and fixed-width components.</li>
+<li><strong>Combine with overflow control</strong>: Pair hyphenation
+with <code>overflow-wrap: break-word</code> as a fallback for ultra-long
+strings (like URLs) that do not exist in dictionary hyphenation
+systems.</li>
+</ol></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

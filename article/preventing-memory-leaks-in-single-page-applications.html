@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing Memory Leaks in Single-Page Applications - web-development</title>
+    <meta name="description" content="Single-page applications (SPAs) run continuously without full page reloads, making them vulnerable to gradual memory accumulation that degrades performance and causes browser crashes. This article explores the root causes of client-side memory leaks—su">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/preventing-memory-leaks-in-single-page-applications">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing Memory Leaks in Single-Page Applications - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/preventing-memory-leaks-in-single-page-applications" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Single-page applications (SPAs) run continuously without full page reloads, making them vulnerable to gradual memory accumulation that degrades performance and causes browser crashes. This article explores the root causes of client-side memory leaks—su" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="preventing-memory-leaks-in-single-page-applications">Preventing
+Memory Leaks in Single-Page Applications</h1>
+<p>Single-page applications (SPAs) run continuously without full page
+reloads, making them vulnerable to gradual memory accumulation that
+degrades performance and causes browser crashes. This article explores
+the root causes of client-side memory leaks—such as abandoned event
+listeners, unmanaged timers, detached DOM elements, and unchecked
+caches—and outlines practical, actionable architectural patterns to
+ensure predictable garbage collection throughout the lifecycle of an
+application.</p>
+<h3 id="clean-up-global-event-listeners-and-subscriptions">Clean Up
+Global Event Listeners and Subscriptions</h3>
+<p>When components register listeners to global objects like
+<code>window</code>, <code>document</code>, or shared event buses, the
+browser cannot garbage-collect the component if those listeners remain
+active. Whenever a view or component unmounts, you must explicitly
+detach these handlers.</p>
+<ul>
+<li><strong>Lifecycle Cleanups:</strong> Use framework-specific teardown
+hooks—such as React's <code>useEffect</code> cleanup function, Vue’s
+<code>onBeforeUnmount</code>, or Angular's <code>ngOnDestroy</code>—to
+invoke <code>removeEventListener</code>.</li>
+<li><strong>Reactive Subscriptions:</strong> If utilizing reactive
+libraries like RxJS, cancel subscriptions using operators like
+<code>takeUntil</code> or explicitly invoke
+<code>.unsubscribe()</code>.</li>
+<li><strong>AbortController:</strong> Utilize the standard
+<code>AbortController</code> API to cancel asynchronous tasks and fetch
+requests automatically when views switch.</li>
+</ul>
+<h3 id="cancel-timers-and-animation-frames">Cancel Timers and Animation
+Frames</h3>
+<p>Asynchronous intervals and timeouts execute in the background and
+maintain references to any variables in their scope. A component that
+sets an interval without clearing it leaves that interval running
+indefinitely, holding the component and its scope in memory.</p>
+<ul>
+<li>Always store the identifier returned by <code>setInterval</code>,
+<code>setTimeout</code>, or <code>requestAnimationFrame</code>.</li>
+<li>Clear them using <code>clearInterval</code>,
+<code>clearTimeout</code>, or <code>cancelAnimationFrame</code> in the
+component teardown phase.</li>
+</ul>
+<h3 id="prevent-detached-dom-trees">Prevent Detached DOM Trees</h3>
+<p>A detached DOM node occurs when an element has been removed from the
+visible document tree, but JavaScript still holds a reference to it in a
+variable, array, or object. Because the reference exists, the garbage
+collector cannot free the node or any of its child nodes.</p>
+<ul>
+<li>Avoid storing raw DOM elements in global variables or state
+management stores.</li>
+<li>Favor framework-managed references (like React refs or Vue template
+refs) rather than manually querying and persisting elements with
+<code>document.getElementById</code> or
+<code>document.querySelector</code>.</li>
+<li>If manual DOM caching is necessary, set the referencing variable to
+<code>null</code> as soon as the node is detached.</li>
+</ul>
+<h3 id="guard-against-unbounded-caches-and-closures">Guard Against
+Unbounded Caches and Closures</h3>
+<p>Closures capture variables from their outer scope. When a closure is
+held indefinitely—for example, in a long-lived callback or global
+store—all captured variables remain in memory even if they are never
+accessed again.</p>
+<ul>
+<li><strong>Bound Cache Sizes:</strong> If storing API responses or
+computations client-side, implement eviction strategies such as Least
+Recently Used (LRU) or set a Time-To-Live (TTL) limit so the cache does
+not expand indefinitely during prolonged user sessions.</li>
+<li><strong>Use WeakMap and WeakSet:</strong> When associating metadata
+with objects (such as DOM nodes or component instances), use
+<code>WeakMap</code> or <code>WeakSet</code>. These structures do not
+prevent their keys from being garbage-collected once all other
+references to the object are gone.</li>
+</ul>
+<h3 id="audit-with-browser-memory-profilers">Audit with Browser Memory
+Profilers</h3>
+<p>Preventative architecture should be paired with regular profiling to
+catch regressions before they reach production.</p>
+<ul>
+<li><strong>Heap Snapshots:</strong> Take heap snapshots in browser
+developer tools (such as Chrome DevTools) before and after interacting
+with a feature. Compare the snapshots to identify objects that persist
+after a view is destroyed.</li>
+<li><strong>Allocation Timeline:</strong> Use allocation instrumentation
+to monitor memory spikes and observe whether memory drops back to a
+baseline level following garbage collection cycles.</li>
+<li><strong>Automated Leak Testing:</strong> Integrate automated memory
+leak checks into continuous integration pipelines using tools like
+Playwright or Puppeteer to track heap size variations across repeated
+route transitions.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

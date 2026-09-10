@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Web Application Firewalls Filter Web Traffic - web-development</title>
+    <meta name="description" content="A Web Application Firewall (WAF) acts as a specialized defensive barrier between the public internet and a web application's back-end infrastructure. By operating at the application layer (Layer 7 of the OSI model), a WAF inspects incoming HTTP and HTTPS">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-web-application-firewalls-filter-web-traffic">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Web Application Firewalls Filter Web Traffic - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-web-application-firewalls-filter-web-traffic" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="A Web Application Firewall (WAF) acts as a specialized defensive barrier between the public internet and a web application's back-end infrastructure. By operating at the application layer (Layer 7 of the OSI model), a WAF inspects incoming HTTP and HTTPS" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-web-application-firewalls-filter-web-traffic">How Web
+Application Firewalls Filter Web Traffic</h1>
+<p>A Web Application Firewall (WAF) acts as a specialized defensive
+barrier between the public internet and a web application's back-end
+infrastructure. By operating at the application layer (Layer 7 of the
+OSI model), a WAF inspects incoming HTTP and HTTPS traffic in real time
+to identify and block malicious requests before they can exploit
+vulnerabilities in the code. This article examines the core mechanisms
+WAFs use to filter malicious incoming traffic, the common exploits they
+prevent, and their critical role in modern secure web development.</p>
+<h3 id="how-wafs-operate-at-the-application-layer">How WAFs Operate at
+the Application Layer</h3>
+<p>Traditional network firewalls and routers primarily inspect traffic
+at the transport and network layers (Layers 3 and 4), filtering packets
+based on IP addresses and port numbers. While this protects
+infrastructure from unauthorized access points, it cannot interpret the
+content of web-specific payloads passing through standard web ports like
+80 (HTTP) and 443 (HTTPS).</p>
+<p>A WAF operates directly at Layer 7, allowing it to deconstruct and
+analyze full HTTP/HTTPS requests, including headers, cookies, query
+parameters, and POST data. When a client sends a request to a server,
+the WAF intercepts the traffic, evaluates the payload against predefined
+security rules and behavioral patterns, and decides whether to permit,
+drop, challenge (via CAPTCHA), or sanitize the incoming data.</p>
+<h3 id="core-filtering-mechanisms">Core Filtering Mechanisms</h3>
+<p>To distinguish legitimate users from attackers, a WAF uses several
+primary detection models:</p>
+<ul>
+<li><strong>Signature-Based Detection (Negative Security
+Model):</strong> The WAF compares incoming payloads against a database
+of known threat signatures. This is effective for rapidly blocking
+common exploits, such as standard SQL injection (SQLi) patterns, known
+malicious user agents, and recognized exploit strings.</li>
+<li><strong>Behavioral and Anomaly Detection (Positive Security
+Model):</strong> Instead of only looking for known bad inputs, the
+positive model defines what constitutes valid traffic—such as acceptable
+request formats, data types, and rate thresholds. Anything deviating
+from this baseline is flagged or blocked, which helps identify zero-day
+vulnerabilities.</li>
+<li><strong>Rate Limiting and Bot Mitigation:</strong> A WAF monitors
+the velocity of incoming requests from specific IP addresses or sessions
+to mitigate brute-force credential stuffing, content scraping, and Layer
+7 Distributed Denial of Service (DDoS) attacks designed to overwhelm
+application resources.</li>
+</ul>
+<h3 id="protection-against-common-vulnerabilities">Protection Against
+Common Vulnerabilities</h3>
+<p>WAFs provide automated protection against critical web application
+risks, particularly those cataloged in the OWASP Top 10. Key threats
+intercepted by a WAF include:</p>
+<ul>
+<li><strong>SQL Injection (SQLi):</strong> Prevents attackers from
+injecting arbitrary database commands through form inputs or URL
+parameters to exfiltrate or manipulate database contents.</li>
+<li><strong>Cross-Site Scripting (XSS):</strong> Identifies and
+neutralizes malicious JavaScript payloads submitted via user input,
+preventing code execution in other users' browsers.</li>
+<li><strong>Cross-Site Request Forgery (CSRF):</strong> Inspects request
+headers and tokens to verify that state-changing actions originate from
+authenticated and intended sources.</li>
+<li><strong>Path Traversal and File Inclusion:</strong> Blocks attempts
+to navigate restricted server directories or execute unauthorized local
+and remote files.</li>
+</ul>
+<h3 id="the-role-of-wafs-in-secure-development-workflows">The Role of
+WAFs in Secure Development Workflows</h3>
+<p>In modern web development, a WAF serves as a critical operational
+safeguard rather than a replacement for secure coding practices. Even
+with rigorous code audits and penetration testing, zero-day
+vulnerabilities or deployment oversights can reach production
+environments.</p>
+<p>A key operational advantage of a WAF is <strong>virtual
+patching</strong>. When a new vulnerability is discovered in an
+application or a third-party dependency, engineering teams may require
+days or weeks to write, test, and deploy a permanent software fix. A
+security team can deploy a custom WAF rule within minutes to block
+traffic exploiting that specific vulnerability, providing immediate
+protection while the developers work on the underlying codebase.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

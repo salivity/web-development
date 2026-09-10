@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Atomics API and Shared Memory Guide - web-development</title>
+    <meta name="description" content="The JavaScript Atomics API coordinates thread-safe operations on shared memory buffers by providing low-level, indivisible read-modify-write operations and synchronization primitives. While SharedArrayBuffer allows multiple Web Workers to access the same">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/javascript-atomics-api-and-shared-memory-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="JavaScript Atomics API and Shared Memory Guide - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/javascript-atomics-api-and-shared-memory-guide" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The JavaScript Atomics API coordinates thread-safe operations on shared memory buffers by providing low-level, indivisible read-modify-write operations and synchronization primitives. While SharedArrayBuffer allows multiple Web Workers to access the same" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="javascript-atomics-api-and-shared-memory-guide">JavaScript
+Atomics API and Shared Memory Guide</h1>
+<p>The JavaScript <code>Atomics</code> API coordinates thread-safe
+operations on shared memory buffers by providing low-level, indivisible
+read-modify-write operations and synchronization primitives. While
+<code>SharedArrayBuffer</code> allows multiple Web Workers to access the
+same block of memory simultaneously, it inherently introduces race
+conditions and data corruption. The <code>Atomics</code> object
+addresses this concurrency challenge by ensuring memory modifications
+complete without interruption, preventing compiler reordering, and
+enabling inter-thread synchronization using sleep and wake
+mechanics.</p>
+<h3
+id="the-concurrency-problem-sharedarraybuffer-and-race-conditions">The
+Concurrency Problem: SharedArrayBuffer and Race Conditions</h3>
+<p>In standard JavaScript concurrency, Web Workers communicate via
+message passing through <code>postMessage()</code>, which clones or
+transfers data between isolated memory heaps.
+<code>SharedArrayBuffer</code> bypasses this serialization overhead by
+allowing multiple threads (the main thread and workers) to read and
+write the same physical allocation in memory via <code>TypedArray</code>
+views.</p>
+<p>However, non-atomic memory manipulation leads to race conditions. A
+simple operation such as incrementing a counter (<code>count++</code>)
+actually consists of three distinct machine-level steps:</p>
+<ol type="1">
+<li>Reading the value from memory into a CPU register.</li>
+<li>Modifying the value inside the register.</li>
+<li>Writing the updated value back to memory.</li>
+</ol>
+<p>If two threads execute this sequence concurrently on the same memory
+address, their steps can interleave. Thread B may read the original
+value before Thread A writes its modified value, causing one increment
+to be lost completely.</p>
+<h3 id="indivisible-operations-with-atomics">Indivisible Operations with
+Atomics</h3>
+<p>The <code>Atomics</code> API solves race conditions by providing
+methods that execute as single, uninterrupted operations at the hardware
+level. When a thread initiates an atomic operation on a shared buffer,
+no other thread can read, write, or alter the target memory location
+until that operation completes.</p>
+<p>Key atomic modification methods include:</p>
+<ul>
+<li><strong><code>Atomics.add(typedArray, index, value)</code> and
+<code>Atomics.sub(typedArray, index, value)</code>:</strong> Atomically
+adds or subtracts a value at a specified index, returning the old
+value.</li>
+<li><strong><code>Atomics.load(typedArray, index)</code> and
+<code>Atomics.store(typedArray, index, value)</code>:</strong>
+Guarantees that reads and writes are clean and uncorrupted, preventing
+torn reads (reading half-written data).</li>
+<li><strong><code>Atomics.exchange(typedArray, index, value)</code>:</strong>
+Writes a new value to an index and returns the old value
+atomically.</li>
+<li><strong><code>Atomics.compareExchange(typedArray, index, expectedValue, replacementValue)</code>:</strong>
+Evaluates whether the current value equals <code>expectedValue</code>.
+Only if it matches does it replace it with
+<code>replacementValue</code>. This primitive forms the foundation for
+lock-free programming and custom synchronization structures.</li>
+</ul>
+<h3 id="inter-thread-coordination-with-wait-and-notify">Inter-Thread
+Coordination with Wait and Notify</h3>
+<p>Beyond atomic mathematical operations, threads frequently need to
+coordinate their execution order—for example, one worker waiting for
+another worker to finish populating a buffer segment.</p>
+<p>The <code>Atomics</code> API provides a condition-variable mechanism
+using <code>Atomics.wait()</code> and <code>Atomics.notify()</code>:</p>
+<ul>
+<li><strong><code>Atomics.wait(typedArray, index, value, timeout)</code>:</strong>
+Inspects the specified index of an <code>Int32Array</code> or
+<code>BigInt64Array</code>. If the value matches the provided
+<code>value</code> argument, the thread suspends execution (sleeps) and
+yields CPU cycles. If the values do not match, it returns immediately
+without blocking. To prevent freezing the user interface,
+<code>Atomics.wait()</code> is disallowed on the browser's main UI
+thread and can only run inside Web Workers.</li>
+<li><strong><code>Atomics.notify(typedArray, index, count)</code>:</strong>
+Awakens a designated number of threads (<code>count</code>) that are
+suspended in an <code>Atomics.wait()</code> call on that specific
+index.</li>
+</ul>
+<p>This wait-notify pair allows developers to construct traditional
+synchronization primitives such as mutexes (mutual exclusions),
+semaphores, and read-write locks directly inside web applications.</p>
+<h3 id="sequential-consistency-and-memory-fences">Sequential Consistency
+and Memory Fences</h3>
+<p>Modern CPUs and JavaScript optimizing compilers routinely reorder
+instructions to maximize hardware pipeline efficiency. In
+single-threaded execution, this reordering is invisible. In
+multi-threaded environments, instruction reordering can cause one thread
+to observe changes in an order different from how they were written in
+the source code.</p>
+<p>All operations in the <code>Atomics</code> API enforce sequential
+consistency. They act as memory barriers (fences), ensuring that all
+operations initiated before an atomic call are committed to memory
+before the atomic operation executes, and no subsequent operations can
+be reordered ahead of it. This guarantees a globally consistent view of
+shared memory across every running thread.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Verify Accessible HTML Landmarks - web-development</title>
+    <meta name="description" content="Verifying that accessible landmark elements are correctly mapped in HTML is critical for ensuring users of assistive technologies, such as screen readers, can efficiently navigate and understand a webpage's layout. Web development engineers validate thes">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-verify-accessible-html-landmarks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Verify Accessible HTML Landmarks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-verify-accessible-html-landmarks" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Verifying that accessible landmark elements are correctly mapped in HTML is critical for ensuring users of assistive technologies, such as screen readers, can efficiently navigate and understand a webpage's layout. Web development engineers validate thes" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-verify-accessible-html-landmarks">How to Verify
+Accessible HTML Landmarks</h1>
+<p>Verifying that accessible landmark elements are correctly mapped in
+HTML is critical for ensuring users of assistive technologies, such as
+screen readers, can efficiently navigate and understand a webpage's
+layout. Web development engineers validate these landmarks through a
+combination of browser developer tools, automated accessibility audits,
+browser extensions, and manual testing with screen readers. By
+confirming that native HTML5 elements correctly translate into
+Accessible Rich Internet Applications (ARIA) roles in the accessibility
+tree, engineers guarantee a seamless structural experience.</p>
+<h3 id="inspecting-the-browser-accessibility-tree">Inspecting the
+Browser Accessibility Tree</h3>
+<p>The primary method for checking landmark mappings is using the
+Accessibility panel within modern browser developer tools (such as
+Chrome DevTools, Firefox Developer Tools, or Safari Web Inspector).</p>
+<ol type="1">
+<li>Open DevTools and navigate to the <strong>Elements</strong> or
+<strong>Inspector</strong> tab.</li>
+<li>Select the accessibility sub-panel to view the <strong>Accessibility
+Tree</strong>.</li>
+<li>Inspect key structural elements to verify their computed roles. For
+example:
+<ul>
+<li><code>&lt;header&gt;</code> maps to <code>role="banner"</code> (when
+not inside a sectioning element like <code>&lt;article&gt;</code> or
+<code>&lt;section&gt;</code>).</li>
+<li><code>&lt;nav&gt;</code> maps to
+<code>role="navigation"</code>.</li>
+<li><code>&lt;main&gt;</code> maps to <code>role="main"</code>.</li>
+<li><code>&lt;footer&gt;</code> maps to <code>role="contentinfo"</code>
+(when at the page root level).</li>
+<li><code>&lt;aside&gt;</code> maps to
+<code>role="complementary"</code>.</li>
+<li><code>&lt;section&gt;</code> or <code>&lt;form&gt;</code> maps to
+<code>role="region"</code> or <code>role="form"</code> when provided
+with an accessible name via <code>aria-label</code> or
+<code>aria-labelledby</code>.</li>
+</ul></li>
+</ol>
+<p>If the computed role does not display the expected landmark role, the
+element may be nested incorrectly or suppressed by an invalid role
+override.</p>
+<h3 id="running-automated-accessibility-scanners">Running Automated
+Accessibility Scanners</h3>
+<p>Automated testing tools catch common structural mistakes, such as
+missing primary landmarks or duplicate landmarks lacking distinct
+labels.</p>
+<ul>
+<li><strong>Lighthouse and Axe Core:</strong> Run automated audits
+through the Chrome Lighthouse tab or the Axe browser extension. These
+tools flag missing <code>&lt;main&gt;</code> landmarks, orphaned content
+outside of landmarks, and duplicate landmarks that need unique
+<code>aria-label</code> attributes.</li>
+<li><strong>Linters and CI/CD Integrations:</strong> Incorporate tools
+such as <code>eslint-plugin-jsx-a11y</code> or automated testing suites
+(like Cypress or Playwright paired with <code>@axe-core</code>) to catch
+structural regressions before code reaches production.</li>
+</ul>
+<h3 id="using-landmark-visualization-extensions">Using Landmark
+Visualization Extensions</h3>
+<p>Specialized browser extensions provide visual overlays of all
+landmarks on a rendered page:</p>
+<ul>
+<li><strong>Landmarks Extension:</strong> Highlights all declared
+landmarks directly in the viewport, showing the nesting levels and
+labels.</li>
+<li><strong>Accessibility Insights for Web:</strong> Includes an
+automated "Ad-hoc tools" feature that draws borders around all landmarks
+and displays their assigned roles, making it easy to identify regions of
+the page that fall outside of any landmark.</li>
+</ul>
+<h3 id="manual-validation-with-screen-readers">Manual Validation with
+Screen Readers</h3>
+<p>The final step is manual verification using popular screen readers to
+ensure that the landmarks behave as expected during navigation.</p>
+<ul>
+<li><strong>NVDA (Windows):</strong> Press <code>D</code> to jump
+forward between landmarks, or press <code>Insert + F7</code> to open the
+Elements List and select the "Landmarks" radio button to review all
+detected landmarks and their labels.</li>
+<li><strong>JAWS (Windows):</strong> Press <code>R</code> to cycle
+through regions/landmarks, or press <code>Insert + F3</code> to view the
+list of landmarks.</li>
+<li><strong>VoiceOver (macOS/iOS):</strong> Open the VoiceOver Rotor
+using <code>Control + Option + U</code> (or a two-finger rotation on
+iOS), navigate to the "Landmarks" menu, and verify the full list of page
+regions.</li>
+</ul>
+<p>During manual testing, verify that every significant area of the page
+is enclosed within an appropriate landmark, that there is only one
+top-level <code>&lt;main&gt;</code> element, and that multiple landmarks
+of the same type (such as primary and secondary <code>&lt;nav&gt;</code>
+elements) have unique, descriptive labels.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

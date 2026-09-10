@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Designing Smoke Tests for Production Health - web-development</title>
+    <meta name="description" content="Production smoke testing is the practice of running a minimal, highly targeted suite of automated checks immediately after a deployment to confirm that the application is operational and capable of handling user traffic. This article outlines how modern">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/designing-smoke-tests-for-production-health">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Designing Smoke Tests for Production Health - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/designing-smoke-tests-for-production-health" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Production smoke testing is the practice of running a minimal, highly targeted suite of automated checks immediately after a deployment to confirm that the application is operational and capable of handling user traffic. This article outlines how modern" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="designing-smoke-tests-for-production-health">Designing Smoke
+Tests for Production Health</h1>
+<p>Production smoke testing is the practice of running a minimal, highly
+targeted suite of automated checks immediately after a deployment to
+confirm that the application is operational and capable of handling user
+traffic. This article outlines how modern web engineering teams build
+effective post-deployment smoke test suites, covering critical journey
+identification, non-destructive test design, synthetic data strategies,
+deployment pipeline integration, and automated rollback triggers.</p>
+<h3 id="focus-on-critical-user-journeys">Focus on Critical User
+Journeys</h3>
+<p>A production smoke test suite should not duplicate an entire
+end-to-end regression suite. Instead, teams identify the core
+revenue-generating or mission-critical paths—often referred to as Tier-1
+journeys. For an e-commerce platform, this includes loading the
+homepage, searching for a product, viewing a product details page, and
+rendering the checkout screen. For a SaaS platform, it involves
+authenticating, loading the primary dashboard, and executing a basic
+read query. By limiting the scope to 5–15 high-value flows, the suite
+stays lean, running in under five minutes to provide instant
+feedback.</p>
+<h3 id="prioritize-read-only-and-idempotent-checks">Prioritize Read-Only
+and Idempotent Checks</h3>
+<p>Executing tests in production carries the risk of polluting customer
+data, triggering unwanted notifications, or exhausting real inventory.
+Teams mitigate this by focusing primarily on read-only operations and
+idempotency:</p>
+<ul>
+<li><strong>Deep Health Checks:</strong> Querying internal
+<code>/healthz</code> or <code>/ready</code> endpoints that verify
+database connectivity, cache accessibility, and third-party service
+reachability without modifying data.</li>
+<li><strong>Synthetic Test Accounts:</strong> Using dedicated, flagged
+user profiles configured to bypass billing gateways (e.g., using
+test-mode payment credentials) or interact only with sandboxed
+records.</li>
+<li><strong>Feature Flag Isolation:</strong> Running specific checks
+behind feature toggles to test functionality before enabling it for real
+users.</li>
+</ul>
+<h3 id="combine-api-and-synthetic-browser-tests">Combine API and
+Synthetic Browser Tests</h3>
+<p>Effective suites employ a layered approach to verify both the backend
+services and the frontend delivery mechanisms:</p>
+<ol type="1">
+<li><strong>API-Level Probes:</strong> Lightweight HTTP requests verify
+that routing, authentication services, and microservice communication
+are operating as expected. These tests are fast, deterministic, and
+highlight backend regressions within seconds.</li>
+<li><strong>Headless Browser Tests:</strong> Tools like Playwright or
+Cypress validate that frontend assets (JavaScript bundles, CSS, CDN
+resources) loaded correctly, single-page applications hydrate without
+client-side exceptions, and critical UI elements render properly.</li>
+</ol>
+<h3
+id="integrate-with-deployment-pipelines-and-canary-releases">Integrate
+with Deployment Pipelines and Canary Releases</h3>
+<p>Smoke tests should be embedded directly into deployment automation
+rather than executed manually. In modern progressive delivery setups
+(such as blue/green or canary deployments), the deployment pipeline
+triggers the smoke tests against the newly deployed instance while it
+receives a small fraction of traffic (e.g., 5–10%) or before switching
+the active router. If the smoke suite passes, the deployment proceeds to
+full rollout; if it fails, the pipeline immediately triggers an
+automated rollback to minimize user impact.</p>
+<h3 id="connect-results-to-observability-and-alerting">Connect Results
+to Observability and Alerting</h3>
+<p>Smoke tests should serve as an extension of the team's observability
+stack. When a smoke test fails, the output must be actionable:</p>
+<ul>
+<li><strong>Distributed Tracing:</strong> Tag test requests with
+specific headers (e.g., <code>X-Smoke-Test: true</code>) so that
+operations can be traced through distributed systems in tools like
+OpenTelemetry or Datadog without skewing standard performance
+metrics.</li>
+<li><strong>Targeted Notifications:</strong> Route smoke test failures
+directly to the on-call deployment channel or paging service with links
+to execution logs, screenshots of failed UI steps, and relevant server
+traces.</li>
+</ul>
+<p>By keeping the suite fast, non-destructive, and strictly tied to
+essential business functions, engineering teams achieve high confidence
+in deployment stability while minimizing mean time to recovery
+(MTTR).</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

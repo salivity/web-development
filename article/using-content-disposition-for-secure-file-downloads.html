@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Content-Disposition for Secure File Downloads - web-development</title>
+    <meta name="description" content="The Content-Disposition HTTP header is a critical tool in web development for managing how browsers handle incoming files, determining whether content renders directly in the viewport or downloads to the user's device. Beyond improving user experience, t">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-content-disposition-for-secure-file-downloads">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Content-Disposition for Secure File Downloads - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-content-disposition-for-secure-file-downloads" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Content-Disposition HTTP header is a critical tool in web development for managing how browsers handle incoming files, determining whether content renders directly in the viewport or downloads to the user's device. Beyond improving user experience, t" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-content-disposition-for-secure-file-downloads">Using
+Content-Disposition for Secure File Downloads</h1>
+<p>The <code>Content-Disposition</code> HTTP header is a critical tool
+in web development for managing how browsers handle incoming files,
+determining whether content renders directly in the viewport or
+downloads to the user's device. Beyond improving user experience, this
+header serves as an essential defense mechanism against client-side
+vulnerabilities, such as stored Cross-Site Scripting (XSS) and
+MIME-confusion attacks. This article explains how the
+<code>Content-Disposition</code> header functions, its role in
+mitigating security risks, and best practices for implementing it
+securely.</p>
+<h2 id="understanding-the-content-disposition-directives">Understanding
+the Content-Disposition Directives</h2>
+<p>The <code>Content-Disposition</code> response header informs the
+client about the intended presentation of the response payload. It
+supports two primary directives:</p>
+<ul>
+<li><strong><code>inline</code></strong>: Instructs the browser to
+render the file within the browser window if it supports the file type
+(e.g., standard images, PDFs, plain text).</li>
+<li><strong><code>attachment</code></strong>: Prompts the browser to
+download the file locally instead of displaying it, regardless of file
+type.</li>
+</ul>
+<p>When set to <code>attachment</code>, the header can also include a
+<code>filename</code> parameter that defines the default name suggested
+to the user upon saving:</p>
+<pre class="http"><code>Content-Disposition: attachment; filename=&quot;monthly_report.pdf&quot;</code></pre>
+<p>For internationalization and modern character sets, the
+<code>filename*</code> parameter is used following RFC 5987, allowing
+defined character encodings:</p>
+<pre class="http"><code>Content-Disposition: attachment; filename*=UTF-8&#39;&#39;revisi%C3%B3n.pdf</code></pre>
+<h2 id="security-roles-of-content-disposition">Security Roles of
+Content-Disposition</h2>
+<h3 id="1-mitigating-stored-cross-site-scripting-xss">1. Mitigating
+Stored Cross-Site Scripting (XSS)</h3>
+<p>A primary vector for stored XSS occurs when applications allow users
+to upload files—such as HTML, SVG, or XML files containing embedded
+JavaScript—and subsequently serve those files directly back to other
+users.</p>
+<p>If served with <code>Content-Disposition: inline</code>, the browser
+executes any embedded scripts within the context of your application's
+domain. This grants the attacker access to session cookies, local
+storage, and the ability to execute unauthorized actions on behalf of
+the victim.</p>
+<p>By forcing <code>Content-Disposition: attachment</code>, the browser
+downloads the file rather than parsing and executing its active contents
+in the browser window, effectively neutralizing the script execution in
+the context of the host origin.</p>
+<h3 id="2-preventing-mime-sniffing-exploits">2. Preventing MIME-Sniffing
+Exploits</h3>
+<p>Some browsers attempt to determine a file's format by inspecting its
+byte stream (MIME sniffing), occasionally ignoring the server-supplied
+<code>Content-Type</code> header. An attacker might disguise an
+executable or HTML file as a harmless <code>.txt</code> or
+<code>.jpg</code> file.</p>
+<p>Using <code>Content-Disposition: attachment</code> ensures that even
+if a browser misidentifies a file's format, it treats the resource as a
+downloaded object rather than an executable or viewable script. For
+comprehensive protection, this should be paired with the
+<code>X-Content-Type-Options: nosniff</code> header to strictly enforce
+declared content types.</p>
+<h3 id="3-preventing-directory-traversal-and-filename-injection">3.
+Preventing Directory Traversal and Filename Injection</h3>
+<p>When dynamic filenames are included in the
+<code>Content-Disposition</code> header without proper sanitization,
+attackers can inject carriage returns, path traversal sequences
+(<code>../</code>), or shell characters.</p>
+<p>Improperly validated names can result in HTTP response splitting or
+trick the operating system into writing files to unintended directories
+on the client side. Restricting and sanitizing the <code>filename</code>
+parameter guarantees that client filesystems remain uncompromised.</p>
+<h2 id="best-practices-for-secure-implementation">Best Practices for
+Secure Implementation</h2>
+<ul>
+<li><strong>Default to <code>attachment</code> for User-Generated
+Content:</strong> Unless a file is explicitly intended to be viewed in
+the browser and is guaranteed safe (such as heavily sanitized images),
+serve all user-uploaded files as attachments.</li>
+<li><strong>Pair with Additional Security Headers:</strong> Always serve
+downloads with <code>X-Content-Type-Options: nosniff</code> and a robust
+<code>Content-Security-Policy</code> (CSP) to restrict any unintended
+script execution.</li>
+<li><strong>Strictly Sanitize the Filename Parameter:</strong> Strip
+directory paths, null bytes, and non-alphanumeric characters from
+user-provided filenames on the server. Never blindly echo raw user input
+into the header value.</li>
+<li><strong>Isolate File Serving on a Separate Domain:</strong> Host
+user downloads on a dedicated sandbox domain (e.g.,
+<code>usercontent.example.com</code> instead of
+<code>app.example.com</code>). This isolates cookies and authentication
+contexts, ensuring that even if a malicious file runs, it cannot access
+session data from your main application.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

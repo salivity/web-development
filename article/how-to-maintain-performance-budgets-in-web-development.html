@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Maintain Performance Budgets in Web Development - web-development</title>
+    <meta name="description" content="As web applications evolve, continuous feature additions often lead to performance regression and bundle bloat. This article outlines the essential strategies development teams can use to maintain strict performance budgets without slowing down delivery,">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-maintain-performance-budgets-in-web-development">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Maintain Performance Budgets in Web Development - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-maintain-performance-budgets-in-web-development" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="As web applications evolve, continuous feature additions often lead to performance regression and bundle bloat. This article outlines the essential strategies development teams can use to maintain strict performance budgets without slowing down delivery," />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-maintain-performance-budgets-in-web-development">How to
+Maintain Performance Budgets in Web Development</h1>
+<p>As web applications evolve, continuous feature additions often lead
+to performance regression and bundle bloat. This article outlines the
+essential strategies development teams can use to maintain strict
+performance budgets without slowing down delivery, focusing on automated
+CI/CD gating, smart code architecture, real-time monitoring, and team
+culture.</p>
+<h3 id="integrate-performance-gates-in-cicd-pipelines">Integrate
+Performance Gates in CI/CD Pipelines</h3>
+<p>The most reliable way to enforce performance budgets is to automate
+checks before code merges into production. Integrate tools like
+Lighthouse CI, bundlesize, or Size Limit into your continuous
+integration (CI) workflow. Configure the pipeline to fail pull requests
+automatically if a commit exceeds thresholds for JavaScript bundle size,
+Total Blocking Time (TBT), or Largest Contentful Paint (LCP). This moves
+performance accountability to the moment code is written, preventing
+regressions from slipping into production.</p>
+<h3 id="implement-dynamic-code-splitting-and-lazy-loading">Implement
+Dynamic Code Splitting and Lazy Loading</h3>
+<p>New features do not need to be loaded on initial page render. Break
+large application bundles into smaller, manageable chunks using
+route-based and interaction-based code splitting. Utilize native dynamic
+imports (<code>import()</code>) to load non-critical resources, such as
+modal dialogs, complex forms, or analytics widgets, only when user
+intent is demonstrated. By offloading non-critical feature code from the
+critical rendering path, you keep the initial payload within the
+allocated budget.</p>
+<h3 id="enforce-the-one-in-one-out-rule">Enforce the "One-In, One-Out"
+Rule</h3>
+<p>When introducing a heavy dependency or feature that threatens a
+performance threshold, apply a strict optimization policy: offset the
+new weight by refactoring or removing existing debt. Before adopting a
+new third-party library, evaluate lighter alternatives using tools like
+Bundlephobia. If a new capability must be added, audit the codebase to
+deprecate obsolete features, tree-shake unused exports, or replace
+legacy polyfills and heavyweight packages with native browser APIs.</p>
+<h3 id="isolate-and-audit-third-party-scripts">Isolate and Audit
+Third-Party Scripts</h3>
+<p>Third-party scripts (trackers, tag managers, chat widgets) are major
+contributors to budget breaches. Establish a dedicated budget
+specifically for external tags and scripts. Run third-party code in web
+workers via tools like Partytown, or defer loading until after the main
+application achieves interactivity. Regularly audit Tag Manager
+containers to eliminate duplicate or abandoned vendor scripts that
+degrade performance independently of internal releases.</p>
+<h3 id="combine-synthetic-testing-with-real-user-monitoring-rum">Combine
+Synthetic Testing with Real-User Monitoring (RUM)</h3>
+<p>While CI/CD synthetic testing catches regressions in isolated
+environments, real-world user conditions vary wildly across devices and
+network speeds. Implement Real-User Monitoring (RUM) to track field data
+on Core Web Vitals (INP, LCP, CLS). Correlate deployment timelines with
+RUM data to identify regressions that synthetic lab tests missed.
+Setting automated alerts for spikes in metric percentiles (p75 or p90)
+enables teams to quickly deploy patches before user retention is
+affected.</p>
+<h3 id="include-performance-in-the-definition-of-done">Include
+Performance in the "Definition of Done"</h3>
+<p>Sustaining budgets requires a shared team mindset. Incorporate
+performance criteria into product planning, technical design reviews,
+and the team’s "Definition of Done." When engineers and product managers
+agree that a feature is incomplete if it breaches Core Web Vitals or
+bundle size limits, performance shifts from an afterthought optimization
+task to a non-negotiable acceptance criterion.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

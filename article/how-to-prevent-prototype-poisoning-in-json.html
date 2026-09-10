@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Prevent Prototype Poisoning in JSON - web-development</title>
+    <meta name="description" content="Prototype poisoning, often referred to as prototype pollution, occurs when untrusted JSON input injects malicious properties into a JavaScript application's base object prototype, potentially leading to denial of service, logic bypasses, or remote code e">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-prevent-prototype-poisoning-in-json">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Prevent Prototype Poisoning in JSON - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-prevent-prototype-poisoning-in-json" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Prototype poisoning, often referred to as prototype pollution, occurs when untrusted JSON input injects malicious properties into a JavaScript application's base object prototype, potentially leading to denial of service, logic bypasses, or remote code e" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-prevent-prototype-poisoning-in-json">How to Prevent
+Prototype Poisoning in JSON</h1>
+<p>Prototype poisoning, often referred to as prototype pollution, occurs
+when untrusted JSON input injects malicious properties into a JavaScript
+application's base object prototype, potentially leading to denial of
+service, logic bypasses, or remote code execution. Safeguarding web
+applications against this vulnerability requires securing both the data
+ingestion and data manipulation phases. This article outlines the
+primary security mechanisms used to mitigate prototype poisoning when
+parsing and processing JSON data, including reviver functions,
+prototype-free data structures, strict schema validation, and runtime
+hardening techniques.</p>
+<h3 id="use-a-reviver-function-with-jsonparse">Use a Reviver Function
+with <code>JSON.parse()</code></h3>
+<p>By default, native <code>JSON.parse()</code> creates plain JavaScript
+objects inheriting from <code>Object.prototype</code>. If the parsed
+string contains keys such as <code>__proto__</code>,
+<code>constructor</code>, or <code>prototype</code>, standard property
+access or subsequent merge operations might modify the global
+prototype.</p>
+<p>You can intercept and neutralize these dangerous keys directly during
+parsing by supplying a custom reviver function:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">safeReviver</span>(key<span class="op">,</span> value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;__proto__&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;constructor&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;prototype&#39;</span>) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">undefined</span><span class="op">;</span> <span class="co">// Strips the dangerous property</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> value<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeData <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(untrustedJsonString<span class="op">,</span> safeReviver)<span class="op">;</span></span></code></pre></div>
+<h3 id="store-data-in-prototype-free-objects-or-maps">Store Data in
+Prototype-Free Objects or Maps</h3>
+<p>When constructing lookup tables, caches, or dictionaries from parsed
+JSON, avoid using standard object literals (<code>{}</code>). Instead,
+instantiate objects that do not inherit from
+<code>Object.prototype</code>:</p>
+<ul>
+<li><strong><code>Object.create(null)</code></strong>: Creates a pure
+dictionary with no prototype chain, making it completely immune to
+<code>__proto__</code> injection.</li>
+<li><strong><code>Map</code> instances</strong>: Provide a key-value
+store where keys are treated purely as identifiers rather than object
+properties, preventing any prototype traversal.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeDictionary <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">assign</span>(<span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(<span class="kw">null</span>)<span class="op">,</span> safeData)<span class="op">;</span></span></code></pre></div>
+<h3 id="enforce-strict-schema-validation">Enforce Strict Schema
+Validation</h3>
+<p>Never trust incoming JSON payloads without structural validation.
+Employing schema validators like Zod, Joi, or Ajv ensures that parsed
+payloads conform strictly to expected data shapes and data types.</p>
+<p>Most modern schema validation libraries automatically strip or reject
+unrecognized properties. When configuring validators, enable strict mode
+to reject unknown properties explicitly (for instance, using
+<code>.strict()</code> in Zod or
+<code>additionalProperties: false</code> in JSON Schema).</p>
+<h3 id="utilize-secure-object-merging-utilities">Utilize Secure Object
+Merging Utilities</h3>
+<p>Prototype pollution rarely triggers via <code>JSON.parse()</code>
+alone; the vulnerability usually manifests when the parsed output is
+passed into a recursive "deep merge" or "extend" utility.</p>
+<p>Vulnerable recursive functions copy properties indiscriminately:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Vulnerable implementation pattern</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>target[key] <span class="op">=</span> source[key]<span class="op">;</span></span></code></pre></div>
+<p>To eliminate this vector:</p>
+<ul>
+<li>Ensure all utility libraries (such as Lodash or Ramda) are regularly
+updated to versions with built-in prototype pollution defenses.</li>
+<li>If writing custom clone or merge functions, explicitly guard against
+sensitive keys:</li>
+</ul>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">safeDeepMerge</span>(target<span class="op">,</span> source) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> key <span class="kw">of</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(source)) {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (key <span class="op">===</span> <span class="st">&#39;__proto__&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;constructor&#39;</span> <span class="op">||</span> key <span class="op">===</span> <span class="st">&#39;prototype&#39;</span>) {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>      <span class="cf">continue</span><span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="kw">typeof</span> source[key] <span class="op">===</span> <span class="st">&#39;object&#39;</span> <span class="op">&amp;&amp;</span> source[key] <span class="op">!==</span> <span class="kw">null</span>) {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      target[key] <span class="op">=</span> <span class="fu">safeDeepMerge</span>(target[key] <span class="op">||</span> {}<span class="op">,</span> source[key])<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>      target[key] <span class="op">=</span> source[key]<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> target<span class="op">;</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="freeze-the-object-prototype">Freeze the Object Prototype</h3>
+<p>At application startup, you can freeze standard built-in prototypes
+to make them immutable. This defense-in-depth measure prevents runtime
+modification of shared prototypes across the entire runtime
+environment:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">freeze</span>(<span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">freeze</span>(<span class="bu">Array</span><span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">freeze</span>(<span class="bu">Function</span><span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span></code></pre></div>
+<p>If an attacker manages to bypass input validation and attempts to
+write to a property on <code>Object.prototype</code>, the operation will
+fail silently in non-strict mode or throw a <code>TypeError</code> in
+strict mode. Note that this measure should be thoroughly tested, as some
+legacy third-party libraries modify prototypes legitimately.</p>
+<h3 id="runtime-configuration-flags">Runtime Configuration Flags</h3>
+<p>For Node.js environments, runtime-level flags can restrict or disable
+prototype modification behaviors:</p>
+<ul>
+<li><strong><code>--disable-proto=delete</code></strong>: Disables
+<code>Object.prototype.__proto__</code>, converting it into a normal
+property rather than a prototype accessor.</li>
+<li><strong><code>--disable-proto=throw</code></strong>: Throws an
+exception whenever <code>__proto__</code> is accessed or modified.</li>
+<li><strong><code>--frozen-intrinsics</code></strong>: Automatically
+freezes all built-in JavaScript objects and prototypes when the Node.js
+process initializes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

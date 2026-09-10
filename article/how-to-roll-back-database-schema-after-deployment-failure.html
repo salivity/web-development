@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Roll Back Database Schema After Deployment Failure - web-development</title>
+    <meta name="description" content="Handling database schema rollbacks during catastrophic deployment failures requires a structured strategy combining forward-compatible schema design, automated migration frameworks, Point-in-Time Recovery (PITR), and strict incident runbooks. Because dat">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-roll-back-database-schema-after-deployment-failure">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Roll Back Database Schema After Deployment Failure - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-roll-back-database-schema-after-deployment-failure" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Handling database schema rollbacks during catastrophic deployment failures requires a structured strategy combining forward-compatible schema design, automated migration frameworks, Point-in-Time Recovery (PITR), and strict incident runbooks. Because dat" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-roll-back-database-schema-after-deployment-failure">How
+to Roll Back Database Schema After Deployment Failure</h1>
+<p>Handling database schema rollbacks during catastrophic deployment
+failures requires a structured strategy combining forward-compatible
+schema design, automated migration frameworks, Point-in-Time Recovery
+(PITR), and strict incident runbooks. Because databases hold state,
+standard rollbacks cannot simply overwrite data without risking
+permanent data loss. Engineering teams rely on preventive architectural
+patterns like expand-and-contract, automated rollback scripts, and
+isolated recovery environments to restore service availability while
+keeping data intact.</p>
+<h3 id="1-the-expand-and-contract-pattern">1. The Expand-and-Contract
+Pattern</h3>
+<p>The most effective way to handle schema rollbacks is to design
+changes so a rollback is never immediately necessary. The
+expand-and-contract (or parallel change) pattern breaks a breaking
+schema change into phased releases:</p>
+<ul>
+<li><strong>Expand:</strong> Introduce the new schema elements (such as
+a new column or table) alongside the existing structure. The database
+supports both old and new versions simultaneously.</li>
+<li><strong>Transition:</strong> The application is updated to read from
+and write to both structures, with background workers backfilling
+historical data.</li>
+<li><strong>Contract:</strong> Once the new application code is
+confirmed stable in production, a subsequent release removes the
+deprecated tables or columns.</li>
+</ul>
+<p>If the application deployment fails catastrophically during the
+transition phase, engineers simply roll back the application binary or
+container. The database schema remains unchanged and continues to
+support the previous application version without interruption.</p>
+<h3 id="2-migration-scripts-with-explicit-down-paths">2. Migration
+Scripts with Explicit Down Paths</h3>
+<p>Modern frameworks (such as Flyway, Liquibase, Prisma, and Rails
+Active Record) structure schema changes into versioned, bidirectional
+migrations containing <code>up</code> and <code>down</code>
+definitions.</p>
+<p>During a deployment failure, automated deployment pipelines can
+trigger the corresponding <code>down</code> migration to reverse
+structural modifications, such as dropping an added index or removing an
+unpopulated table. However, mature teams restrict automated
+<code>down</code> executions if the operation is destructive (e.g.,
+dropping a column containing live user data). For destructive changes,
+the pipeline halts and requires human intervention.</p>
+<h3 id="3-decoupling-schema-migrations-from-code-deployments">3.
+Decoupling Schema Migrations from Code Deployments</h3>
+<p>High-reliability engineering teams do not run database migrations and
+application code deployments in the same step. Schema updates are
+executed out-of-band:</p>
+<ol type="1">
+<li>Run pre-deployment migrations (must be backward-compatible).</li>
+<li>Deploy the application code.</li>
+<li>If the application crashes, revert the application deployment
+instantly.</li>
+<li>Because the schema changes were non-breaking, the older code version
+continues running normally against the migrated database.</li>
+</ol>
+<h3 id="4-point-in-time-recovery-pitr-and-replay-logs">4. Point-in-Time
+Recovery (PITR) and Replay Logs</h3>
+<p>When a migration script itself fails catastrophically—such as
+accidentally locking critical tables, modifying primary keys
+incorrectly, or corrupting existing records—schema-level reversals are
+insufficient. In this scenario, teams execute Point-in-Time
+Recovery:</p>
+<ul>
+<li>The production database is placed into a temporary read-only or
+maintenance mode to halt new transactions.</li>
+<li>The database engine restores state using snapshots combined with
+transaction logs (such as PostgreSQL WAL or MySQL binary logs) up to the
+exact timestamp immediately preceding the deployment.</li>
+<li>Once restored, any valid user transactions that occurred during the
+incident window are extracted from the failed instance's logs and
+replayed into the restored database to prevent data loss.</li>
+</ul>
+<h3 id="5-automated-pre-deployment-verification">5. Automated
+Pre-Deployment Verification</h3>
+<p>To prevent catastrophic failures in the first place, continuous
+integration pipelines deploy proposed schema changes against
+production-sized, sanitized database clones (often using copy-on-write
+technology). This allows teams to test both the forward migration and
+the rollback script under realistic production loads, measuring locks,
+migration duration, and replication lag before the migration is approved
+for production release.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

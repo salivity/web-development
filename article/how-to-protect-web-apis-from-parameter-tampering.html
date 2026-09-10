@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Protect Web APIs from Parameter Tampering - web-development</title>
+    <meta name="description" content="Parameter tampering attacks occur when malicious actors manipulate parameters sent in HTTP requests—such as query strings, request bodies, or headers—to alter business logic, escalate privileges, or access unauthorized data. Securing web development">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-protect-web-apis-from-parameter-tampering">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Protect Web APIs from Parameter Tampering - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-protect-web-apis-from-parameter-tampering" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Parameter tampering attacks occur when malicious actors manipulate parameters sent in HTTP requests—such as query strings, request bodies, or headers—to alter business logic, escalate privileges, or access unauthorized data. Securing web development" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-protect-web-apis-from-parameter-tampering">How to Protect
+Web APIs from Parameter Tampering</h1>
+<p>Parameter tampering attacks occur when malicious actors manipulate
+parameters sent in HTTP requests—such as query strings, request bodies,
+or headers—to alter business logic, escalate privileges, or access
+unauthorized data. Securing web development APIs against this
+vulnerability requires a multi-layered defense strategy. This article
+outlines the essential technical measures to safeguard APIs, including
+strict input validation, server-side state enforcement, role-based
+authorization, cryptographic message signing, and mass assignment
+mitigation.</p>
+<h3 id="enforce-strict-server-side-validation-and-schemas">Enforce
+Strict Server-Side Validation and Schemas</h3>
+<p>Never rely on client-side validation alone. APIs must evaluate every
+incoming parameter on the server using strict validation rules.</p>
+<ul>
+<li><strong>Allowlisting:</strong> Validate incoming data against strict
+allowlists of allowed formats, regex patterns, data types, and value
+ranges rather than blocking known bad inputs.</li>
+<li><strong>Schema Validation:</strong> Enforce API contract definitions
+using tools such as OpenAPI (Swagger) or JSON Schema. Reject any payload
+containing unexpected types, additional properties, or malformed data
+immediately with a <code>400 Bad Request</code>.</li>
+</ul>
+<h3 id="guard-against-mass-assignment">Guard Against Mass
+Assignment</h3>
+<p>Parameter tampering often targets object bindings, where an attacker
+injects internal fields (such as <code>isAdmin: true</code> or
+<code>role: "superuser"</code>) into a request.</p>
+<ul>
+<li><strong>Data Transfer Objects (DTOs):</strong> Bind incoming
+payloads strictly to explicitly defined DTOs or view models rather than
+mapping directly to database entities.</li>
+<li><strong>Field Filtering:</strong> Explicitly define which fields are
+read-only and block clients from updating sensitive internal states via
+generic update endpoints.</li>
+</ul>
+<h3 id="keep-business-logic-and-state-on-the-server">Keep Business Logic
+and State on the Server</h3>
+<p>A common parameter tampering vulnerability involves altering
+parameters like prices, discounts, or quantities during multi-step
+transactions.</p>
+<ul>
+<li><strong>Centralize Critical Values:</strong> Sensitive values must
+always be calculated and retrieved directly from a trusted database or
+secure server-side session, never accepted directly from client
+parameters.</li>
+<li><strong>Single Source of Truth:</strong> Treat any incoming business
+value from the client as a reference or ID, not an authoritative
+attribute.</li>
+</ul>
+<h3
+id="implement-broken-object-level-authorization-bolaidor-checks">Implement
+Broken Object-Level Authorization (BOLA/IDOR) Checks</h3>
+<p>Attackers frequently alter identifiers (such as <code>user_id</code>
+or <code>account_id</code>) in URL paths or query parameters to access
+records belonging to other users.</p>
+<ul>
+<li><strong>Context-Aware Authorization:</strong> For every request,
+verify that the authenticated user explicitly owns or has access rights
+to the specific resource ID requested.</li>
+<li><strong>Use Indirection or GUIDs:</strong> While not a substitute
+for access control, using non-sequential, cryptographically strong
+unique identifiers (UUIDs/GUIDs) prevents attackers from trivially
+guessing or iterating through parameter IDs.</li>
+</ul>
+<h3 id="use-cryptographic-hashes-and-digital-signatures">Use
+Cryptographic Hashes and Digital Signatures</h3>
+<p>For sensitive requests where parameters must traverse untrusted
+clients without modification, apply cryptographic integrity
+verification.</p>
+<ul>
+<li><strong>HMAC Signatures:</strong> Implement Hash-based Message
+Authentication Codes (HMAC) generated from the request parameters and a
+secret key. The server recalculates the hash on arrival; if a single
+parameter was altered, the signatures will not match.</li>
+<li><strong>Signed Tokens:</strong> If parameters must be passed through
+the client (e.g., state tokens or password-reset workflows), encapsulate
+them inside cryptographically signed tokens (like JWTs) with short
+expiration windows.</li>
+</ul>
+<h3 id="deploy-api-gateways-and-web-application-firewalls-waf">Deploy
+API Gateways and Web Application Firewalls (WAF)</h3>
+<p>Add edge defenses to detect and intercept parameter tampering
+attempts before they hit application servers.</p>
+<ul>
+<li><strong>Inspection and Anomaly Detection:</strong> Configure WAFs
+and API Gateways to detect signature anomalies, parameter pollution
+(sending duplicate parameters to confuse parsers), and out-of-bounds
+parameter lengths.</li>
+<li><strong>Rate Limiting:</strong> Throttle automated attempts to
+brute-force or fuzz parameters across your endpoints.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

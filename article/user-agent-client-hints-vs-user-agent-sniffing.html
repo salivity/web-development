@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User-Agent Client Hints vs User-Agent Sniffing - web-development</title>
+    <meta name="description" content="Traditional user-agent sniffing has long been a fragile, error-prone method for detecting browser and device capabilities, often leading to broken web experiences and privacy risks. The User-Agent Client Hints (UA-CH) API replaces this legacy approach by">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/user-agent-client-hints-vs-user-agent-sniffing">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="User-Agent Client Hints vs User-Agent Sniffing - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/user-agent-client-hints-vs-user-agent-sniffing" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Traditional user-agent sniffing has long been a fragile, error-prone method for detecting browser and device capabilities, often leading to broken web experiences and privacy risks. The User-Agent Client Hints (UA-CH) API replaces this legacy approach by" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="user-agent-client-hints-vs-user-agent-sniffing">User-Agent
+Client Hints vs User-Agent Sniffing</h1>
+<p>Traditional user-agent sniffing has long been a fragile, error-prone
+method for detecting browser and device capabilities, often leading to
+broken web experiences and privacy risks. The User-Agent Client Hints
+(UA-CH) API replaces this legacy approach by offering a structured,
+privacy-preserving, and deliberate mechanism for servers to request only
+the specific client information they need. This article explores the
+shortcomings of legacy user-agent strings, the architecture of
+User-Agent Client Hints, and how modern web developers can implement
+them for reliable content negotiation.</p>
+<h3 id="the-problem-with-legacy-user-agent-sniffing">The Problem with
+Legacy User-Agent Sniffing</h3>
+<p>For decades, browsers communicated their identity through the
+<code>User-Agent</code> HTTP header. Over time, this single string
+accumulated historical baggage, with browsers spoofing each other's
+tokens to bypass arbitrary site blocking. The result was a bloated,
+unstructured string filled with conflicting identifiers (such as Chrome
+reporting itself as Safari, Mozilla, and KHTML).</p>
+<p>Parsing these strings required complex regular expressions and
+constantly updated third-party detection libraries. Minor browser
+updates could alter string formatting, inadvertently breaking site
+functionality. Crucially, the legacy <code>User-Agent</code> string
+broadcasted granular system details on every single HTTP request—such as
+precise operating system builds and device models—making it a primary
+vector for passive browser fingerprinting.</p>
+<h3 id="how-user-agent-client-hints-work">How User-Agent Client Hints
+Work</h3>
+<p>To resolve these issues, major browser vendors began freezing the
+legacy <code>User-Agent</code> string and introduced User-Agent Client
+Hints. Rather than sending a monolithic string by default, the browser
+splits information into two categories: <strong>Low-Entropy</strong> and
+<strong>High-Entropy</strong> hints.</p>
+<ol type="1">
+<li><p><strong>Low-Entropy Hints:</strong> Safe, basic information sent
+automatically with every request. These do not reveal enough detail to
+uniquely identify a user.</p>
+<ul>
+<li><code>Sec-CH-UA</code>: The browser brand and significant version
+(e.g., <code>"Chromium";v="124"</code>,
+<code>"Google Chrome";v="124"</code>).</li>
+<li><code>Sec-CH-UA-Mobile</code>: A boolean value indicating whether
+the browser is running on a mobile device (<code>?0</code> or
+<code>?1</code>).</li>
+<li><code>Sec-CH-UA-Platform</code>: The operating system family (e.g.,
+<code>"Windows"</code> or <code>"Android"</code>).</li>
+</ul></li>
+<li><p><strong>High-Entropy Hints:</strong> Granular details that could
+contribute to user tracking, such as exact OS versions, device models,
+full architecture, or bitness. These are never sent by default.</p></li>
+</ol>
+<h3 id="the-explicit-request-model">The Explicit Request Model</h3>
+<p>The core architectural change in UA-CH is that servers must
+explicitly opt in to receive high-entropy data. This shift eliminates
+passive tracking and forces applications to request only what is
+functional for their use case.</p>
+<p>When a server requires high-entropy details, it sends an
+<code>Accept-CH</code> response header specifying the exact hints it
+needs:</p>
+<pre class="http"><code>Accept-CH: Sec-CH-UA-Platform-Version, Sec-CH-UA-Model, Sec-CH-UA-Arch</code></pre>
+<p>On subsequent requests to that origin, the browser includes the
+requested headers:</p>
+<pre class="http"><code>Sec-CH-UA-Platform-Version: &quot;15.0.0&quot;
+Sec-CH-UA-Model: &quot;Pixel 8&quot;
+Sec-CH-UA-Arch: &quot;arm&quot;</code></pre>
+<h3 id="accessing-client-hints-via-javascript">Accessing Client Hints
+via JavaScript</h3>
+<p>Client-side code can access low-entropy hints synchronously through
+the <code>navigator.userAgentData</code> property, avoiding string
+parsing entirely:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> { brands<span class="op">,</span> mobile<span class="op">,</span> platform } <span class="op">=</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">userAgentData</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (mobile) {</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Apply mobile-specific logic</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If the application requires high-entropy data, it must request it
+asynchronously via <code>getHighEntropyValues()</code>, returning a
+Promise:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">navigator</span><span class="op">.</span><span class="at">userAgentData</span><span class="op">.</span><span class="fu">getHighEntropyValues</span>([</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;architecture&quot;</span><span class="op">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;model&quot;</span><span class="op">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">&quot;platformVersion&quot;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>])<span class="op">.</span><span class="fu">then</span>(hints <span class="kw">=&gt;</span> {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(hints<span class="op">.</span><span class="at">platformVersion</span>)<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="why-ua-ch-outperforms-legacy-sniffing">Why UA-CH Outperforms
+Legacy Sniffing</h3>
+<ul>
+<li><strong>Structured Data:</strong> Information is delivered as
+key-value pairs formatted according to the Structured Fields standard,
+removing the need for fragile regex parsing.</li>
+<li><strong>Privacy by Default:</strong> By withholding detailed device
+identifiers until explicitly requested, UA-CH drastically limits passive
+tracking.</li>
+<li><strong>Resilience:</strong> Because hints are explicitly typed and
+standardized, minor browser patches and upstream engine changes do not
+unexpectedly break parsing logic.</li>
+<li><strong>Granular Control:</strong> Site owners and third-party
+services can define permissions policies (using the
+<code>Permissions-Policy</code> header) to govern which subresources are
+permitted to access client hints.</li>
+</ul>
+<p>By transitioning from passive, monolithic user-agent sniffing to
+targeted, structured Client Hints, modern web applications gain a more
+resilient codebase while respecting modern user privacy standards.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

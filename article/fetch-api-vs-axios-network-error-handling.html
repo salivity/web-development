@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch API vs Axios: Network Error Handling - web-development</title>
+    <meta name="description" content="When managing HTTP requests in modern web development, understanding how your client library detects and manages failures is critical for building resilient applications. While both the native Fetch API and the third-party library Axios perform asynchron">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/fetch-api-vs-axios-network-error-handling">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fetch API vs Axios: Network Error Handling - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/fetch-api-vs-axios-network-error-handling" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When managing HTTP requests in modern web development, understanding how your client library detects and manages failures is critical for building resilient applications. While both the native Fetch API and the third-party library Axios perform asynchron" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fetch-api-vs-axios-network-error-handling">Fetch API vs Axios:
+Network Error Handling</h1>
+<p>When managing HTTP requests in modern web development, understanding
+how your client library detects and manages failures is critical for
+building resilient applications. While both the native Fetch API and the
+third-party library Axios perform asynchronous data fetching using
+Promises, they handle network errors and bad HTTP response statuses
+fundamentally differently. The native Fetch API only rejects a promise
+upon true network disruptions (such as DNS failures or lost
+connections), treating HTTP error codes like 404 or 500 as successful
+completions. In contrast, Axios automatically categorizes any HTTP
+status code outside the 2xx range as an error, providing built-in
+timeout configurations and structured error objects out of the box.</p>
+<h3 id="the-fetch-api-strict-network-only-rejections">The Fetch API:
+Strict Network-Only Rejections</h3>
+<p>The Fetch API is built natively into modern browsers and Node.js
+runtimes. Its error handling behavior is defined around the transport
+layer rather than the application layer.</p>
+<ul>
+<li><strong>Promise Rejection Criteria:</strong> A Fetch promise rejects
+<em>only</em> when a network error occurs that prevents the request from
+completing. Examples include being offline, a blocked CORS request, an
+invalid domain, or a terminated connection.</li>
+<li><strong>Handling HTTP Errors:</strong> If a server responds with an
+HTTP status code such as <code>404 Not Found</code>,
+<code>401 Unauthorized</code>, or
+<code>500 Internal Server Error</code>, Fetch considers the transaction
+complete. The promise resolves normally, meaning the error will not
+trigger a <code>.catch()</code> block.</li>
+<li><strong>Manual Verification:</strong> Developers must manually
+verify the response state by checking the boolean
+<code>response.ok</code> property (which is <code>true</code> for
+statuses 200–299) or inspecting <code>response.status</code>.</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fetch</span>(<span class="st">&#39;https://api.example.com/data&#39;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">then</span>(response <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">!</span>response<span class="op">.</span><span class="at">ok</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Must manually throw an error to catch HTTP failures</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="vs">`HTTP error! Status: </span><span class="sc">${</span>response<span class="op">.</span><span class="at">status</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> response<span class="op">.</span><span class="fu">json</span>()<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">then</span>(data <span class="kw">=&gt;</span> <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(data))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">catch</span>(error <span class="kw">=&gt;</span> {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Catches true network failures OR the manually thrown error above</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Request failed:&#39;</span><span class="op">,</span> error<span class="op">.</span><span class="at">message</span>)<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span></code></pre></div>
+<h3 id="axios-unified-and-automatic-error-handling">Axios: Unified and
+Automatic Error Handling</h3>
+<p>Axios is a standalone, promise-based HTTP client that standardizes
+error handling across both browser and Node.js environments.</p>
+<ul>
+<li><strong>Promise Rejection Criteria:</strong> By default, Axios
+rejects the promise if the request encounters a network failure
+<em>or</em> if the HTTP response status falls outside the 2xx
+range.</li>
+<li><strong>Structured Error Objects:</strong> When an error occurs,
+Axios returns a comprehensive error object that clearly categorizes the
+failure:
+<ul>
+<li><code>error.response</code>: The server responded with a non-2xx
+status code. Contains status, headers, and response data.</li>
+<li><code>error.request</code>: The request was sent, but no response
+was received (e.g., timeout, network drops).</li>
+<li><code>error.message</code>: An issue occurred while setting up the
+request before it was sent.</li>
+</ul></li>
+<li><strong>Custom Status Validation:</strong> Axios allows developers
+to adjust which HTTP status codes throw errors via the
+<code>validateStatus</code> configuration option.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>axios<span class="op">.</span><span class="fu">get</span>(<span class="st">&#39;https://api.example.com/data&#39;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">then</span>(response <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(response<span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">catch</span>(error <span class="kw">=&gt;</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (error<span class="op">.</span><span class="at">response</span>) {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Server responded with a status code outside the 2xx range (404, 500, etc.)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="vs">`HTTP error: </span><span class="sc">${</span>error<span class="op">.</span><span class="at">response</span><span class="op">.</span><span class="at">status</span><span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (error<span class="op">.</span><span class="at">request</span>) {</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Request was made, but no response was received (network failure/offline)</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Network failure or no response from server&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Configuration or request setup issue</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>      <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Request setup error:&#39;</span><span class="op">,</span> error<span class="op">.</span><span class="at">message</span>)<span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span></code></pre></div>
+<h3 id="handling-request-timeouts">Handling Request Timeouts</h3>
+<p>Network latency and unresponsive servers require requests to abort
+after a set period.</p>
+<ul>
+<li><strong>Fetch API:</strong> Fetch does not have a native timeout
+parameter. To abort a hanging request, developers must instantiate an
+<code>AbortController</code>, pass its <code>signal</code> into the
+Fetch configuration, and trigger <code>controller.abort()</code>
+manually using <code>setTimeout</code>.</li>
+<li><strong>Axios:</strong> Axios includes a dedicated
+<code>timeout</code> property directly in its configuration (e.g.,
+<code>{ timeout: 5000 }</code>). If the request exceeds the threshold,
+Axios automatically aborts the operation and rejects the promise with an
+<code>ECONNABORTED</code> error code.</li>
+</ul>
+<h3 id="summary-of-differences">Summary of Differences</h3>
+<ul>
+<li><strong>4xx and 5xx Statuses:</strong> Fetch resolves the promise;
+Axios rejects the promise automatically.</li>
+<li><strong>Network Dropouts:</strong> Both reject the promise, but
+Axios categorizes the failure under <code>error.request</code>.</li>
+<li><strong>Timeout Execution:</strong> Fetch requires an
+<code>AbortController</code>; Axios provides an inline
+<code>timeout</code> configuration.</li>
+<li><strong>Error Inspection:</strong> Fetch requires manual checks on
+<code>response.ok</code> or <code>response.status</code>; Axios returns
+a normalized error schema distinguishing network loss from server-side
+errors.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

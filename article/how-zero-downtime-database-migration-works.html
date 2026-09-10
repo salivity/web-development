@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Zero-Downtime Database Migration Works - web-development</title>
+    <meta name="description" content="Zero-downtime database schema migration is an operational strategy that allows engineering teams to update a live database's structure without taking the application offline or locking out user transactions. By decoupling database alterations from applic">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-zero-downtime-database-migration-works">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Zero-Downtime Database Migration Works - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-zero-downtime-database-migration-works" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Zero-downtime database schema migration is an operational strategy that allows engineering teams to update a live database's structure without taking the application offline or locking out user transactions. By decoupling database alterations from applic" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-zero-downtime-database-migration-works">How Zero-Downtime
+Database Migration Works</h1>
+<p>Zero-downtime database schema migration is an operational strategy
+that allows engineering teams to update a live database's structure
+without taking the application offline or locking out user transactions.
+By decoupling database alterations from application code deployments,
+developers ensure that the system remains fully operational throughout
+the transition. This guide explains the core principles, operational
+phases, and best practices that make seamless schema migrations possible
+in modern web operations.</p>
+<h3 id="the-problem-with-traditional-migrations">The Problem with
+Traditional Migrations</h3>
+<p>In traditional deployments, altering a database schema often requires
+taking an application offline. Running operations such as adding
+non-null columns, renaming fields, or creating indexes can place
+exclusive locks on large tables, preventing reads and writes.
+Furthermore, if a new version of the application depends on an altered
+schema, deploying the database and code simultaneously creates a window
+of failure where either the new code breaks against the old schema or
+existing instances crash against the new schema.</p>
+<h3 id="the-decoupling-strategy">The Decoupling Strategy</h3>
+<p>Zero-downtime migrations solve this by decoupling schema changes from
+application deployments. Instead of executing a single, all-at-once
+migration, changes are broken down into small, backward-compatible
+steps. The golden rule is that the database must always support both the
+currently running application version and the version about to be
+deployed.</p>
+<h3 id="the-expand-and-contract-pattern">The Expand and Contract
+Pattern</h3>
+<p>The industry standard for achieving zero-downtime updates is the
+"Expand and Contract" (or Parallel Run) pattern. This methodology breaks
+every breaking change into multiple distinct deployments across three
+main phases:</p>
+<ol type="1">
+<li><p><strong>Expand (Add New Structures):</strong> The database schema
+is expanded to accommodate the new requirements without altering
+existing structures. For example, if a column needs to be renamed from
+<code>phone</code> to <code>phone_number</code>, a new column named
+<code>phone_number</code> is added as nullable. Because the original
+<code>phone</code> column is untouched, the currently running
+application suffers no disruption.</p></li>
+<li><p><strong>Transition (Dual-Writing and Backfilling):</strong> A new
+version of the application is deployed that reads from the old structure
+but writes to both the old and new structures (dual-writing). Once
+dual-writing is active, background worker processes backfill legacy data
+into the new structure in small, non-blocking batches. Once all records
+are synchronized, the application is updated again to read exclusively
+from the new structure.</p></li>
+<li><p><strong>Contract (Remove Legacy Structures):</strong> After
+verifying that the new structure functions correctly and no running
+application code references the old column, a final cleanup migration is
+executed. The old column or table is dropped, completing the
+transition.</p></li>
+</ol>
+<h3 id="mitigating-table-locks">Mitigating Table Locks</h3>
+<p>A schema migration can still cause downtime if the database engine
+locks the table while modifying metadata or re-indexing. To prevent
+this, operations teams employ database-specific mechanisms:</p>
+<ul>
+<li><strong>Non-Blocking Indexing:</strong> Databases like PostgreSQL
+and MySQL support asynchronous index creation (e.g.,
+<code>CREATE INDEX CONCURRENTLY</code> in PostgreSQL) which builds
+indexes without holding an exclusive write lock.</li>
+<li><strong>Safe Column Additions:</strong> Modern database engines
+allow adding nullable columns or columns with default values as pure
+metadata changes, avoiding full table rewrites.</li>
+<li><strong>Online Schema Change Tools:</strong> For large-scale MySQL
+environments, tools such as GitHub's <code>gh-ost</code> or Percona’s
+<code>pt-online-schema-change</code> create a shadow copy of the table,
+apply the changes, stream replication events from the original to the
+copy, and swap the tables atomically using an instantaneous rename
+operation.</li>
+</ul>
+<h3 id="automation-and-safety-guardrails">Automation and Safety
+Guardrails</h3>
+<p>Reliable zero-downtime operations require automated guardrails within
+the continuous integration and deployment (CI/CD) pipeline. Migration
+linters analyze pull requests to flag unsafe operations, such as adding
+non-nullable columns without defaults or dropping active columns.
+Additionally, migration scripts should be automated using migration
+management tools (such as Flyway, Liquibase, or framework-level tools
+like Prisma and Django Migrations) that run independently of the
+application boot cycle to prevent race conditions during horizontal
+scaling.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using CSS Writing-Mode for Vertical Typography - web-development</title>
+    <meta name="description" content="The modern CSS writing-mode property is a cornerstone of internationalized web design, enabling native vertical text layout for East Asian and Central Asian scripts directly in the browser. By defining whether lines of text are laid out horizontally or v">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-css-writing-mode-for-vertical-typography">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using CSS Writing-Mode for Vertical Typography - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-css-writing-mode-for-vertical-typography" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The modern CSS writing-mode property is a cornerstone of internationalized web design, enabling native vertical text layout for East Asian and Central Asian scripts directly in the browser. By defining whether lines of text are laid out horizontally or v" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-css-writing-mode-for-vertical-typography">Using CSS
+Writing-Mode for Vertical Typography</h1>
+<p>The modern CSS <code>writing-mode</code> property is a cornerstone of
+internationalized web design, enabling native vertical text layout for
+East Asian and Central Asian scripts directly in the browser. By
+defining whether lines of text are laid out horizontally or vertically
+and dictating the direction in which blocks progress,
+<code>writing-mode</code> shifts web typography away from its
+historically Western, horizontal bias. This article examines how the
+property functions, how it pairs with logical properties and specialized
+orientation rules, and why it is essential for authentic global web
+development.</p>
+<h3 id="core-values-and-script-support">Core Values and Script
+Support</h3>
+<p>The <code>writing-mode</code> property governs the block flow
+direction of an element. The primary values supporting vertical scripts
+are:</p>
+<ul>
+<li><code>vertical-rl</code>: Text flows vertically from top to bottom,
+and blocks progress from right to left. This is the standard layout for
+traditional Chinese, Japanese (Tate-gaki), and Korean vertical
+text.</li>
+<li><code>vertical-lr</code>: Text flows vertically from top to bottom,
+but blocks progress from left to right. This is essential for scripts
+like traditional Mongolian and Phags-pa.</li>
+<li><code>horizontal-tb</code>: The default web standard, where text
+flows horizontally from left to right (or right to left) with blocks
+progressing top to bottom.</li>
+</ul>
+<p>When applied, the browser transforms the inline axis (the direction
+text reads) into a vertical line, automatically adjusting scrolling,
+line wrapping, and baseline alignments to match the native expectations
+of the target language.</p>
+<h3 id="integration-with-css-logical-properties">Integration with CSS
+Logical Properties</h3>
+<p>A critical evolution alongside <code>writing-mode</code> is the CSS
+Logical Properties and Values specification. Traditional physical
+properties like <code>width</code>, <code>height</code>,
+<code>margin-top</code>, or <code>padding-left</code> are bound to the
+physical screen. In a vertical layout, a physical
+<code>margin-top</code> affects the start of the line rather than the
+space between lines.</p>
+<p>Logical properties replace physical coordinates with flow-relative
+terms:</p>
+<ul>
+<li><code>inline-size</code> and <code>block-size</code> replace
+<code>width</code> and <code>height</code>. In <code>vertical-rl</code>,
+<code>block-size</code> controls horizontal width, while
+<code>inline-size</code> controls vertical height.</li>
+<li><code>margin-block-start</code> and <code>margin-block-end</code>
+control spacing before and after lines.</li>
+<li><code>margin-inline-start</code> and <code>margin-inline-end</code>
+govern spacing at the beginning and end of the text stream.</li>
+</ul>
+<p>Using logical properties ensures that layouts adapt fluidly across
+multilingual websites without requiring separate, physically mapped
+stylesheets for vertical layouts.</p>
+<h3 id="fine-tuning-vertical-typography">Fine-Tuning Vertical
+Typography</h3>
+<p>Vertical typography often contains mixed content, such as Latin
+words, abbreviations, or numbers embedded within East Asian text. Modern
+CSS provides complementary properties to handle these typographical
+nuances:</p>
+<ul>
+<li><strong><code>text-orientation</code></strong>: Controls the slant
+and posture of characters in a vertical line. Setting
+<code>text-orientation: mixed</code> rotates Latin glyphs 90 degrees
+while keeping East Asian glyphs upright. Setting it to
+<code>upright</code> forces all characters, including Latin letters, to
+stand upright in a single vertical column.</li>
+<li><strong><code>text-combine-upright</code></strong>: Implements the
+typographic practice known as <em>tate-chū-yoko</em>. This property
+allows developers to pack multiple horizontal characters—such as a
+two-digit number or a short abbreviation like "2026" or "AM"—into the
+space of a single vertical character cell, maintaining rhythm and
+readability.</li>
+</ul>
+<h3 id="impact-on-global-web-development">Impact on Global Web
+Development</h3>
+<p>Before the widespread support of <code>writing-mode</code>,
+developers relied on brittle hacks, such as rotating text containers
+using CSS transforms or exporting text as static images. These
+workarounds degraded accessibility, broke text selection, severely
+harmed search engine indexing, and created high maintenance
+overhead.</p>
+<p>With native <code>writing-mode</code> support across all modern
+rendering engines, vertical scripts are fully accessible to screen
+readers, searchable by crawlers, and natively responsive. Global web
+developers can now build culturally authentic, multi-script layouts that
+honor traditional typography while maintaining the full performance and
+accessibility of the modern open web.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

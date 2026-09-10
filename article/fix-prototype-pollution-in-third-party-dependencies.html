@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Prototype Pollution in Third-Party Dependencies - web-development</title>
+    <meta name="description" content="Client-side prototype pollution occurs when an attacker manipulates JavaScript's prototype-based inheritance to inject malicious properties into base objects, potentially leading to cross-site scripting (XSS), logic bypasses, or denial of service. Becaus">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/fix-prototype-pollution-in-third-party-dependencies">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fix Prototype Pollution in Third-Party Dependencies - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/fix-prototype-pollution-in-third-party-dependencies" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Client-side prototype pollution occurs when an attacker manipulates JavaScript's prototype-based inheritance to inject malicious properties into base objects, potentially leading to cross-site scripting (XSS), logic bypasses, or denial of service. Becaus" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="fix-prototype-pollution-in-third-party-dependencies">Fix
+Prototype Pollution in Third-Party Dependencies</h1>
+<p>Client-side prototype pollution occurs when an attacker manipulates
+JavaScript's prototype-based inheritance to inject malicious properties
+into base objects, potentially leading to cross-site scripting (XSS),
+logic bypasses, or denial of service. Because modern web applications
+heavily rely on third-party libraries for state management, data
+parsing, and utility functions, vulnerable external dependencies
+represent a primary attack vector. This article outlines the automated
+and manual methods web engineers use to detect prototype pollution
+within external dependencies and details actionable mitigation
+strategies to secure the client-side runtime.</p>
+<h3 id="how-external-dependencies-introduce-the-vulnerability">How
+External Dependencies Introduce the Vulnerability</h3>
+<p>Third-party dependencies frequently process complex or untrusted
+inputs using recursive operations. Prototype pollution typically
+surfaces in external packages that perform:</p>
+<ul>
+<li><strong>Deep Object Merging:</strong> Utility functions (such as
+outdated versions of <code>lodash.merge</code> or
+<code>merge-deep</code>) that recursively combine objects without
+verifying property keys.</li>
+<li><strong>Property Path Traversals:</strong> Functions that set nested
+object properties via string paths (e.g.,
+<code>set(obj, 'a.b.c', value)</code>).</li>
+<li><strong>Query String and JSON Parsing:</strong> Parsers that convert
+URL query strings or payloads into deep objects without sanitizing
+special keys.</li>
+</ul>
+<p>When these utilities encounter keys like <code>__proto__</code>,
+<code>constructor</code>, or <code>prototype</code>, they alter
+<code>Object.prototype</code> directly, causing every object in the
+application runtime to inherit the injected properties.</p>
+<h3 id="detecting-prototype-pollution-in-dependencies">Detecting
+Prototype Pollution in Dependencies</h3>
+<p>Engineers use a combination of static analysis, dynamic scanning, and
+runtime monitoring to uncover vulnerable dependencies.</p>
+<h4 id="1-software-composition-analysis-sca">1. Software Composition
+Analysis (SCA)</h4>
+<p>Automated dependency scanning flags known vulnerabilities cataloged
+in public databases (like the National Vulnerability Database):</p>
+<ul>
+<li><strong>Package Manager Audits:</strong> Running native tools such
+as <code>npm audit</code> or <code>yarn audit</code> during build cycles
+identifies known CVEs in direct and transitive dependencies.</li>
+<li><strong>Continuous SCA Platforms:</strong> Tools such as Snyk,
+Dependabot, and SonarQube integrate into CI/CD pipelines to block builds
+containing dependencies with documented prototype pollution flaws.</li>
+</ul>
+<h4 id="2-dynamic-analysis-and-fuzzing">2. Dynamic Analysis and
+Fuzzing</h4>
+<p>Because SCA only identifies <em>known</em> CVEs, dynamic testing
+identifies zero-day or proprietary library issues:</p>
+<ul>
+<li><strong>Automated Runtime Probing:</strong> Automated browser tests
+(via Puppeteer or Playwright) inject payloads such as
+<code>?__proto__[polluted]=true</code> or
+<code>{"__proto__": {"polluted": true}}</code> into entry fields, API
+responses, and URL parameters. The test then evaluates
+<code>window.polluted</code> or <code>({}).polluted</code> to determine
+if the property was globally assigned.</li>
+<li><strong>Browser Security Extensions:</strong> Tools like the
+Prototype Pollution Scanner or DOM Invader (built into Burp Suite)
+automatically instrument the DOM and JavaScript environment to trace
+property creation back to specific library execution paths.</li>
+</ul>
+<h4 id="3-static-application-security-testing-sast">3. Static
+Application Security Testing (SAST)</h4>
+<p>SAST tools inspect source code and third-party vendor bundles for
+insecure patterns, such as recursive assignment loops:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// A typical vulnerable pattern flagged by SAST</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">merge</span>(target<span class="op">,</span> source) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> key <span class="kw">in</span> source) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="kw">typeof</span> source[key] <span class="op">===</span> <span class="st">&#39;object&#39;</span>) {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      target[key] <span class="op">=</span> <span class="fu">merge</span>(target[key] <span class="op">||</span> {}<span class="op">,</span> source[key])<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      target[key] <span class="op">=</span> source[key]<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> target<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+<h3 id="mitigating-client-side-prototype-pollution">Mitigating
+Client-Side Prototype Pollution</h3>
+<p>Remediating prototype pollution requires defensive programming,
+library maintenance, and runtime hardening.</p>
+<h4 id="1-update-or-replace-vulnerable-packages">1. Update or Replace
+Vulnerable Packages</h4>
+<p>The most direct remediation is keeping dependencies up to date. When
+a vulnerability is reported in an external package:</p>
+<ul>
+<li>Upgrade to the patched version immediately.</li>
+<li>If a package is unmaintained, replace it with native modern
+JavaScript methods (e.g., using <code>Object.assign()</code> or the
+spread operator <code>{ ...obj }</code> for shallow merges, or
+<code>structuredClone()</code> for deep copying).</li>
+</ul>
+<h4 id="2-freeze-the-prototype-at-runtime">2. Freeze the Prototype at
+Runtime</h4>
+<p>Freezing the prototype prevents any script—first-party or
+third-party—from modifying built-in methods or adding global
+properties:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">freeze</span>(<span class="bu">Object</span><span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="bu">Object</span><span class="op">.</span><span class="fu">freeze</span>(<span class="bu">Array</span><span class="op">.</span><span class="at">prototype</span>)<span class="op">;</span></span></code></pre></div>
+<p><em>Note:</em> This should be executed as early as possible in the
+application lifecycle before external scripts load. While highly
+effective, engineers must thoroughly test legacy libraries, as some
+depend on legitimately modifying prototypes at runtime.</p>
+<h4 id="3-use-safe-data-structures">3. Use Safe Data Structures</h4>
+<p>When handling dynamic key-value pairs or untrusted inputs, use
+structures that do not possess a prototype chain:</p>
+<ul>
+<li><strong>Prototype-Free Objects:</strong> Create objects with a
+<code>null</code> prototype:
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeMap <span class="op">=</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">create</span>(<span class="kw">null</span>)<span class="op">;</span></span></code></pre></div></li>
+<li><strong>Modern Map Objects:</strong> Use JavaScript's native
+<code>Map</code> collections, which do not fall back to
+<code>Object.prototype</code>:
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> dynamicData <span class="op">=</span> <span class="kw">new</span> <span class="bu">Map</span>()<span class="op">;</span></span></code></pre></div></li>
+</ul>
+<h4 id="4-enforce-input-validation-and-key-sanitization">4. Enforce
+Input Validation and Key Sanitization</h4>
+<p>Before passing dynamic objects to third-party utility functions,
+reject or strip hazardous properties:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">sanitizeKeys</span>(obj) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> dangerousKeys <span class="op">=</span> [<span class="st">&#39;__proto__&#39;</span><span class="op">,</span> <span class="st">&#39;constructor&#39;</span><span class="op">,</span> <span class="st">&#39;prototype&#39;</span>]<span class="op">;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">const</span> key <span class="kw">of</span> <span class="bu">Object</span><span class="op">.</span><span class="fu">keys</span>(obj)) {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (dangerousKeys<span class="op">.</span><span class="fu">includes</span>(key)) {</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>      <span class="kw">delete</span> obj[key]<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (<span class="kw">typeof</span> obj[key] <span class="op">===</span> <span class="st">&#39;object&#39;</span> <span class="op">&amp;&amp;</span> obj[key] <span class="op">!==</span> <span class="kw">null</span>) {</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>      <span class="fu">sanitizeKeys</span>(obj[key])<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> obj<span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="5-defense-in-depth-with-content-security-policy-csp">5.
+Defense-in-Depth with Content Security Policy (CSP)</h4>
+<p>Even if prototype pollution occurs, attackers typically require an
+execution "gadget" (such as dynamic script generation) to escalate the
+vulnerability into Cross-Site Scripting (XSS). A strict Content Security
+Policy minimizes the impact:</p>
+<ul>
+<li>Disallow <code>unsafe-eval</code>.</li>
+<li>Restrict script execution to cryptographically random values
+(nonces) or hashes.</li>
+<li>Enforce <code>require-trusted-types-for 'script'</code> to ensure
+that DOM-modifying APIs only accept typed and validated data, stopping
+polluted properties from generating arbitrary executable code.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

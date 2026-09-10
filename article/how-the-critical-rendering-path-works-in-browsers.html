@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Critical Rendering Path Works in Browsers - web-development</title>
+    <meta name="description" content="The critical rendering path is the sequence of steps browser rendering engines execute to convert raw HTML, CSS, and JavaScript files into visible pixels on the screen. This process encompasses five primary stages: constructing the Document Object Model">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-the-critical-rendering-path-works-in-browsers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How the Critical Rendering Path Works in Browsers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-the-critical-rendering-path-works-in-browsers" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The critical rendering path is the sequence of steps browser rendering engines execute to convert raw HTML, CSS, and JavaScript files into visible pixels on the screen. This process encompasses five primary stages: constructing the Document Object Model" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-the-critical-rendering-path-works-in-browsers">How the
+Critical Rendering Path Works in Browsers</h1>
+<p>The critical rendering path is the sequence of steps browser
+rendering engines execute to convert raw HTML, CSS, and JavaScript files
+into visible pixels on the screen. This process encompasses five primary
+stages: constructing the Document Object Model (DOM), building the CSS
+Object Model (CSSOM), combining them into the Render Tree, calculating
+the Layout, and Painting the visual elements. Understanding how browsers
+process each phase is essential for optimizing web page load speeds,
+minimizing render-blocking resources, and improving overall front-end
+performance.</p>
+<h3 id="1-document-object-model-dom-construction">1. Document Object
+Model (DOM) Construction</h3>
+<p>When a browser receives the initial HTML document via network
+packets, it processes the raw bytes into the DOM tree through four
+sequential sub-steps:</p>
+<ol type="1">
+<li><strong>Conversion:</strong> The browser reads the raw bytes from
+the disk or network and translates them into individual characters based
+on the document's specified encoding (such as UTF-8).</li>
+<li><strong>Tokenization:</strong> The engine parses the character
+stream into distinct tokens dictated by the W3C HTML5 standard (such as
+<code>&lt;html&gt;</code>, <code>&lt;body&gt;</code>, and specific tag
+attributes).</li>
+<li><strong>Lexing (Node Creation):</strong> Tokens are converted into
+objects with defined properties and rules, producing individual DOM
+nodes.</li>
+<li><strong>DOM Tree Construction:</strong> Because HTML tags define
+parent-child and sibling relationships, the browser links these nodes
+into a tree structure that captures the full hierarchy of the
+document.</li>
+</ol>
+<p>The DOM creation is an incremental process; the browser can begin
+processing parts of the HTML as they arrive over the wire.</p>
+<h3 id="2-css-object-model-cssom-construction">2. CSS Object Model
+(CSSOM) Construction</h3>
+<p>While the browser processes HTML, it encounters external stylesheet
+links (<code>&lt;link rel="stylesheet"&gt;</code>) and inline
+<code>&lt;style&gt;</code> tags. The browser requests and reads the raw
+CSS bytes, translating them through the same conversion, tokenization,
+and node-creation process used for HTML.</p>
+<p>The resulting nodes are linked into the CSSOM, a tree structure
+mapping style rules to elements. Unlike HTML parsing, CSSOM construction
+is not incremental. Because styles cascade and inherit downward, the
+browser cannot use a partial CSSOM; it must process all CSS rules fully
+before moving to the next stage. As a result, CSS is considered a
+render-blocking resource.</p>
+<h3 id="3-render-tree-construction">3. Render Tree Construction</h3>
+<p>Once the browser has created both the DOM and the CSSOM, it merges
+them to produce the Render Tree. The Render Tree captures only the nodes
+required to render the page visually, along with their computed
+styles.</p>
+<p>To build the Render Tree, the engine traverses the DOM from the root
+and performs two actions:</p>
+<ul>
+<li>It skips non-visual nodes that do not produce rendered output, such
+as <code>&lt;head&gt;</code>, <code>&lt;script&gt;</code>, and
+<code>&lt;meta&gt;</code> tags.</li>
+<li>It skips elements hidden via CSS rules, such as
+<code>display: none;</code>. In contrast, elements styled with
+<code>visibility: hidden</code> or <code>opacity: 0</code> are retained
+because they still occupy space in the layout.</li>
+</ul>
+<p>Each visible node in the Render Tree is paired with its matching
+computed CSSOM styles.</p>
+<h3 id="4-layout-reflow">4. Layout (Reflow)</h3>
+<p>With the Render Tree constructed, the browser executes the Layout
+phase (often referred to as Reflow). During this stage, the engine
+calculates the exact geometric position, dimensions, and relationship of
+every visible element relative to the device's viewport.</p>
+<p>The browser starts at the root of the Render Tree and works downward,
+determining box models, margins, padding, line heights, and absolute
+pixel coordinates. Layout calculations depend directly on viewport
+dimensions; modifying device orientation, resizing the browser window,
+or dynamically altering element geometry forces the browser to
+recalculate these positions.</p>
+<h3 id="5-paint-rasterization-and-compositing">5. Paint (Rasterization)
+and Compositing</h3>
+<p>The final phase transforms the computed layout data into actual
+pixels on the screen:</p>
+<ul>
+<li><strong>Painting:</strong> The engine divides the Render Tree into
+visual layers based on styling properties like <code>z-index</code>,
+transforms, and fixed positioning. It then draws text, colors, borders,
+shadows, and images onto these individual layers.</li>
+<li><strong>Compositing:</strong> The browser uploads these layers to
+the GPU. The GPU combines and arranges the layers in the correct
+stacking order and draws the final image onto the user's screen.</li>
+</ul>
+<h3 id="the-role-of-javascript-in-the-path">The Role of JavaScript in
+the Path</h3>
+<p>JavaScript can query and manipulate both the DOM and CSSOM. When the
+HTML parser encounters a standard <code>&lt;script&gt;</code> tag, DOM
+construction pauses immediately while the browser downloads and executes
+the script.</p>
+<p>Furthermore, if the browser is currently downloading or parsing CSS
+when a script is encountered, it delays script execution until the CSSOM
+is fully built to ensure the script does not access stale style
+properties. Modern optimization patterns—such as adding
+<code>async</code> or <code>defer</code> attributes to scripts, inlining
+critical CSS, and preloading key assets—prevent JavaScript and CSS from
+stalling this pipeline, allowing the browser to traverse the critical
+rendering path as quickly as possible.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

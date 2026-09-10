@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protecting GraphQL from Deeply Nested DoS Attacks - web-development</title>
+    <meta name="description" content="GraphQL's flexible querying capabilities allow clients to request precisely the data they need, but this flexibility makes backends vulnerable to denial-of-service (DoS) attacks through deeply nested queries. Because GraphQL schemas often contain cyclic">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/protecting-graphql-from-deeply-nested-dos-attacks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Protecting GraphQL from Deeply Nested DoS Attacks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/protecting-graphql-from-deeply-nested-dos-attacks" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="GraphQL's flexible querying capabilities allow clients to request precisely the data they need, but this flexibility makes backends vulnerable to denial-of-service (DoS) attacks through deeply nested queries. Because GraphQL schemas often contain cyclic" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="protecting-graphql-from-deeply-nested-dos-attacks">Protecting
+GraphQL from Deeply Nested DoS Attacks</h1>
+<p>GraphQL's flexible querying capabilities allow clients to request
+precisely the data they need, but this flexibility makes backends
+vulnerable to denial-of-service (DoS) attacks through deeply nested
+queries. Because GraphQL schemas often contain cyclic or recursive
+relationships—such as a user having friends who also have friends—a
+malicious client can craft an exponentially complex query that consumes
+excessive server and database resources. To prevent these
+vulnerabilities, web developers implement mechanisms such as query depth
+limiting, query cost analysis, pagination bounds, execution timeouts,
+and persisted queries.</p>
+<h3 id="maximum-query-depth-limiting">Maximum Query Depth Limiting</h3>
+<p>Query depth limiting is the most direct defense against deeply nested
+attacks. Before executing an incoming operation, the GraphQL server
+analyzes the query’s Abstract Syntax Tree (AST) to determine its maximum
+depth. Each nested selection set increments the depth counter. If the
+query's depth exceeds a predefined threshold (for instance, a depth
+limit of 5 to 7 levels), the server rejects the request immediately
+without running any database resolvers. Libraries such as
+<code>graphql-depth-limit</code> for Node.js or native depth-validation
+rules in engines like Apollo Server make this mechanism straightforward
+to implement.</p>
+<h3 id="query-cost-analysis-and-complexity-calculation">Query Cost
+Analysis and Complexity Calculation</h3>
+<p>While depth limiting prevents deep trees, it does not prevent "wide"
+attacks where a query asks for dozens of expensive root or secondary
+fields. Query cost analysis solves this by assigning a numerical score
+or weight to each field based on its computation or retrieval cost.
+Resolvers that perform database joins, external API calls, or return
+large lists receive higher cost values. The server parses the AST,
+calculates the cumulative cost (often taking arguments like
+<code>first</code> or <code>limit</code> into account as multipliers),
+and rejects any query exceeding a maximum complexity budget.</p>
+<h3 id="enforcing-pagination-and-list-limits">Enforcing Pagination and
+List Limits</h3>
+<p>Nested attacks often rely on unbounded array fields to multiply the
+server's work at each level. If a schema allows retrieving a list of
+entities without an upper bound, a client can combine moderate nesting
+with large batches to cause memory exhaustion. Protecting against this
+requires mandating pagination arguments (<code>first</code>,
+<code>last</code>, or <code>limit</code>) on all list fields and
+strictly enforcing a maximum permissible page size at the schema or
+validation level.</p>
+<h3 id="execution-and-resolver-timeouts">Execution and Resolver
+Timeouts</h3>
+<p>Even with static AST analysis, certain queries may cause database
+stalls or unpredicted resource spikes. Setting strict execution timeouts
+at both the application server level and the database level ensures that
+runaway queries are forcefully terminated. In GraphQL, this can be
+implemented through context cancellation, resolver middleware that
+monitors execution duration, or database query timeout directives.</p>
+<h3 id="persisted-queries-and-whitelisting">Persisted Queries and
+Whitelisting</h3>
+<p>For applications where the GraphQL backend serves known first-party
+clients (such as mobile apps or internal web frontends), persisted
+queries provide the strongest protection against arbitrary query
+attacks. During the build process, the client compiles its approved
+queries and generates unique cryptographic hashes for each. In
+production, the client sends only the hash, and the server executes the
+corresponding pre-vetted query. The server is configured to reject any
+arbitrary, unhashed GraphQL queries from the public, entirely
+eliminating the risk of deeply nested DoS attacks.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

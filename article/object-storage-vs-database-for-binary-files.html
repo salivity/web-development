@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Storage vs Database for Binary Files - web-development</title>
+    <meta name="description" content="When designing modern web architectures, development teams must decide whether to store binary large objects (BLOBs)—such as images, videos, audio, and documents—directly inside a database or in dedicated object storage. This article compares both ap">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/object-storage-vs-database-for-binary-files">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Object Storage vs Database for Binary Files - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/object-storage-vs-database-for-binary-files" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When designing modern web architectures, development teams must decide whether to store binary large objects (BLOBs)—such as images, videos, audio, and documents—directly inside a database or in dedicated object storage. This article compares both ap" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="object-storage-vs-database-for-binary-files">Object Storage vs
+Database for Binary Files</h1>
+<p>When designing modern web architectures, development teams must
+decide whether to store binary large objects (BLOBs)—such as images,
+videos, audio, and documents—directly inside a database or in dedicated
+object storage. This article compares both approaches across crucial
+technical factors, including cost, query performance, database backup
+complexity, bandwidth handling, and transactional consistency, providing
+a clear framework to help teams choose the right storage architecture
+for their applications.</p>
+<h3 id="cost-and-scalability">Cost and Scalability</h3>
+<p>Object storage solutions (such as Amazon S3, Google Cloud Storage, or
+Azure Blob Storage) are significantly cheaper per gigabyte than the
+high-performance SSD storage typically provisioned for relational and
+NoSQL databases. Object storage is built for petabyte-scale horizontal
+elasticity without capacity planning.</p>
+<p>In contrast, storing binary files in databases increases database
+disk usage exponentially. Databases require CPU, RAM, and IOPS to manage
+stored data. Consuming these expensive compute resources simply to house
+static binary data rapidly inflates infrastructure costs without
+providing proportional value.</p>
+<h3 id="performance-and-bandwidth">Performance and Bandwidth</h3>
+<p>Serving binary files from a database burdens the database engine.
+Retrieving large files consumes database connection pools, memory
+buffers, and network throughput, leading to connection starvation for
+routine read and write queries.</p>
+<p>Object storage decouples asset delivery from the application and
+database tiers. By combining object storage with a Content Delivery
+Network (CDN), files are cached and served geographically closer to end
+users. This offloads virtually all egress bandwidth and processing
+overhead from application servers and databases.</p>
+<h3 id="backup-recovery-and-maintenance">Backup, Recovery, and
+Maintenance</h3>
+<p>Database operational health relies on fast, predictable maintenance
+cycles. Including gigabytes or terabytes of binary data inside database
+tables leads to "database bloat," which severely degrades maintenance
+routines:</p>
+<ul>
+<li><strong>Backup Duration:</strong> Full and incremental backups take
+significantly longer to complete.</li>
+<li><strong>Disaster Recovery:</strong> Recovery Time Objectives (RTO)
+suffer because restoring a multi-terabyte database to a new instance can
+take hours or days.</li>
+<li><strong>Replication Lag:</strong> Replicating large binary updates
+to read replicas increases replication lag and strains network
+connections between nodes.</li>
+</ul>
+<p>Using object storage keeps databases small, allowing database backups
+and point-in-time restores to execute quickly and reliably. Object
+storage platforms independently handle durability and redundancy through
+automated multi-region replication.</p>
+<h3 id="access-control-and-application-delivery">Access Control and
+Application Delivery</h3>
+<p>Serving files from a database requires an application server to query
+the database, buffer the binary payload into memory, and stream it to
+the client over HTTP. This consumes valuable application server
+threads.</p>
+<p>Object storage simplifies asset delivery through features like
+pre-signed URLs, allowing authorized users to upload or download files
+directly to and from the storage provider securely. This bypasses both
+the application layer and the database entirely during file transfers,
+improving application throughput.</p>
+<h3 id="transactional-integrity-and-atomicity">Transactional Integrity
+and Atomicity</h3>
+<p>The primary advantage of storing binaries directly in a database is
+ACID compliance. If an operation requires that a record and its
+associated binary file be created, updated, or rolled back
+simultaneously, storing the BLOB within the same database transaction
+guarantees absolute atomicity.</p>
+<p>When using object storage, teams must manage atomicity manually. If
+an upload succeeds but the subsequent database record creation fails,
+orphaned files can remain in the storage bucket. Teams must mitigate
+this by implementing cleanup jobs, two-phase commits, or event-driven
+reconciliation workflows.</p>
+<h3 id="the-recommended-architecture">The Recommended Architecture</h3>
+<p>For almost all modern web applications, the industry standard pattern
+is a hybrid approach:</p>
+<ol type="1">
+<li>Store the binary file in <strong>object storage</strong>.</li>
+<li>Store the resulting file URL, metadata (size, MIME type, upload
+timestamp), and relational keys in the <strong>database</strong>.</li>
+<li>Serve the assets via a <strong>CDN</strong> utilizing pre-signed
+URLs or token-based authentication for restricted files.</li>
+</ol>
+<p>Direct database BLOB storage should be reserved exclusively for edge
+cases involving tiny files (under a few kilobytes) where strict
+transactional consistency is mandatory and the total volume of data will
+remain permanently low.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

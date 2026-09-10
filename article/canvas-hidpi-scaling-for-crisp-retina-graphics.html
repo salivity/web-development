@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas HiDPI Scaling for Crisp Retina Graphics - web-development</title>
+    <meta name="description" content="HTML5 canvas elements often appear blurry or pixelated on modern high-resolution screens because of a mismatch between logical display pixels and the screen's physical hardware pixels. This article explains the underlying cause of this distortion, how hi">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/canvas-hidpi-scaling-for-crisp-retina-graphics">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Canvas HiDPI Scaling for Crisp Retina Graphics - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/canvas-hidpi-scaling-for-crisp-retina-graphics" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="HTML5 canvas elements often appear blurry or pixelated on modern high-resolution screens because of a mismatch between logical display pixels and the screen's physical hardware pixels. This article explains the underlying cause of this distortion, how hi" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="canvas-hidpi-scaling-for-crisp-retina-graphics">Canvas HiDPI
+Scaling for Crisp Retina Graphics</h1>
+<p>HTML5 canvas elements often appear blurry or pixelated on modern
+high-resolution screens because of a mismatch between logical display
+pixels and the screen's physical hardware pixels. This article explains
+the underlying cause of this distortion, how high-density displays
+handle rendering, and the step-by-step implementation of HiDPI (High
+Dots Per Inch) scaling to achieve sharp vector shapes, smooth lines, and
+crisp typography on Retina displays.</p>
+<h3 id="the-cause-of-blurry-canvas-elements">The Cause of Blurry Canvas
+Elements</h3>
+<p>When you define an HTML5 canvas with specific <code>width</code> and
+<code>height</code> attributes (for example, <code>width="400"</code>
+and <code>height="300"</code>), the browser creates an internal bitmap
+buffer of 400 by 300 pixels.</p>
+<p>Modern high-density displays, such as Apple’s Retina screens, utilize
+a higher physical pixel density than standard displays. These devices
+rely on a metric called the Device Pixel Ratio
+(<code>window.devicePixelRatio</code>, or DPR), which indicates the
+ratio between physical hardware pixels and logical CSS pixels. On a
+standard display, the DPR is 1. On a Retina display, the DPR is commonly
+2, 3, or higher.</p>
+<p>When a canvas with standard dimensions renders on a 2x Retina screen,
+the browser must map a single bitmap pixel across a 2x2 grid of four
+physical pixels. To fill this space, the browser upscales and
+interpolates the bitmap image, resulting in visibly soft edges, fuzzy
+text, and pixelated graphics.</p>
+<h3 id="how-hidpi-scaling-fixes-the-problem">How HiDPI Scaling Fixes the
+Problem</h3>
+<p>HiDPI scaling eliminates blurriness by decoupling the canvas's
+internal drawing buffer from its visual layout size. The solution
+consists of three primary steps:</p>
+<ol type="1">
+<li><strong>Detect the Device Pixel Ratio:</strong> Determine the ratio
+using <code>window.devicePixelRatio || 1</code>.</li>
+<li><strong>Increase Internal Resolution:</strong> Multiply the canvas
+element's internal bitmap dimensions (<code>canvas.width</code> and
+<code>canvas.height</code>) by the DPR. This increases the total number
+of hardware pixels available for drawing.</li>
+<li><strong>Constrain Visual Display Size:</strong> Set the canvas
+element's CSS dimensions (<code>canvas.style.width</code> and
+<code>canvas.style.height</code>) to the original logical size. This
+ensures the canvas takes up the correct layout space on the page.</li>
+<li><strong>Normalize the Coordinate System:</strong> Scale the canvas
+2D rendering context using <code>context.scale(dpr, dpr)</code>. This
+allows developers to write standard drawing coordinates without manually
+multiplying every value by the DPR.</li>
+</ol>
+<h3 id="implementation">Implementation</h3>
+<p>The following standard pattern handles HiDPI scaling
+automatically:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> canvas <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;myCanvas&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> ctx <span class="op">=</span> canvas<span class="op">.</span><span class="fu">getContext</span>(<span class="st">&#39;2d&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 1: Get the device pixel ratio</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> dpr <span class="op">=</span> <span class="bu">window</span><span class="op">.</span><span class="at">devicePixelRatio</span> <span class="op">||</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">// Define the logical display size</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> logicalWidth <span class="op">=</span> <span class="dv">400</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> logicalHeight <span class="op">=</span> <span class="dv">300</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 2: Set the internal buffer size to match physical pixels</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>canvas<span class="op">.</span><span class="at">width</span> <span class="op">=</span> logicalWidth <span class="op">*</span> dpr<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>canvas<span class="op">.</span><span class="at">height</span> <span class="op">=</span> logicalHeight <span class="op">*</span> dpr<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 3: Set the CSS display size to match logical pixels</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>canvas<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">width</span> <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span>logicalWidth<span class="sc">}</span><span class="vs">px`</span><span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>canvas<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">height</span> <span class="op">=</span> <span class="vs">`</span><span class="sc">${</span>logicalHeight<span class="sc">}</span><span class="vs">px`</span><span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="co">// Step 4: Scale the drawing context</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>ctx<span class="op">.</span><span class="fu">scale</span>(dpr<span class="op">,</span> dpr)<span class="op">;</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co">// Now you can draw using logical coordinates</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>ctx<span class="op">.</span><span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#0070f3&#39;</span><span class="op">;</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>ctx<span class="op">.</span><span class="fu">fillRect</span>(<span class="dv">50</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>ctx<span class="op">.</span><span class="at">font</span> <span class="op">=</span> <span class="st">&#39;16px sans-serif&#39;</span><span class="op">;</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>ctx<span class="op">.</span><span class="at">fillStyle</span> <span class="op">=</span> <span class="st">&#39;#000000&#39;</span><span class="op">;</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>ctx<span class="op">.</span><span class="fu">fillText</span>(<span class="st">&#39;Crisp rendering on Retina&#39;</span><span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">180</span>)<span class="op">;</span></span></code></pre></div>
+<h3 id="key-considerations">Key Considerations</h3>
+<ul>
+<li><strong>Dynamic Resizing:</strong> When handling window resize
+events, recalculate the DPR and reapply the width, height, and context
+scale, as DPR can change if a user moves a browser window between
+different monitors.</li>
+<li><strong>Performance Overhead:</strong> Multiplying the internal
+buffer size on a 3x screen increases the pixel count by a factor of
+nine, which requires more GPU memory and processing power. Keep
+performance in mind when scaling intensive, real-time animations.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

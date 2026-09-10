@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Secure Random Numbers with Web Crypto API - web-development</title>
+    <meta name="description" content="This article explores how modern web applications generate cryptographically secure pseudo-random numbers using the Web Cryptography API. It breaks down the mechanics of the crypto.getRandomValues() method, details how modern browsers bridge JavaScript w">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/generating-secure-random-numbers-with-web-crypto-api">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generating Secure Random Numbers with Web Crypto API - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/generating-secure-random-numbers-with-web-crypto-api" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how modern web applications generate cryptographically secure pseudo-random numbers using the Web Cryptography API. It breaks down the mechanics of the crypto.getRandomValues() method, details how modern browsers bridge JavaScript w" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="generating-secure-random-numbers-with-web-crypto-api">Generating
+Secure Random Numbers with Web Crypto API</h1>
+<p>This article explores how modern web applications generate
+cryptographically secure pseudo-random numbers using the Web
+Cryptography API. It breaks down the mechanics of the
+<code>crypto.getRandomValues()</code> method, details how modern
+browsers bridge JavaScript with underlying operating system entropy
+sources, contrasts secure generation with standard pseudo-random
+functions like <code>Math.random()</code>, and demonstrates proper
+implementation patterns for sensitive web security tasks.</p>
+<h2 id="the-limitation-of-mathrandom">The Limitation of
+<code>Math.random()</code></h2>
+<p>Standard JavaScript provides <code>Math.random()</code> for basic
+randomness. However, <code>Math.random()</code> relies on deterministic
+algorithms—most commonly variations of xorshift128+—designed for speed
+and uniform distribution rather than unpredictability. Because its
+internal state can be deduced after observing a short sequence of
+outputs, it is entirely unsuitable for security-sensitive contexts like
+session tokens, cryptographic nonces, password salts, or key
+generation.</p>
+<h2 id="the-web-cryptography-api-solution">The Web Cryptography API
+Solution</h2>
+<p>To address this limitation, the W3C defined the Web Cryptography API,
+exposed globally in modern browsers via <code>window.crypto</code> (or
+<code>crypto</code> in secure contexts and Web Workers). Within this
+interface, the <code>crypto.getRandomValues()</code> method produces
+cryptographically secure pseudo-random numbers (CSPRNG).</p>
+<p>Unlike basic pseudo-random number generators (PRNGs), a CSPRNG
+satisfies two core security properties:</p>
+<ol type="1">
+<li><strong>Next-Bit Unpredictability:</strong> Given the first
+<em>k</em> bits of a random sequence, an attacker with polynomial
+computing power cannot predict the <em>(k+1)</em>-th bit with a
+probability significantly greater than 50%.</li>
+<li><strong>State Compromise Resistance:</strong> If the internal state
+of the generator is compromised, an attacker cannot reconstruct prior
+random outputs (forward secrecy) or predict future outputs if new
+entropy is continuously injected.</li>
+</ol>
+<h2 id="underlying-operating-system-entropy-sources">Underlying
+Operating System Entropy Sources</h2>
+<p>The browser itself does not independently generate cryptographic
+randomness from scratch. Instead, the Web Cryptography API acts as an
+abstraction layer that interfaces directly with the host operating
+system's kernel CSPRNG.</p>
+<p>When <code>crypto.getRandomValues()</code> is invoked, the browser
+queries the OS-level entropy pool, which continuously collects physical
+noise from hardware sources (such as thermal sensor variations,
+keystroke timings, disk I/O interrupt jitter, and network packet
+arrivals). Depending on the platform, the browser taps into specific
+system APIs:</p>
+<ul>
+<li><strong>Linux / Android:</strong> Reads from
+<code>/dev/urandom</code> or uses the <code>getrandom()</code> system
+call.</li>
+<li><strong>Windows:</strong> Calls the CryptoAPI or Cryptography API:
+Next Generation (CNG) via <code>BCryptGenRandom</code> or
+<code>CryptGenRandom</code>.</li>
+<li><strong>macOS / iOS:</strong> Interfaces with the Security framework
+via <code>SecRandomCopyBytes</code> or the kernel-level
+<code>getentropy()</code>.</li>
+</ul>
+<p>These underlying operating system routines feed collected
+environmental entropy through robust cryptographic algorithms (such as
+AES-CTR-DRBG, HMAC-DRBG, or ChaCha20) to ensure continuous,
+non-blocking, and statistically sound randomness.</p>
+<h2 id="implementation-with-cryptogetrandomvalues">Implementation with
+<code>crypto.getRandomValues()</code></h2>
+<p>The <code>crypto.getRandomValues()</code> method populates an
+existing JavaScript <code>ArrayBufferView</code> (such as a typed
+integer array) in place with cryptographically secure random bytes.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Generate a 16-byte cryptographically secure token</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> randomBytes <span class="op">=</span> <span class="kw">new</span> <span class="bu">Uint8Array</span>(<span class="dv">16</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="at">crypto</span><span class="op">.</span><span class="fu">getRandomValues</span>(randomBytes)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Convert to a hexadecimal string representation</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> secureToken <span class="op">=</span> <span class="bu">Array</span><span class="op">.</span><span class="fu">from</span>(randomBytes<span class="op">,</span> byte <span class="kw">=&gt;</span> </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  byte<span class="op">.</span><span class="fu">toString</span>(<span class="dv">16</span>)<span class="op">.</span><span class="fu">padStart</span>(<span class="dv">2</span><span class="op">,</span> <span class="st">&#39;0&#39;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>)<span class="op">.</span><span class="fu">join</span>(<span class="st">&#39;&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(secureToken)<span class="op">;</span></span></code></pre></div>
+<h3 id="supported-typed-arrays">Supported Typed Arrays</h3>
+<p>The method accepts instances of integer-based typed arrays:</p>
+<ul>
+<li><code>Int8Array</code>, <code>Uint8Array</code>,
+<code>Uint8ClampedArray</code></li>
+<li><code>Int16Array</code>, <code>Uint16Array</code></li>
+<li><code>Int32Array</code>, <code>Uint32Array</code></li>
+<li><code>BigInt64Array</code>, <code>BigUint64Array</code></li>
+</ul>
+<p>It does not accept floating-point arrays such as
+<code>Float32Array</code> or <code>Float64Array</code>. Floating-point
+representations introduce rounding and bit-pattern complexities that
+undermine uniform entropy distribution.</p>
+<h2 id="technical-constraints-and-best-practices">Technical Constraints
+and Best Practices</h2>
+<ul>
+<li><strong>Quotas and Size Limits:</strong> The
+<code>crypto.getRandomValues()</code> method enforces a strict
+65,536-byte (64 KiB) limit per execution call. Attempting to fill a
+buffer larger than this limit throws a <code>QuotaExceededError</code>
+DOMException to prevent thread blocking and entropy starvation.
+Applications requiring more data must make sequential calls with
+appropriately sized buffers.</li>
+<li><strong>Context Restrictions:</strong> While
+<code>crypto.getRandomValues()</code> is available in most contexts, the
+broader Web Cryptography API (<code>crypto.subtle</code>) is strictly
+restricted to secure contexts (HTTPS or <code>localhost</code>).</li>
+<li><strong>Range Normalization:</strong> To generate random integers
+within a specific range without introducing modulo bias, developers
+should combine <code>crypto.getRandomValues()</code> with rejection
+sampling algorithms rather than using the modulo operator directly
+across raw random bytes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

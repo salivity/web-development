@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CSS Pointer-Events Affects Event Bubbling - web-development</title>
+    <meta name="description" content="The CSS pointer-events property determines whether an HTML element can become the target of mouse, touch, and stylus interactions. While often thought of as an event-cancellation tool, it primarily affects the browser's hit-testing process rather than mo">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-css-pointer-events-affects-event-bubbling">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CSS Pointer-Events Affects Event Bubbling - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-css-pointer-events-affects-event-bubbling" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS pointer-events property determines whether an HTML element can become the target of mouse, touch, and stylus interactions. While often thought of as an event-cancellation tool, it primarily affects the browser's hit-testing process rather than mo" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-css-pointer-events-affects-event-bubbling">How CSS
+Pointer-Events Affects Event Bubbling</h1>
+<p>The CSS <code>pointer-events</code> property determines whether an
+HTML element can become the target of mouse, touch, and stylus
+interactions. While often thought of as an event-cancellation tool, it
+primarily affects the browser's hit-testing process rather than
+modifying the DOM event bubbling mechanism directly. This article
+explains how <code>pointer-events: none</code> alters which elements
+receive interactions, how the underlying visual stack responds, and how
+events propagate through the DOM tree when nested elements re-enable
+pointer interactions.</p>
+<h2 id="hit-testing-vs-event-bubbling">Hit-Testing vs. Event
+Bubbling</h2>
+<p>To understand how <code>pointer-events</code> impacts bubbling, it is
+essential to distinguish between hit-testing and propagation.</p>
+<p>When a user clicks or touches a screen, the browser performs a
+hit-test to identify the topmost visual element under the cursor's
+coordinates. Once identified, the browser dispatches a pointer event to
+that specific target element. The event then traverses the standard DOM
+event flow: the capture phase, the target phase, and the bubbling phase
+(where the event travels up the ancestor tree).</p>
+<p>The <code>pointer-events</code> property directly controls the
+hit-testing phase, not the bubbling phase.</p>
+<h2 id="the-effect-of-pointer-events-none">The Effect of
+<code>pointer-events: none</code></h2>
+<p>Setting <code>pointer-events: none</code> on an element instructs the
+browser's hit-testing engine to completely ignore it.</p>
+<p>When a user clicks on an element with
+<code>pointer-events: none</code>:</p>
+<ol type="1">
+<li>The element is treated as invisible to the pointer.</li>
+<li>The browser targets whichever element is visually directly
+underneath it in the stacking context (z-index order).</li>
+<li>The event fires on that underlying element and bubbles up through
+that underlying element's DOM ancestors.</li>
+<li>The bypassed element never enters the target phase and does not
+receive the initial event.</li>
+</ol>
+<p>Because the bypassed element was never targeted, no event originates
+from it. However, if the element visually underneath happens to be an
+ancestor in the DOM tree, the ancestor will receive the event directly
+as the target, not via bubbling from the bypassed child.</p>
+<h2 id="bubbling-with-nested-elements">Bubbling with Nested
+Elements</h2>
+<p>A common misconception is that <code>pointer-events: none</code>
+prevents all events from passing through an element's DOM tree. However,
+children of an element with <code>pointer-events: none</code> can opt
+back into pointer interactions by declaring
+<code>pointer-events: auto</code>.</p>
+<p>When a child element has <code>pointer-events: auto</code> inside a
+parent with <code>pointer-events: none</code>:</p>
+<ol type="1">
+<li>The child passes hit-testing and becomes the event target when
+clicked.</li>
+<li>The event enters the target phase on the child.</li>
+<li>The event then bubbles up the DOM tree as normal.</li>
+</ol>
+<p>During this bubbling phase, the parent element—despite having
+<code>pointer-events: none</code>—<strong>will still execute any
+attached JavaScript event listeners</strong>.
+<code>pointer-events: none</code> only stops an element from being the
+initial target of a hit-test; it does not block events that bubble up
+from child elements that are valid targets.</p>
+<h2 id="practical-implications">Practical Implications</h2>
+<ul>
+<li><strong>Click-Through Overlays:</strong> Applying
+<code>pointer-events: none</code> to decorative graphics, loading masks,
+or overlays allows users to interact with buttons and links positioned
+underneath them without JavaScript intervention.</li>
+<li><strong>Preventing Accidental Double Clicks:</strong> Temporarily
+setting <code>pointer-events: none</code> on form submission buttons
+disables cursor feedback and prevents duplicate triggers without
+disrupting native form bubbling behavior.</li>
+<li><strong>Selective Interactivity:</strong> Wrapping a complex
+component in a <code>pointer-events: none</code> container while
+assigning <code>pointer-events: auto</code> to specific controls allows
+developers to expose only certain interactive points without rewriting
+markup structure.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

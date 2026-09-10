@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Eliminate FOIT with Font Subsetting and Swap - web-development</title>
+    <meta name="description" content="Flash of Invisible Text (FOIT) degrades user experience and hurts Core Web Vitals by hiding text behind empty space while custom web fonts load. Combining font subsetting with the CSS font-display: swap property provides an effective, two-pronged strateg">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-eliminate-foit-with-font-subsetting-and-swap">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Eliminate FOIT with Font Subsetting and Swap - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-eliminate-foit-with-font-subsetting-and-swap" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Flash of Invisible Text (FOIT) degrades user experience and hurts Core Web Vitals by hiding text behind empty space while custom web fonts load. Combining font subsetting with the CSS font-display: swap property provides an effective, two-pronged strateg" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="how-to-eliminate-foit-with-font-subsetting-and-swap">How to
+Eliminate FOIT with Font Subsetting and Swap</h1>
+<p>Flash of Invisible Text (FOIT) degrades user experience and hurts
+Core Web Vitals by hiding text behind empty space while custom web fonts
+load. Combining font subsetting with the CSS
+<code>font-display: swap</code> property provides an effective,
+two-pronged strategy to eliminate this problem entirely. Subsetting
+strips out unneeded glyphs to drastically reduce file sizes and
+accelerate delivery, while <code>font-display: swap</code> tells the
+browser to immediately display fallback text until the custom font is
+ready. Together, these techniques ensure that page content remains
+instantly readable on any connection.</p>
+<h3 id="understanding-foit">Understanding FOIT</h3>
+<p>When a browser encounters an external web font declared in CSS, it
+often delays rendering the affected text until the font file finishes
+downloading. By default, browsers like Chrome, Firefox, and Safari hold
+text in an invisible state for up to three seconds. If the network is
+slow or the font file is large, users are left staring at blank spaces
+where headlines and body copy should be. This behavior is Flash of
+Invisible Text.</p>
+<h3 id="how-font-display-swap-solves-the-visibility-problem">How
+<code>font-display: swap</code> Solves the Visibility Problem</h3>
+<p>The <code>font-display</code> descriptor in the
+<code>@font-face</code> rule controls how a font is rendered relative to
+its download progress. Applying the <code>swap</code> value eliminates
+the initial block period where text is invisible.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">@font-face</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-family</span><span class="ch">:</span> <span class="st">&#39;CustomFont&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">src</span><span class="ch">:</span> <span class="fu">url(</span><span class="st">&#39;/fonts/custom-font.woff2&#39;</span><span class="fu">)</span> <span class="fu">format(</span><span class="st">&#39;woff2&#39;</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-weight</span><span class="ch">:</span> <span class="dv">400</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-style</span><span class="ch">:</span> <span class="dv">normal</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-display</span><span class="ch">:</span> <span class="dv">swap</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When set to <code>swap</code>, the browser:</p>
+<ol type="1">
+<li>Gives the font face a zero-second block period, meaning text is
+never hidden.</li>
+<li>Instantly renders the text using the next available fallback font in
+the font stack (e.g., <code>Arial</code>, <code>system-ui</code>).</li>
+<li>Downloads the custom font in the background.</li>
+<li>Swaps the fallback font with the custom font as soon as the file
+finishes loading.</li>
+</ol>
+<p>This approach converts FOIT into FOUT (Flash of Unstyled Text). While
+the user may notice a slight visual shift when the font changes, they
+can read the content immediately, preventing frustration and lowering
+bounce rates.</p>
+<h3 id="how-font-subsetting-minimizes-the-swap-duration">How Font
+Subsetting Minimizes the Swap Duration</h3>
+<p>While <code>font-display: swap</code> ensures content is readable
+right away, a noticeable jump between the fallback font and the custom
+font can be visually jarring and potentially trigger Cumulative Layout
+Shift (CLS). This is where font subsetting becomes critical.</p>
+<p>Standard font files often contain thousands of characters, including
+multiple language scripts, ligatures, historical symbols, and
+mathematical glyphs that a website will never use. A full font file can
+easily exceed 200KB.</p>
+<p>Font subsetting is the process of generating a custom, trimmed font
+file containing only the characters required for your content (for
+instance, basic Latin characters, numbers, and standard
+punctuation).</p>
+<p>Subsetting reduces font payloads by:</p>
+<ul>
+<li><strong>Drastically shrinking file sizes:</strong> A 150KB font can
+often be reduced to 15KB–30KB using tools like Glyphhanger, Subfont, or
+Google Fonts' <code>text</code> query parameter.</li>
+<li><strong>Accelerating download times:</strong> Smaller files transit
+the network significantly faster, particularly on mobile
+connections.</li>
+<li><strong>Shortening the swap delay:</strong> Because the file arrives
+almost immediately, the transition from fallback font to custom font
+occurs within milliseconds, often before the user even registers the
+swap.</li>
+</ul>
+<p>You can also use the CSS <code>unicode-range</code> descriptor
+alongside subset files to ensure the browser only downloads the specific
+character sets requested by the page:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">@font-face</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-family</span><span class="ch">:</span> <span class="st">&#39;CustomFont&#39;</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">src</span><span class="ch">:</span> <span class="fu">url(</span><span class="st">&#39;/fonts/custom-font-latin.woff2&#39;</span><span class="fu">)</span> <span class="fu">format(</span><span class="st">&#39;woff2&#39;</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-weight</span><span class="ch">:</span> <span class="dv">400</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-style</span><span class="ch">:</span> <span class="dv">normal</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-display</span><span class="ch">:</span> <span class="dv">swap</span><span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">unicode-range</span><span class="ch">:</span> <span class="dv">U+0000-00FF</span><span class="op">,</span> <span class="dv">U+0131</span><span class="op">,</span> <span class="dv">U+0152-0153</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="the-combined-result">The Combined Result</h3>
+<p>Relying solely on <code>font-display: swap</code> prevents invisible
+text, but slow-loading full-weight fonts can create an unpleasant and
+prolonged FOUT. Relying solely on font subsetting makes fonts load
+faster, but network hiccups can still trigger the default multi-second
+invisible block.</p>
+<p>By uniting both methods, <code>font-display: swap</code> guarantees
+that text is visible without delay, while font subsetting ensures the
+custom typography arrives so quickly that the swap is nearly
+imperceptible.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

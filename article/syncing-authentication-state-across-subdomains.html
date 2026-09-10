@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syncing Authentication State Across Subdomains - web-development</title>
+    <meta name="description" content="Managing authentication across multiple subdomains (such as app.example.com, api.example.com, and example.com) requires a cohesive strategy to ensure users remain logged in seamlessly without compromising application security. Web development teams prima">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/syncing-authentication-state-across-subdomains">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Syncing Authentication State Across Subdomains - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/syncing-authentication-state-across-subdomains" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Managing authentication across multiple subdomains (such as app.example.com, api.example.com, and example.com) requires a cohesive strategy to ensure users remain logged in seamlessly without compromising application security. Web development teams prima" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="syncing-authentication-state-across-subdomains">Syncing
+Authentication State Across Subdomains</h1>
+<p>Managing authentication across multiple subdomains (such as
+<code>app.example.com</code>, <code>api.example.com</code>, and
+<code>example.com</code>) requires a cohesive strategy to ensure users
+remain logged in seamlessly without compromising application security.
+Web development teams primarily achieve this synchronization through
+wildcard domain cookies, centralized Identity Providers (IdP) using
+Single Sign-On (SSO) protocols, shared session stores, and client-side
+inter-tab communication APIs.</p>
+<h3 id="1-wildcard-domain-cookies">1. Wildcard Domain Cookies</h3>
+<p>The most common and straightforward method is scoping session cookies
+to the root domain. By default, a cookie set by
+<code>app.example.com</code> is only accessible to that specific
+subdomain. However, by setting the <code>Domain</code> attribute to the
+apex domain, all subdomains inherit access:</p>
+<ul>
+<li><strong>Cookie Configuration:</strong> Setting
+<code>Domain=.example.com</code> allows <code>example.com</code>,
+<code>app.example.com</code>, and <code>admin.example.com</code> to read
+the cookie.</li>
+<li><strong>Security Attributes:</strong> Teams must pair this
+configuration with <code>Secure</code> (ensuring transit only over
+HTTPS), <code>HttpOnly</code> (preventing access via JavaScript to
+mitigate XSS attacks), and an appropriate <code>SameSite</code> setting
+(<code>Lax</code> is standard for cross-subdomain top-level
+navigations).</li>
+<li><strong>Trade-offs:</strong> This approach requires all services to
+share the same parent domain. If a less-secure subdomain is compromised,
+malicious scripts could potentially capture or overwrite authentication
+cookies for the entire domain tree.</li>
+</ul>
+<h3 id="2-centralized-identity-providers-and-sso-oauth-20--oidc">2.
+Centralized Identity Providers and SSO (OAuth 2.0 / OIDC)</h3>
+<p>When subdomains are hosted on disparate infrastructure, run by
+separate teams, or require strict isolation, teams rely on centralized
+authentication via OAuth 2.0 and OpenID Connect (OIDC).</p>
+<ul>
+<li><strong>Architecture:</strong> Authentication is delegated to a
+dedicated subdomain (e.g., <code>auth.example.com</code>).</li>
+<li><strong>The Flow:</strong> When an unauthenticated user visits
+<code>dashboard.example.com</code>, they are redirected to
+<code>auth.example.com</code>. The auth server checks for an active
+session, issues an authorization code, and redirects the user back with
+tokens (Access Token and ID Token).</li>
+<li><strong>Silent Authentication:</strong> Modern Single Page
+Applications (SPAs) use silent token renewal—performing background
+checks using promptless OpenID flows (<code>prompt=none</code>) or web
+workers to verify authentication state without forcing a user-facing
+page refresh.</li>
+</ul>
+<h3 id="3-shared-backend-session-stores">3. Shared Backend Session
+Stores</h3>
+<p>For applications using server-side sessions rather than stateless
+JWTs, synchronization occurs at the database or cache layer:</p>
+<ul>
+<li><strong>Central Cache (Redis / Memcached):</strong> Each subdomain
+runs its own server instance, but all servers connect to a shared
+distributed cache.</li>
+<li><strong>Mechanism:</strong> The user presents an opaque session
+identifier (stored in a wildcard cookie). Whichever subdomain receives
+the request queries the shared Redis cluster to validate the session
+data and retrieve the user's permissions.</li>
+<li><strong>Benefits:</strong> Instant session invalidation. Revoking a
+session in the centralized store immediately terminates the user's
+access across all subdomains.</li>
+</ul>
+<h3 id="4-client-side-real-time-synchronization-and-global-logout">4.
+Client-Side Real-Time Synchronization and Global Logout</h3>
+<p>Coordinating state across active browser tabs running different
+subdomains—especially during logout events—is critical for security and
+user experience.</p>
+<ul>
+<li><strong>BroadcastChannel API:</strong> If subdomains embed an
+identical central authorization iframe, that iframe can utilize the
+<code>BroadcastChannel</code> API to notify other open tabs when an
+authentication state changes.</li>
+<li><strong>Storage Events:</strong> Similar to the channel API, an
+embedded cross-domain iframe can write a timestamp to
+<code>localStorage</code>. Other tabs listening to the
+<code>storage</code> event will detect this update and trigger a
+re-authentication check or force a redirect to the login page.</li>
+<li><strong>Back-Channel Logout:</strong> In federated setups, the
+identity provider sends direct server-to-server notifications to all
+registered subdomains when a user logs out, instructing each backend to
+destroy the corresponding local session.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

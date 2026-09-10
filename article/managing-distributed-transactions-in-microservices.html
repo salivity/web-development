@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Managing Distributed Transactions in Microservices - web-development</title>
+    <meta name="description" content="Managing distributed transactions is one of the most complex hurdles in microservices-based web development. Transitioning from monolithic architectures to decoupled, service-specific databases breaks traditional database guarantees, introducing critical">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/managing-distributed-transactions-in-microservices">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Managing Distributed Transactions in Microservices - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/managing-distributed-transactions-in-microservices" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Managing distributed transactions is one of the most complex hurdles in microservices-based web development. Transitioning from monolithic architectures to decoupled, service-specific databases breaks traditional database guarantees, introducing critical" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="managing-distributed-transactions-in-microservices">Managing
+Distributed Transactions in Microservices</h1>
+<p>Managing distributed transactions is one of the most complex hurdles
+in microservices-based web development. Transitioning from monolithic
+architectures to decoupled, service-specific databases breaks
+traditional database guarantees, introducing critical issues surrounding
+data consistency, partial system failures, and architectural overhead.
+This article examines the key technical challenges developers face when
+coordinating state changes across multiple distributed services and
+databases.</p>
+<h3 id="loss-of-traditional-acid-guarantees">Loss of Traditional ACID
+Guarantees</h3>
+<p>In a monolithic application, a single relational database uses local
+ACID (Atomicity, Consistency, Isolation, Durability) transactions to
+ensure that all changes succeed or fail as a single unit. In
+microservices, each service typically owns its private database. A
+business transaction often requires updates across multiple databases
+managed by different services. Coordinating these updates without a
+centralized transaction coordinator makes traditional ACID guarantees
+practically impossible to maintain without sacrificing system
+performance and availability.</p>
+<h3 id="limitations-of-two-phase-commit-2pc">Limitations of Two-Phase
+Commit (2PC)</h3>
+<p>The traditional solution for distributed transactions is the
+Two-Phase Commit protocol. While 2PC provides atomicity across multiple
+resources, it is poorly suited for modern web applications. 2PC is a
+blocking protocol: all participating services must lock resources during
+the prepare and commit phases. If a participant becomes unresponsive or
+network latency spikes, the entire system can stall. This tight coupling
+violates the fundamental microservices principle of autonomous,
+resilient services and sharply degrades scalability.</p>
+<h3 id="the-dual-write-problem">The Dual-Write Problem</h3>
+<p>Microservices frequently need to update a local database and notify
+other services via a message broker. Executing these two operations
+atomically is a major challenge known as the dual-write problem. If the
+database update succeeds but the message broker publish fails,
+downstream services never receive the update. Conversely, if the message
+is published but the database transaction rolls back, downstream
+services process phantom data. Resolving this requires specialized
+patterns such as the Transactional Outbox pattern or Change Data Capture
+(CDC), which add architectural complexity.</p>
+<h3
+id="complexity-of-eventual-consistency-and-compensating-transactions">Complexity
+of Eventual Consistency and Compensating Transactions</h3>
+<p>To avoid the bottlenecks of 2PC, microservices architectures
+typically rely on eventual consistency using patterns like the Saga
+pattern (orchestrated or choreographed). Instead of a single
+transaction, a Saga executes a sequence of local transactions. If one
+step fails, the system must trigger compensating transactions to undo
+the previous steps. Implementing compensating transactions introduces
+substantial challenges:</p>
+<ul>
+<li><strong>Compensating Actions Can Fail:</strong> A rollback
+transaction is itself an operation that can encounter network failures
+or bugs, requiring retries, dead-letter queues, or manual
+intervention.</li>
+<li><strong>Lack of Isolation:</strong> Intermediate states are visible
+to other services before the entire Saga finishes. This leads to
+concurrency anomalies, such as dirty reads or lost updates, because
+standard database-level isolation does not span distributed steps.</li>
+</ul>
+<h3 id="partial-failures-and-network-unreliability">Partial Failures and
+Network Unreliability</h3>
+<p>Distributed systems inherently operate over unreliable networks. When
+a service sends a request to another service to complete part of a
+transaction, three outcomes are possible: success, failure, or timeout.
+In the case of a timeout, the calling service cannot definitively know
+whether the operation succeeded, failed, or is still pending. Handling
+these partial failures requires designing every transaction endpoint to
+be strictly idempotent, implementing automated retry mechanisms with
+exponential backoff, and deploying circuit breakers to prevent cascading
+system crashes.</p>
+<h3 id="observability-and-operational-overhead">Observability and
+Operational Overhead</h3>
+<p>Diagnosing failures in a distributed transaction is far more
+difficult than debugging a single database log. When a transaction spans
+half a dozen independent services and message queues, tracking where a
+failure occurred requires end-to-end distributed tracing, consistent
+correlation IDs, and unified logging. Without comprehensive
+observability tools, identifying whether an inconsistency was caused by
+a dropped message, a race condition, or a failed compensating step
+becomes an arduous task for engineering teams.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

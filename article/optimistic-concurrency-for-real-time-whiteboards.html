@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimistic Concurrency for Real-Time Whiteboards - web-development</title>
+    <meta name="description" content="Real-time collaborative whiteboards demand instantaneous feedback and fluid multi-user interaction, making low-latency synchronization critical for modern web applications. Optimistic concurrency plays a foundational role in achieving this responsiveness">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/optimistic-concurrency-for-real-time-whiteboards">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimistic Concurrency for Real-Time Whiteboards - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/optimistic-concurrency-for-real-time-whiteboards" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Real-time collaborative whiteboards demand instantaneous feedback and fluid multi-user interaction, making low-latency synchronization critical for modern web applications. Optimistic concurrency plays a foundational role in achieving this responsiveness" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="optimistic-concurrency-for-real-time-whiteboards">Optimistic
+Concurrency for Real-Time Whiteboards</h1>
+<p>Real-time collaborative whiteboards demand instantaneous feedback and
+fluid multi-user interaction, making low-latency synchronization
+critical for modern web applications. Optimistic concurrency plays a
+foundational role in achieving this responsiveness by allowing client
+browsers to apply state mutations locally before waiting for server
+authorization or network round trips. This article explores how
+optimistic concurrency powers real-time canvas experiences, how it
+mitigates network latency, the mechanisms used to resolve state
+conflicts, and the key architectural trade-offs involved in web
+development.</p>
+<p>In a collaborative whiteboard, users continuously create, move,
+scale, and delete canvas elements such as shapes, paths, and sticky
+notes. Relying on pessimistic locking—where an element is locked on the
+server before a user can modify it—introduces perceptible lag,
+interrupts user flow, and severely degrades the tactile feel of drawing
+or dragging. Optimistic concurrency removes this barrier by assuming
+that conflicts between simultaneous edits are rare. The application
+executes changes immediately on the client side, ensuring interactions
+remain locked at 60 or 120 frames per second regardless of network
+conditions.</p>
+<p>Under this model, the client updates its local canvas state instantly
+and dispatches the corresponding mutation event to a central server or
+peer network using low-latency protocols like WebSockets or WebRTC. The
+server serves as the arbiter of truth, assigning monotonically
+increasing version numbers, sequence IDs, or vector timestamps to each
+event. If no conflicting updates exist for that object, the server
+commits the mutation and broadcasts the accepted state change to all
+other connected clients.</p>
+<p>When concurrent conflicting actions do occur—such as two users moving
+the same vector object to different coordinates at the exact same
+millisecond—optimistic concurrency relies on deterministic conflict
+resolution strategies:</p>
+<ul>
+<li><strong>Last-Write-Wins (LWW):</strong> Changes are applied based on
+the most recent server timestamp. The losing client receives an update
+from the server and silently corrects its local state to match the
+authoritative version.</li>
+<li><strong>Operational Transformation (OT):</strong> Canvas operations
+are mathematically transformed against concurrent operations, preserving
+both users' intents where possible.</li>
+<li><strong>Conflict-Free Replicated Data Types (CRDTs):</strong> Data
+structures, such as state-based or operation-based CRDTs, ensure that
+all clients eventually converge to the same canvas state automatically
+without requiring heavy centralized coordination logic.</li>
+<li><strong>State Rollback and Replay:</strong> If a mutation is
+rejected by the server, the client unwinds the optimistic update to the
+last confirmed baseline and reapplies any valid subsequent local
+actions, preventing state drift.</li>
+</ul>
+<p>Implementing optimistic concurrency on the web requires robust
+architectural discipline. Canvas elements must maintain granular unique
+identifiers, and mutations should be kept fine-grained (e.g., isolating
+positional shifts from color changes) to minimize false conflicts.
+Additionally, the user interface must handle corrections gracefully;
+visual changes should snap or smoothly interpolate to the corrected
+state without jarring visual flickers that disorient the user.</p>
+<p>Ultimately, optimistic concurrency transforms collaborative
+whiteboards from rigid, network-dependent tools into fluid, intuitive
+digital workspaces. By decoupling the immediate visual rendering loop
+from the network verification loop, web developers can deliver
+responsive, desktop-grade collaboration across distributed teams.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Information API for Dynamic Asset Loading - web-development</title>
+    <meta name="description" content="The Network Information API provides web applications with programmatic access to details about a user's active internet connection, including bandwidth estimates and connection types. By reading these metrics in real time, web development teams can impl">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/network-information-api-for-dynamic-asset-loading">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Network Information API for Dynamic Asset Loading - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/network-information-api-for-dynamic-asset-loading" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Network Information API provides web applications with programmatic access to details about a user's active internet connection, including bandwidth estimates and connection types. By reading these metrics in real time, web development teams can impl" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="network-information-api-for-dynamic-asset-loading">Network
+Information API for Dynamic Asset Loading</h1>
+<p>The Network Information API provides web applications with
+programmatic access to details about a user's active internet
+connection, including bandwidth estimates and connection types. By
+reading these metrics in real time, web development teams can implement
+adaptive loading strategies that dynamically tailor the weight, quality,
+and priority of web assets to match current network conditions. This
+practice ensures that users on slow or metered networks receive a fast,
+usable experience without unnecessary data consumption, while users on
+high-speed connections enjoy full-fidelity media and enhanced
+features.</p>
+<h2 id="understanding-the-core-connection-properties">Understanding the
+Core Connection Properties</h2>
+<p>The Network Information API exposes the
+<code>NetworkInformation</code> object through
+<code>navigator.connection</code>. Development teams can query several
+key properties to gauge network constraints:</p>
+<ul>
+<li><strong><code>effectiveType</code></strong>: Returns an estimated
+connection profile based on round-trip time and bandwidth, categorized
+as <code>'slow-2g'</code>, <code>'2g'</code>, <code>'3g'</code>, or
+<code>'4g'</code>. This is often the most practical property for
+high-level decision-making.</li>
+<li><strong><code>saveData</code></strong>: A boolean that reflects
+whether the user has enabled a data-saving mode in their browser
+settings.</li>
+<li><strong><code>downlink</code></strong>: An estimated bandwidth limit
+rounded to the nearest megabit per second (Mbps).</li>
+<li><strong><code>rtt</code></strong>: An estimated round-trip time
+rounded to the nearest multiple of 25 milliseconds.</li>
+</ul>
+<h2 id="conditionally-loading-media-assets">Conditionally Loading Media
+Assets</h2>
+<p>Images and videos typically constitute the majority of a web page’s
+payload. The Network Information API allows developers to serve lighter
+alternatives when conditions warrant it.</p>
+<h3 id="responsive-images-based-on-network-speed">Responsive Images
+Based on Network Speed</h3>
+<p>Rather than relying solely on viewport dimensions via traditional
+<code>srcset</code> attributes, JavaScript can check
+<code>effectiveType</code> or <code>saveData</code> prior to requesting
+media:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">&#39;connection&#39;</span> <span class="kw">in</span> <span class="bu">navigator</span>) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> connection <span class="op">=</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">connection</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> isSlowConnection <span class="op">=</span> connection<span class="op">.</span><span class="at">saveData</span> <span class="op">||</span> connection<span class="op">.</span><span class="at">effectiveType</span> <span class="op">===</span> <span class="st">&#39;2g&#39;</span> <span class="op">||</span> connection<span class="op">.</span><span class="at">effectiveType</span> <span class="op">===</span> <span class="st">&#39;slow-2g&#39;</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> heroImage <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&#39;hero&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  heroImage<span class="op">.</span><span class="at">src</span> <span class="op">=</span> isSlowConnection <span class="op">?</span> <span class="st">&#39;hero-lowres.webp&#39;</span> <span class="op">:</span> <span class="st">&#39;hero-highres.webp&#39;</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="video-quality-and-autoplay-adjustment">Video Quality and
+Autoplay Adjustment</h3>
+<p>Streaming players can use <code>downlink</code> and <code>rtt</code>
+values to select the initial video bitrate, reducing buffering times.
+Additionally, teams can automatically disable bandwidth-heavy features,
+such as background video playback or carousel preloading, when
+<code>saveData</code> is detected.</p>
+<h2 id="prioritizing-and-deferring-javascript-bundles">Prioritizing and
+Deferring JavaScript Bundles</h2>
+<p>Bulky JavaScript bundles can block rendering and tie up the main
+thread on low-powered devices operating on slow networks. Teams can use
+connection data to split features into tiers:</p>
+<ol type="1">
+<li><strong>Core Tier</strong>: Essential HTML, CSS, and critical
+interaction logic loaded unconditionally.</li>
+<li><strong>Enhanced Tier</strong>: Non-essential features, client-side
+analytics, rich animations, and third-party widgets loaded only if the
+connection is <code>'4g'</code> and <code>saveData</code> is false.</li>
+</ol>
+<p>Dynamic <code>import()</code> statements allow teams to load scripts
+on demand:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">loadNonCriticalModules</span>() {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="bu">navigator</span><span class="op">.</span><span class="at">connection</span> <span class="op">&amp;&amp;</span> (<span class="bu">navigator</span><span class="op">.</span><span class="at">connection</span><span class="op">.</span><span class="at">effectiveType</span> <span class="op">===</span> <span class="st">&#39;4g&#39;</span> <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="bu">navigator</span><span class="op">.</span><span class="at">connection</span><span class="op">.</span><span class="at">saveData</span>)) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> { initializeAnalytics } <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="st">&#39;./analytics.js&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">initializeAnalytics</span>()<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="handling-network-changes-dynamically">Handling Network Changes
+Dynamically</h2>
+<p>Connection quality is not static; mobile users frequently transition
+between Wi-Fi, cellular, and dead zones. The Network Information API
+includes a <code>change</code> event listener that notifies the
+application whenever connection parameters fluctuate:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">&#39;connection&#39;</span> <span class="kw">in</span> <span class="bu">navigator</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">navigator</span><span class="op">.</span><span class="at">connection</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;change&#39;</span><span class="op">,</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> { effectiveType } <span class="op">=</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">connection</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Adjust fetching strategies or pause heavy background tasks</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (effectiveType <span class="op">===</span> <span class="st">&#39;slow-2g&#39;</span> <span class="op">||</span> effectiveType <span class="op">===</span> <span class="st">&#39;2g&#39;</span>) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="fu">pauseBackgroundSync</span>()<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="best-practices-and-fallbacks">Best Practices and Fallbacks</h2>
+<p>Because the Network Information API is not supported uniformly across
+all browsers, development teams must treat it as a progressive
+enhancement. Always check for the presence of
+<code>'connection' in navigator</code> before reading properties. When
+unsupported, applications should gracefully default to standard
+responsive design techniques, such as standard CSS media queries,
+<code>&lt;picture&gt;</code> elements, and standard asset optimization
+pipelines.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

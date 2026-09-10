@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Prefers-Reduced-Motion for Vestibular Disorders - web-development</title>
+    <meta name="description" content="The CSS @media (prefers-reduced-motion) media query is an essential accessibility feature that detects whether a user has requested their operating system to minimize non-essential motion. For users with vestibular disorders, rapid, unexpected, or disori">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-prefers-reduced-motion-for-vestibular-disorders">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS Prefers-Reduced-Motion for Vestibular Disorders - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-prefers-reduced-motion-for-vestibular-disorders" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS @media (prefers-reduced-motion) media query is an essential accessibility feature that detects whether a user has requested their operating system to minimize non-essential motion. For users with vestibular disorders, rapid, unexpected, or disori" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="css-prefers-reduced-motion-for-vestibular-disorders">CSS
+Prefers-Reduced-Motion for Vestibular Disorders</h1>
+<p>The CSS <code>@media (prefers-reduced-motion)</code> media query is
+an essential accessibility feature that detects whether a user has
+requested their operating system to minimize non-essential motion. For
+users with vestibular disorders, rapid, unexpected, or disorienting web
+animations can trigger severe physical symptoms, including nausea,
+dizziness, and migraines. By utilizing this media query, web developers
+can adjust or remove problematic motion effects, ensuring websites
+remain safe, accessible, and usable for individuals with balance and
+sensory sensitivities.</p>
+<h3
+id="understanding-vestibular-disorders-and-web-animation">Understanding
+Vestibular Disorders and Web Animation</h3>
+<p>The vestibular system consists of the inner ear structures and brain
+mechanisms that control balance, spatial orientation, and eye
+coordination. When a website features aggressive visual movement—such as
+parallax scrolling, high-speed zooming, auto-playing background videos,
+or unexpected shifts in perspective—the brain receives conflicting
+information from the eyes and the inner ear.</p>
+<p>This sensory mismatch can immediately trigger physical distress in
+people with vestibular conditions like Ménière's disease, labyrinthitis,
+or vestibular migraine. Symptoms often include:</p>
+<ul>
+<li>Severe vertigo and loss of balance</li>
+<li>Motion sickness and nausea</li>
+<li>Disorientation and cognitive fatigue</li>
+<li>Headaches and eye strain</li>
+</ul>
+<h3 id="how-prefers-reduced-motion-works">How
+<code>prefers-reduced-motion</code> Works</h3>
+<p>Modern operating systems (such as Windows, macOS, iOS, and Android)
+include accessibility settings allowing users to minimize or disable
+interface animations. The CSS
+<code>@media (prefers-reduced-motion)</code> query exposes these
+system-level preferences directly to web browsers.</p>
+<p>The query accepts two primary values:</p>
+<ul>
+<li><code>no-preference</code>: Indicates the user has not expressed a
+preference, meaning default animations can safely run.</li>
+<li><code>reduce</code>: Indicates the user has configured their device
+to minimize motion, signaling that web animations must be suppressed or
+modified.</li>
+</ul>
+<h3 id="implementation-strategies">Implementation Strategies</h3>
+<p>Developers can implement this media query in two main ways: by
+selectively applying animations only when no preference is set, or by
+neutralizing animations when a reduction is explicitly requested.</p>
+<h4 id="1-graceful-degradation-disabling-animations-globally">1.
+Graceful Degradation (Disabling Animations Globally)</h4>
+<p>A common and efficient approach is to apply a global override that
+halts or significantly curtails transitions and animations for users who
+request reduced motion:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">@media</span> <span class="fu">(</span><span class="kw">prefers-reduced-motion</span><span class="ch">:</span> <span class="dv">reduce</span><span class="fu">)</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">*,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="op">*</span><span class="in">::before</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="op">*</span><span class="in">::after</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">animation-duration</span><span class="ch">:</span> <span class="dv">0.01</span><span class="dt">ms</span> <span class="at">!important</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">animation-iteration-count</span><span class="ch">:</span> <span class="dv">1</span> <span class="at">!important</span><span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transition-duration</span><span class="ch">:</span> <span class="dv">0.01</span><span class="dt">ms</span> <span class="at">!important</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">scroll-behavior</span><span class="ch">:</span> <span class="bu">auto</span> <span class="at">!important</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Setting durations to near zero rather than <code>none</code> prevents
+potential JavaScript event listener breakdowns that rely on
+<code>transitionend</code> or <code>animationend</code> events.</p>
+<h4 id="2-motion-replacement-using-safer-alternatives">2. Motion
+Replacement (Using Safer Alternatives)</h4>
+<p>Reduced motion does not necessarily require a completely static
+interface. Often, the issue stems from rapid movement across space
+rather than state changes. Replacing spatial movement with subtle
+opacity changes (cross-fades) preserves functional feedback without
+triggering vestibular distress.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transition</span><span class="ch">:</span> <span class="dv">transform 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">,</span> <span class="dv">opacity 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span><span class="in">:hover</span> {</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transform</span><span class="ch">:</span> <span class="fu">translateY(</span><span class="dv">-8</span><span class="dt">px</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0.9</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="im">@media</span> <span class="fu">(</span><span class="kw">prefers-reduced-motion</span><span class="ch">:</span> <span class="dv">reduce</span><span class="fu">)</span> {</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.card</span> {</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transition</span><span class="ch">:</span> <span class="dv">opacity 0.2</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.card</span><span class="in">:hover</span> {</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transform</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0.8</span><span class="op">;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="high-risk-effects-to-mitigate">High-Risk Effects to
+Mitigate</h3>
+<p>When supporting the <code>prefers-reduced-motion</code> query,
+prioritize eliminating or replacing the following high-risk animation
+types:</p>
+<ul>
+<li><strong>Parallax Scrolling:</strong> Multi-layered content moving at
+varying speeds is among the most disorienting triggers for vestibular
+disorders.</li>
+<li><strong>Smooth Scrolling:</strong> Forced smooth auto-scrolling
+across long page distances can induce motion sickness.</li>
+<li><strong>Spinning and Scaling:</strong> Elements that rapidly rotate
+or zoom into the viewport create visual turbulence.</li>
+<li><strong>Infinite or Looping Animations:</strong> Continuous
+background movements demand constant ocular processing, leading to
+visual exhaustion.</li>
+</ul>
+<p>By embedding <code>@media (prefers-reduced-motion)</code> into
+standard front-end workflows, developers create an inclusive digital
+environment that respects physical limitations and prevents real-world
+physical harm.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

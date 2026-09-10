@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent Inventory Race Conditions in E-Commerce - web-development</title>
+    <meta name="description" content="High-concurrency events such as flash sales often cause multiple customers to attempt purchasing the same limited stock simultaneously. Without proper concurrency controls, this creates race conditions that lead to overselling, data corruption, and negat">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-inventory-race-conditions-in-e-commerce">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent Inventory Race Conditions in E-Commerce - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-inventory-race-conditions-in-e-commerce" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="High-concurrency events such as flash sales often cause multiple customers to attempt purchasing the same limited stock simultaneously. Without proper concurrency controls, this creates race conditions that lead to overselling, data corruption, and negat" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="prevent-inventory-race-conditions-in-e-commerce">Prevent
+Inventory Race Conditions in E-Commerce</h1>
+<p>High-concurrency events such as flash sales often cause multiple
+customers to attempt purchasing the same limited stock simultaneously.
+Without proper concurrency controls, this creates race conditions that
+lead to overselling, data corruption, and negative user experiences.
+This article outlines the primary software engineering
+strategies—including database locking, atomic operations, distributed
+locks, and asynchronous queues—used to maintain data integrity during
+inventory reservations in concurrent e-commerce systems.</p>
+<h3 id="1-atomic-conditional-updates-optimistic-concurrency">1. Atomic
+Conditional Updates (Optimistic Concurrency)</h3>
+<p>The simplest and often most performant approach at the database level
+is using atomic conditional updates. Instead of reading the stock,
+calculating the difference in the application layer, and saving it back,
+the check and deduction happen within a single SQL statement:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> inventory </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> stock <span class="op">=</span> stock <span class="op">-</span> <span class="dv">1</span> </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> product_id <span class="op">=</span> <span class="dv">123</span> <span class="kw">AND</span> stock <span class="op">&gt;=</span> <span class="dv">1</span>;</span></code></pre></div>
+<p>Because the database engine handles row-level mutations sequentially,
+the query checks the current stock at the moment of update. If the
+database returns an affected row count of <code>1</code>, the
+reservation succeeded. If it returns <code>0</code>, the item is out of
+stock. This avoids application-level race conditions without holding
+open long locks.</p>
+<h3 id="2-pessimistic-locking">2. Pessimistic Locking</h3>
+<p>Pessimistic locking explicitly blocks access to a database row until
+the active transaction completes. In relational databases, this is
+typically executed using a <code>SELECT ... FOR UPDATE</code>
+statement:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="cf">BEGIN</span> <span class="kw">TRANSACTION</span>;</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> stock <span class="kw">FROM</span> inventory <span class="kw">WHERE</span> product_id <span class="op">=</span> <span class="dv">123</span> <span class="cf">FOR</span> <span class="kw">UPDATE</span>;</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co">-- Application checks if stock &gt; 0, then updates:</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> inventory <span class="kw">SET</span> stock <span class="op">=</span> stock <span class="op">-</span> <span class="dv">1</span> <span class="kw">WHERE</span> product_id <span class="op">=</span> <span class="dv">123</span>;</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">COMMIT</span>;</span></code></pre></div>
+<p>Any subsequent request attempting to read or modify that specific row
+must wait until the first transaction commits or rolls back. While
+highly reliable and simple to implement, pessimistic locking can degrade
+performance under heavy load, causing connection pool exhaustion and
+database deadlocks.</p>
+<h3 id="3-redis-and-atomic-lua-scripting">3. Redis and Atomic Lua
+Scripting</h3>
+<p>To offload high-traffic concurrency from relational databases, teams
+frequently use in-memory data stores like Redis. Because Redis is
+single-threaded in its command execution, operations executed
+sequentially remain race-free.</p>
+<p>Using an atomic Lua script ensures that the read, evaluation, and
+decrement happen in an unbroken cycle on the Redis server:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode lua"><code class="sourceCode lua"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">local</span> <span class="va">stock</span> <span class="op">=</span> <span class="fu">tonumber</span><span class="op">(</span><span class="va">redis</span><span class="op">.</span>call<span class="op">(</span><span class="st">&#39;get&#39;</span><span class="op">,</span> <span class="cn">KEYS</span><span class="op">[</span><span class="dv">1</span><span class="op">]))</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="va">stock</span> <span class="kw">and</span> <span class="va">stock</span> <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">then</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="va">redis</span><span class="op">.</span>call<span class="op">(</span><span class="st">&#39;decr&#39;</span><span class="op">,</span> <span class="cn">KEYS</span><span class="op">[</span><span class="dv">1</span><span class="op">])</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">1</span> <span class="co">-- Reservation success</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">0</span> <span class="co">-- Out of stock</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div>
+<p>Once reserved in Redis, the system can persist the reservation
+asynchronously to the primary relational database, shielding it from
+traffic spikes.</p>
+<h3 id="4-distributed-locks">4. Distributed Locks</h3>
+<p>In distributed microservice architectures where stock updates involve
+multi-step workflows across distinct services, row locks and localized
+transactions are insufficient. Distributed locks synchronize access
+across disparate systems using a shared lock provider such as Redis (via
+algorithms like Redlock) or Apache ZooKeeper.</p>
+<p>Before processing a reservation, a service must acquire a uniquely
+identified lock for that specific SKU, execute the validation and hold
+operation, and immediately release the lock. Distributed locks must
+always include a Time-To-Live (TTL) expiration to prevent permanent
+deadlocks in the event that a service worker crashes
+mid-transaction.</p>
+<h3 id="5-message-queues-and-request-serialization">5. Message Queues
+and Request Serialization</h3>
+<p>Another robust approach is to convert concurrent requests into a
+serialized stream using a message broker like Apache Kafka, RabbitMQ, or
+AWS SQS.</p>
+<p>When a customer clicks "Reserve," the system writes an event to a
+partitioned queue, using the <code>product_id</code> as the partition
+key. Because messages within the same partition are consumed
+sequentially:</p>
+<ol type="1">
+<li>Requests for a specific product arrive in parallel.</li>
+<li>The broker orders them into a single FIFO (First-In, First-Out)
+stream.</li>
+<li>A single consumer processes each reservation one by one, completely
+eliminating concurrency-related race conditions.</li>
+</ol>
+<h3 id="6-time-limited-reservation-patterns">6. Time-Limited Reservation
+Patterns</h3>
+<p>To prevent stock from being tied up by abandoned carts, reservations
+should be treated as temporary states rather than permanent deductions.
+When an inventory item is reserved, a record is created with an
+expiration timestamp (e.g., 10 minutes).</p>
+<p>If the payment succeeds, the reservation converts to an order. If the
+time expires or the user cancels, a background sweeper or a time-delayed
+queue event automatically increments the available stock back into the
+pool.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Referrer-Policy to Prevent URL Token Leaks - web-development</title>
+    <meta name="description" content="Sensitive authentication tokens, password reset hashes, and session identifiers are frequently passed through URL query strings during user authentication flows. When a user navigates to an external site or a webpage loads third-party assets, web browser">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-referrer-policy-to-prevent-url-token-leaks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Referrer-Policy to Prevent URL Token Leaks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-referrer-policy-to-prevent-url-token-leaks" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Sensitive authentication tokens, password reset hashes, and session identifiers are frequently passed through URL query strings during user authentication flows. When a user navigates to an external site or a webpage loads third-party assets, web browser" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1 id="using-referrer-policy-to-prevent-url-token-leaks">Using
+Referrer-Policy to Prevent URL Token Leaks</h1>
+<p>Sensitive authentication tokens, password reset hashes, and session
+identifiers are frequently passed through URL query strings during user
+authentication flows. When a user navigates to an external site or a
+webpage loads third-party assets, web browsers automatically transmit
+the full URL in the HTTP <code>Referer</code> header to the recipient
+server. Implementing a strict <code>Referrer-Policy</code> header
+resolves this vulnerability by instructing the browser to strip the path
+and query string—or drop the header entirely—before transmitting request
+metadata, thereby ensuring that private tokens remain hidden from
+external domains, third-party trackers, and server access logs.</p>
+<h3 id="the-mechanism-of-url-token-leakage">The Mechanism of URL Token
+Leakage</h3>
+<p>URL query strings are not designed to store confidential data, yet
+workflows such as magic-link logins, OAuth callbacks, and password
+resets often append one-time tokens directly to the URL (for example,
+<code>https://example.com/reset?token=secret123</code>).</p>
+<p>When a user visits a page containing this URL structure, two common
+actions trigger cross-origin requests:</p>
+<ol type="1">
+<li><strong>Third-Party Subresources:</strong> The page loads external
+scripts, fonts, stylesheets, images, or analytics trackers.</li>
+<li><strong>Outbound Navigation:</strong> The user clicks an external
+link to navigate away from the current application.</li>
+</ol>
+<p>By default, older or unconfigured browsers send the
+<code>Referer</code> request header containing the complete
+URL—including the protocol, domain, path, and query string—to the
+destination server. As a result, third-party servers, content delivery
+networks (CDNs), and intermediary proxies capture and log the sensitive
+token in their access logs, exposing it to potential interception and
+misuse.</p>
+<h3 id="how-referrer-policy-solves-the-issue">How Referrer-Policy Solves
+the Issue</h3>
+<p>The <code>Referrer-Policy</code> HTTP response header allows server
+administrators to define the exact rules browsers must follow when
+populating the <code>Referer</code> header. By enforcing strict
+constraints, developers can prevent query strings from ever leaving the
+user's browser during cross-origin traffic.</p>
+<p>The browser evaluates the policy before generating network requests.
+Depending on the rule applied, the browser modifies the
+<code>Referer</code> header value into one of three formats:</p>
+<ul>
+<li><strong>Full URL:</strong> Protocol, domain, path, and query
+string.</li>
+<li><strong>Origin Only:</strong> Protocol and domain (e.g.,
+<code>https://example.com/</code>).</li>
+<li><strong>Empty:</strong> The <code>Referer</code> header is omitted
+entirely.</li>
+</ul>
+<h3 id="strict-referrer-policy-options">Strict Referrer-Policy
+Options</h3>
+<p>To ensure query strings containing tokens are never exposed
+externally, web applications must use one of the following strict
+policies:</p>
+<ul>
+<li><strong><code>no-referrer</code></strong>: Directs the browser to
+never send the <code>Referer</code> header with any request, regardless
+of destination or security level. This provides maximum privacy and
+eliminates query string leakage entirely.</li>
+<li><strong><code>strict-origin</code></strong>: Sends only the origin
+(scheme, host, and port) over HTTPS connections, completely omitting the
+path and query string. If a request downgrades to insecure HTTP, no
+header is sent.</li>
+<li><strong><code>strict-origin-when-cross-origin</code></strong>: Sends
+the full URL for same-origin requests, allowing internal tracking and
+application functionality. When a cross-origin request is made over
+HTTPS, the browser strips the path and query string, sending only the
+origin. Requests downgrading from HTTPS to HTTP send no header.</li>
+</ul>
+<h3 id="implementation-methods">Implementation Methods</h3>
+<p>To protect URLs across an entire application, the
+<code>Referrer-Policy</code> should be applied at the web server or
+application framework level as an HTTP header:</p>
+<pre class="http"><code>Referrer-Policy: strict-origin-when-cross-origin</code></pre>
+<p>If server configuration is inaccessible, the policy can be specified
+within the <code>&lt;head&gt;</code> tag of an HTML document:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">meta</span><span class="ot"> name</span><span class="op">=</span><span class="st">&quot;referrer&quot;</span><span class="ot"> content</span><span class="op">=</span><span class="st">&quot;strict-origin-when-cross-origin&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>For specific hyperlinks that direct users off-site, developers can
+apply element-level protection using the <code>rel</code> attribute to
+ensure the full URL is not forwarded:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">a</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;https://external-example.com&quot;</span><span class="ot"> rel</span><span class="op">=</span><span class="st">&quot;noreferrer&quot;</span><span class="dt">&gt;</span>External Link<span class="dt">&lt;/</span><span class="kw">a</span><span class="dt">&gt;</span></span></code></pre></div>
+<h3 id="defense-in-depth">Defense-in-Depth</h3>
+<p>While configuring a strict <code>Referrer-Policy</code> stops the
+browser from leaking query strings to external parties, security best
+practices dictate that sensitive tokens should ideally not be placed in
+URLs. Query parameters remain vulnerable to browser history storage,
+shoulder surfing, and local device inspection. Using modern
+alternatives—such as HTTP request bodies, secure cookies, and the
+History API (<code>history.replaceState()</code>) to scrub tokens from
+the address bar immediately after processing—combined with strict
+<code>Referrer-Policy</code> headers creates a robust defense against
+credential exposure.</p></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypeScript Declaration Merging for Third-Party Typings - web-development</title>
+    <meta name="description" content="Declaration merging in TypeScript is a mechanism that allows developers to extend existing type definitions from third-party libraries without altering the original source code. This article explains how declaration merging functions, why it is essential">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/typescript-declaration-merging-for-third-party-typings">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="TypeScript Declaration Merging for Third-Party Typings - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/typescript-declaration-merging-for-third-party-typings" />
+    <meta property="og:image:url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Declaration merging in TypeScript is a mechanism that allows developers to extend existing type definitions from third-party libraries without altering the original source code. This article explains how declaration merging functions, why it is essential" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <article><h1
+id="typescript-declaration-merging-for-third-party-typings">TypeScript
+Declaration Merging for Third-Party Typings</h1>
+<p>Declaration merging in TypeScript is a mechanism that allows
+developers to extend existing type definitions from third-party
+libraries without altering the original source code. This article
+explains how declaration merging functions, why it is essential for
+modern web development, and how it enables seamless customization of
+external types—such as attaching custom properties to framework request
+objects—while preserving full type safety and IDE autocompletion.</p>
+<h2 id="understanding-declaration-merging">Understanding Declaration
+Merging</h2>
+<p>Declaration merging occurs when the TypeScript compiler merges two or
+more separate declarations with the same name into a single definition.
+The resulting entity contains all the features and properties defined
+across all merged declarations.</p>
+<p>While TypeScript supports merging across various structures—including
+namespaces, classes, and enums—the most common application in web
+applications involves interface merging. When two interfaces share the
+identical name and scope, their members are combined sequentially into a
+unified interface.</p>
+<h2 id="the-problem-with-third-party-typings">The Problem with
+Third-Party Typings</h2>
+<p>Modern web development relies heavily on external npm packages like
+Express, Fastify, React, or Axios. These libraries ship with strict
+TypeScript interfaces that represent their standard API surface.</p>
+<p>However, real-world applications frequently modify runtime objects. A
+typical example is adding custom properties to an incoming HTTP request
+via middleware:</p>
+<ul>
+<li>Attaching an authenticated <code>user</code> object to an Express
+<code>Request</code></li>
+<li>Injecting a custom database client or logger</li>
+<li>Appending session tokens or tracing IDs</li>
+</ul>
+<p>Without declaration merging, TypeScript throws a compilation error
+when accessing these custom properties because they do not exist on the
+library's original interface. Developers are often tempted to use
+<code>(req as any).user</code> or declare a local wrapper type, but this
+breaks type safety, eliminates autocompletion, and creates inconsistent
+typings across a codebase.</p>
+<h2 id="extending-external-types-via-module-augmentation">Extending
+External Types via Module Augmentation</h2>
+<p>TypeScript resolves this limitation through module augmentation,
+which leverages declaration merging within an external module’s
+namespace.</p>
+<p>To augment a third-party library, developers declare the target
+module within an ambient declaration file (typically a
+<code>.d.ts</code> file) and define an interface matching the target
+type:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// types/express.d.ts</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="st">&#39;express&#39;</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">declare</span> <span class="im">module</span> <span class="st">&#39;express-serve-static-core&#39;</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">interface</span> Request {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    user<span class="op">?:</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      id<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      role<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    requestId<span class="op">:</span> <span class="dt">string</span><span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When the TypeScript compiler evaluates the project, it merges this
+custom <code>Request</code> definition with the base interface provided
+by the library's type definitions.</p>
+<h2 id="key-advantages-in-web-development">Key Advantages in Web
+Development</h2>
+<h3 id="1-zero-runtime-overhead">1. Zero Runtime Overhead</h3>
+<p>Declaration merging is strictly a compile-time feature. It introduces
+no runtime overhead, helper functions, or additional bundle size to the
+web application.</p>
+<h3 id="2-preserved-type-safety">2. Preserved Type Safety</h3>
+<p>Instead of resorting to type assertions (<code>any</code> or
+<code>unknown</code>), all augmented properties undergo full static type
+checking. If a developer accesses
+<code>req.user.nonExistentField</code>, the compiler flags the error
+immediately.</p>
+<h3 id="3-native-ide-integration">3. Native IDE Integration</h3>
+<p>Augmented types populate directly into the developer's IDE.
+Autocompletion, hover documentation, and refactoring tools recognize
+extended properties exactly as if the original library authors wrote
+them.</p>
+<h3 id="4-non-invasive-extensibility">4. Non-Invasive Extensibility</h3>
+<p>Teams do not need to fork third-party repositories, submit pull
+requests, or manually patch files in <code>node_modules</code> to
+accommodate application-specific data.</p>
+<h2 id="implementation-requirements">Implementation Requirements</h2>
+<p>For declaration merging to function correctly across a project:</p>
+<ul>
+<li><strong>Proper Root Configuration:</strong> Ensure that custom
+declaration files (<code>.d.ts</code>) are included in the
+<code>include</code> array or specified within the
+<code>typeRoots</code> array in <code>tsconfig.json</code>.</li>
+<li><strong>Top-Level Imports:</strong> When augmenting a module, the
+declaration file must contain at least one top-level <code>import</code>
+or <code>export</code> statement to treat the file as a module rather
+than a global script.</li>
+<li><strong>Exact Interface Matching:</strong> Merging requires
+targeting the exact interface used internally by the library. For
+instance, Express types often define properties on
+<code>express-serve-static-core</code> rather than the top-level
+<code>express</code> package directly.</li>
+</ul></article>
+        <div id="comments-container"></div>
+
+        <script>
+            const utterancesScript = document.createElement('script');
+            
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
