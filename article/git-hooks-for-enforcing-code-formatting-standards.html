@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git Hooks for Enforcing Code Formatting Standards - web-development</title>
+    <meta name="description" content="Git hooks automate quality assurance checks within a developer's local workflow, playing a pivotal role in web development teams by enforcing uniform code formatting standards before changes reach a shared repository. By intercepting code changes at the">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/git-hooks-for-enforcing-code-formatting-standards">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Git Hooks for Enforcing Code Formatting Standards - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/git-hooks-for-enforcing-code-formatting-standards" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Git hooks automate quality assurance checks within a developer's local workflow, playing a pivotal role in web development teams by enforcing uniform code formatting standards before changes reach a shared repository. By intercepting code changes at the" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="git-hooks-for-enforcing-code-formatting-standards">Git Hooks for
+Enforcing Code Formatting Standards</h1>
+<p>Git hooks automate quality assurance checks within a developer's
+local workflow, playing a pivotal role in web development teams by
+enforcing uniform code formatting standards before changes reach a
+shared repository. By intercepting code changes at the commit stage,
+hooks automatically run formatters and linters, ensuring that stylistic
+guidelines are consistently maintained across the entire team. This
+article explains how Git hooks work, how teams share and configure them,
+and the specific benefits they bring to the modern web development
+lifecycle.</p>
+<h3 id="the-mechanics-of-git-hooks-in-formatting">The Mechanics of Git
+Hooks in Formatting</h3>
+<p>Git hooks are custom shell scripts that Git executes automatically
+before or after specific lifecycle events, such as <code>commit</code>,
+<code>push</code>, or <code>receive</code>. In the context of code
+formatting, the <code>pre-commit</code> hook is the most widely
+utilized.</p>
+<p>When a developer runs <code>git commit</code>, the
+<code>pre-commit</code> hook triggers before Git generates the commit
+snapshot. The script runs automated formatting tools—such as Prettier
+for JavaScript/TypeScript, Stylelint for CSS, or Black for Python—over
+the staged files. If a formatting error occurs that cannot be
+automatically resolved, or if a strict lint rule fails, the script exits
+with a non-zero status. This aborts the commit, forcing the developer to
+address the discrepancy before the code can be saved to version
+history.</p>
+<h3 id="automating-staged-files-with-modern-tooling">Automating Staged
+Files with Modern Tooling</h3>
+<p>Running formatters over an entire enterprise-scale codebase during
+every commit is slow and inefficient. To solve this, web development
+teams pair Git hooks with staging-aware utilities such as
+<code>lint-staged</code>.</p>
+<p>When paired with a <code>pre-commit</code> script, these
+utilities:</p>
+<ol type="1">
+<li>Identify only the files staged in Git (<code>git add</code>).</li>
+<li>Run formatters strictly on those specific files.</li>
+<li>Automatically re-stage the newly formatted files.</li>
+<li>Allow the commit to proceed without manual developer
+intervention.</li>
+</ol>
+<p>This targeted execution ensures that the formatting process completes
+in seconds, keeping developer workflows fast and unobtrusive.</p>
+<h3 id="sharing-hooks-across-teams">Sharing Hooks Across Teams</h3>
+<p>By default, Git hooks reside locally inside the hidden
+<code>.git/hooks</code> directory, which is excluded from source
+control. To ensure every developer follows the exact same formatting
+rules, web development teams rely on tools like Husky or simple npm
+scripts to manage hooks declaratively.</p>
+<p>These tools allow teams to define hooks directly within project files
+(such as <code>package.json</code> or a tracked <code>.husky</code>
+directory). When a team member clones the repository and installs
+dependencies, the hook configurations are automatically initialized.
+This eliminates variations caused by differing local environments, text
+editors, or operating systems.</p>
+<h3 id="core-benefits-for-web-teams">Core Benefits for Web Teams</h3>
+<ul>
+<li><strong>Shifts Quality Checks to the Left:</strong> Enforcing
+formatting at the local commit phase prevents malformed code from ever
+reaching the remote repository, shifting error detection as close to the
+author as possible.</li>
+<li><strong>Streamlines Code Reviews:</strong> Pull requests are no
+longer cluttered with discussions about indentation, semicolon
+placement, or trailing spaces. Reviewers can focus solely on business
+logic, performance, and architecture.</li>
+<li><strong>Optimizes CI/CD Resources:</strong> Relying solely on
+continuous integration to reject poorly formatted code wastes build
+queue capacity and compute credits. Local Git hooks catch these trivial
+failures before they reach CI pipelines.</li>
+<li><strong>Eliminates Merge Conflicts:</strong> Consistent formatting
+across the team drastically reduces merge conflicts caused by
+developers' editors auto-formatting entire files according to
+conflicting local preferences.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

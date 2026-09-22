@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRI for Loading Polyfills from Third-Party CDNs - web-development</title>
+    <meta name="description" content="Subresource Integrity (SRI) is a critical security specification that ensures external scripts loaded into a web application have not been tampered with or malicious altered. When utilizing third-party Content Delivery Networks (CDNs) to deliver polyfill">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/sri-for-loading-polyfills-from-third-party-cd-ns">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="SRI for Loading Polyfills from Third-Party CDNs - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/sri-for-loading-polyfills-from-third-party-cd-ns" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Subresource Integrity (SRI) is a critical security specification that ensures external scripts loaded into a web application have not been tampered with or malicious altered. When utilizing third-party Content Delivery Networks (CDNs) to deliver polyfill" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="sri-for-loading-polyfills-from-third-party-cdns">SRI for Loading
+Polyfills from Third-Party CDNs</h1>
+<p>Subresource Integrity (SRI) is a critical security specification that
+ensures external scripts loaded into a web application have not been
+tampered with or malicious altered. When utilizing third-party Content
+Delivery Networks (CDNs) to deliver polyfills, SRI acts as a
+cryptographic guardrail by verifying the fetched resource against an
+expected cryptographic hash. This article examines the security role of
+SRI, the risks associated with external polyfill dependencies, and the
+technical considerations required to implement hash verification
+effectively.</p>
+<h3 id="the-purpose-of-subresource-integrity">The Purpose of Subresource
+Integrity</h3>
+<p>Subresource Integrity allows web browsers to verify that resources
+fetched from external servers arrive without unexpected manipulation. It
+is implemented directly on HTML elements such as
+<code>&lt;script&gt;</code> and <code>&lt;link&gt;</code> using the
+<code>integrity</code> attribute, which contains a base64-encoded
+cryptographic digest of the expected file (typically using SHA-256,
+SHA-384, or SHA-512), alongside a <code>crossorigin="anonymous"</code>
+attribute:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> </span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  src</span><span class="op">=</span><span class="st">&quot;https://example-cdn.com/polyfill.min.js&quot;</span><span class="ot"> </span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  integrity</span><span class="op">=</span><span class="st">&quot;sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC&quot;</span><span class="ot"> </span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  crossorigin</span><span class="op">=</span><span class="st">&quot;anonymous&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Before the browser executes the script, it calculates the hash of the
+downloaded payload. If the calculated hash matches the
+<code>integrity</code> attribute, the script runs; if there is a
+mismatch, the browser blocks execution immediately and throws a network
+error.</p>
+<h3 id="why-polyfills-present-a-high-value-target">Why Polyfills Present
+a High-Value Target</h3>
+<p>Polyfills replicate modern web APIs in legacy or unsupported
+environments. By their nature, they often execute early in the page
+lifecycle and run with full execution privileges within the
+application's origin. Consequently, a compromised polyfill script
+can:</p>
+<ul>
+<li>Access the Document Object Model (DOM) and read sensitive user
+inputs.</li>
+<li>Exfiltrate session tokens, authentication cookies, and personal
+data.</li>
+<li>Inject unauthorized redirects or cryptocurrency miners.</li>
+<li>Alter core JavaScript prototypes, compromising global application
+logic.</li>
+</ul>
+<p>Because CDNs operate as third parties outside a developer's direct
+perimeter, relying on them creates a supply-chain risk. If the CDN's
+servers, DNS records, or domain registrations are compromised, malicious
+actors can replace benign polyfills with malicious code. SRI completely
+mitigates this vector: even if an attacker modifies the hosted script on
+the CDN, end-user browsers will reject the script because the payload
+hash no longer matches the developer-defined hash.</p>
+<h3 id="addressing-the-dynamic-polyfill-challenge">Addressing the
+Dynamic Polyfill Challenge</h3>
+<p>Many polyfill services rely on User-Agent sniffing to serve custom,
+dynamically generated code tailored to the specific requesting browser.
+While efficient for minimizing bundle sizes, dynamic polyfills present a
+direct operational conflict with SRI:</p>
+<ul>
+<li><strong>Hash Non-Determinism:</strong> Because the server serves
+different code variants depending on the browser version, no single
+static hash can validate every valid response.</li>
+<li><strong>False Positives:</strong> Enforcing a static SRI hash on an
+endpoint that serves dynamic variations will cause execution failures
+for any browser that receives an alternate script version.</li>
+</ul>
+<p>To resolve this conflict and maintain strict security standards:</p>
+<ol type="1">
+<li><strong>Use Version-Pinned Static Bundles:</strong> Load specific,
+immutable polyfill packages from CDNs where files are static and
+non-varying across User-Agents.</li>
+<li><strong>Pre-bundle Polyfills:</strong> Include required polyfills in
+the core application build pipeline rather than offloading them to
+remote CDN endpoints.</li>
+<li><strong>Self-Host Dynamic Polyfills:</strong> If dynamic generation
+is mandatory, host the polyfill service within your own controlled
+infrastructure and leverage automated Content Security Policy (CSP)
+headers rather than CDN-based SRI.</li>
+</ol>
+<h3 id="implementation-best-practices">Implementation Best
+Practices</h3>
+<ul>
+<li><strong>Always Specify CORS:</strong> The
+<code>crossorigin="anonymous"</code> attribute is mandatory for SRI
+validation on cross-origin requests; without it, the browser skips hash
+verification entirely.</li>
+<li><strong>Use Strong Cryptographic Algorithms:</strong> SHA-384 and
+SHA-512 are recommended over SHA-256 for enhanced collision
+resistance.</li>
+<li><strong>Plan for Updates:</strong> When upgrading third-party
+polyfill versions, update both the resource URL and the corresponding
+hash synchronously in deployment pipelines to prevent blocking
+legitimate application dependencies.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

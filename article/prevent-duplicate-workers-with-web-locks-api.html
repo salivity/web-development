@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent Duplicate Workers with Web Locks API - web-development</title>
+    <meta name="description" content="The Web Locks API provides a built-in browser mechanism for coordinating asynchronous tasks across different execution contexts of the same origin. When multiple tabs, iframes, or Web Workers are active simultaneously, background tasks like synchronizing">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-duplicate-workers-with-web-locks-api">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent Duplicate Workers with Web Locks API - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-duplicate-workers-with-web-locks-api" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Web Locks API provides a built-in browser mechanism for coordinating asynchronous tasks across different execution contexts of the same origin. When multiple tabs, iframes, or Web Workers are active simultaneously, background tasks like synchronizing" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="prevent-duplicate-workers-with-web-locks-api">Prevent Duplicate
+Workers with Web Locks API</h1>
+<p>The Web Locks API provides a built-in browser mechanism for
+coordinating asynchronous tasks across different execution contexts of
+the same origin. When multiple tabs, iframes, or Web Workers are active
+simultaneously, background tasks like synchronizing offline data or
+polling an API can unintentionally run concurrently, causing duplicate
+operations and data races. By using the Web Locks API, web developers
+can implement distributed locks to ensure that only one instance of a
+background worker or process accesses a critical resource or executes a
+specific job at any given time.</p>
+<h3 id="the-problem-of-concurrency-in-the-browser">The Problem of
+Concurrency in the Browser</h3>
+<p>Modern web applications frequently run tasks in the background using
+Web Workers, Service Workers, or standard window scripts. If a user
+opens the same application across five browser tabs, all five contexts
+might attempt to process the same queue in IndexedDB or upload local
+changes to a remote server.</p>
+<p>Historically, developers addressed this using
+<code>localStorage</code> flags, <code>SharedWorker</code>, or
+<code>BroadcastChannel</code>. However, these workarounds are prone to
+race conditions, fail to handle deadlocks if a tab crashes or is
+abruptly closed, and add unnecessary architectural complexity.</p>
+<h3 id="how-the-web-locks-api-solves-duplicate-execution">How the Web
+Locks API Solves Duplicate Execution</h3>
+<p>The Web Locks API (<code>navigator.locks</code>) introduces
+origin-scoped mutexes (mutual exclusions). Any browsing context—whether
+a tab, an iframe, or a worker—can request a named lock. The browser’s
+internal lock manager grants the lock to only one requester at a
+time.</p>
+<p>To prevent duplicate job execution, the process follows three primary
+behaviors:</p>
+<ol type="1">
+<li><strong>Named Lock Acquisition:</strong> A worker requests a lock
+using a string identifier representing the task, such as
+<code>'sync-offline-data'</code>.</li>
+<li><strong>Exclusive Access:</strong> By default, locks are exclusive.
+While one worker holds the lock, any other worker requesting a lock with
+the same name is placed into a waiting queue.</li>
+<li><strong>Automatic Lifecycle Management:</strong> The lock is held as
+long as the callback passed to <code>navigator.locks.request()</code>
+returns an unresolved Promise. Once the Promise resolves or rejects, the
+browser automatically releases the lock. If the worker or tab terminates
+unexpectedly, the lock manager releases the lock immediately, preventing
+deadlocks.</li>
+</ol>
+<h3 id="implementing-non-blocking-job-execution">Implementing
+Non-Blocking Job Execution</h3>
+<p>In many background processing scenarios, duplicate jobs should not
+simply wait in line; they should be skipped entirely if another worker
+is already handling the task. The Web Locks API supports this via the
+<code>ifAvailable</code> option:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">processQueue</span>() {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> <span class="bu">navigator</span><span class="op">.</span><span class="at">locks</span><span class="op">.</span><span class="fu">request</span>(</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&#39;process-queue-lock&#39;</span><span class="op">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    { <span class="dt">ifAvailable</span><span class="op">:</span> <span class="kw">true</span> }<span class="op">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">async</span> (lock) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (<span class="op">!</span>lock) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Another tab or worker is already running this job.</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Job is currently being processed elsewhere. Skipping.&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Lock acquired; execute the job.</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>      <span class="cf">await</span> <span class="fu">runBackgroundTasks</span>()<span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>When <code>{ ifAvailable: true }</code> is provided:</p>
+<ul>
+<li>If no other context holds <code>'process-queue-lock'</code>, the
+lock is granted, and the callback executes with a valid lock
+object.</li>
+<li>If another context is already running the task, the callback
+executes immediately with <code>null</code> instead of waiting, allowing
+the secondary worker to safely bail out.</li>
+</ul>
+<h3 id="key-advantages-for-background-workers">Key Advantages for
+Background Workers</h3>
+<ul>
+<li><strong>Cross-Context Synchronization:</strong> Locks are shared
+across all tabs, DedicatedWorkers, and SharedWorkers belonging to the
+same origin.</li>
+<li><strong>Crash Resilience:</strong> Unlike manual storage flags, if a
+user closes a tab while a background job is running, the lock manager
+detects the context termination and immediately frees the lock for
+remaining tabs.</li>
+<li><strong>Deterministic Sequencing:</strong> When queued execution is
+required instead of skipping, the API processes queued requests in
+strict first-in, first-out (FIFO) order, preventing race conditions
+during database writes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

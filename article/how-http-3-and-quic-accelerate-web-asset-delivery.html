@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How HTTP/3 and QUIC Accelerate Web Asset Delivery - web-development</title>
+    <meta name="description" content="HTTP/3 and the underlying QUIC protocol represent a major architectural shift in web communication, replacing traditional TCP-based transport with a modern, UDP-based foundation. By eliminating head-of-line blocking, minimizing connection handshake laten">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-http-3-and-quic-accelerate-web-asset-delivery">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How HTTP/3 and QUIC Accelerate Web Asset Delivery - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-http-3-and-quic-accelerate-web-asset-delivery" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="HTTP/3 and the underlying QUIC protocol represent a major architectural shift in web communication, replacing traditional TCP-based transport with a modern, UDP-based foundation. By eliminating head-of-line blocking, minimizing connection handshake laten" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-http3-and-quic-accelerate-web-asset-delivery">How HTTP/3 and
+QUIC Accelerate Web Asset Delivery</h1>
+<p>HTTP/3 and the underlying QUIC protocol represent a major
+architectural shift in web communication, replacing traditional
+TCP-based transport with a modern, UDP-based foundation. By eliminating
+head-of-line blocking, minimizing connection handshake latencies, and
+enabling seamless network transitions, these protocols significantly
+accelerate the transmission of web assets like JavaScript, CSS, images,
+and fonts. This article explores how HTTP/3 and QUIC function, why they
+outperform older HTTP versions, and the direct performance benefits they
+bring to modern web development.</p>
+<h3 id="eliminating-head-of-line-blocking">Eliminating Head-of-Line
+Blocking</h3>
+<p>In HTTP/2, all asset streams travel over a single TCP connection. If
+a single packet carrying part of an image or stylesheet is lost in
+transit, the entire TCP connection stalls while waiting for that lost
+packet to retransmit. This phenomenon, known as TCP-level head-of-line
+blocking, delays the delivery of unrelated assets queued behind the
+missing data.</p>
+<p>HTTP/3 relies on QUIC, which operates over UDP rather than TCP. QUIC
+handles stream multiplexing natively at the transport layer instead of
+the application layer. If a packet associated with an image is dropped,
+only that specific image stream pauses; all other parallel streams—such
+as critical CSS or primary JavaScript files—continue streaming
+uninterrupted. This ensures rendering-critical assets load rapidly, even
+on unstable network connections.</p>
+<h3 id="faster-connection-establishment-0-rtt-handshakes">Faster
+Connection Establishment (0-RTT Handshakes)</h3>
+<p>Traditional secure HTTP connections over TCP require multiple
+round-trips to establish communication. A client must first complete the
+TCP three-way handshake, followed by the TLS cryptographic handshake,
+before any asset request can be transmitted. Even with TLS 1.3, this
+process requires multiple round-trip times (RTTs).</p>
+<p>QUIC integrates transport and cryptographic negotiations into a
+unified handshake. On initial connection, QUIC establishes both
+transport and encryption parameters simultaneously, typically requiring
+only 1-RTT. For returning visitors, QUIC supports 0-RTT handshakes,
+allowing clients to send asset requests alongside the initial packet.
+This immediate delivery drastically lowers Time to First Byte (TTFB) and
+accelerates the initial page render.</p>
+<h3 id="robust-connection-migration">Robust Connection Migration</h3>
+<p>Mobile devices frequently switch networks, such as moving from a home
+Wi-Fi network to a cellular data connection. Under TCP, a network switch
+alters the client’s IP address, breaking the active socket connection
+and forcing all in-flight asset downloads to fail and restart.</p>
+<p>QUIC solves this issue by identifying connections using a unique
+64-bit Connection ID (CID) rather than an IP address and port tuple.
+When a user switches networks, the client and server use the existing
+CID to continue ongoing data transfers without renegotiation. Large
+asset downloads, media streams, and background asset prefetches continue
+without interruption, providing a consistent user experience on mobile
+devices.</p>
+<h3 id="native-encryption-and-security-overhead-reduction">Native
+Encryption and Security Overhead Reduction</h3>
+<p>Unlike previous protocols where TLS was layered on top of transport
+protocols, QUIC incorporates TLS 1.3 directly into its transport frame.
+Transport metadata, including packet numbers and stream states, is
+encrypted alongside the asset payloads.</p>
+<p>Encrypting the transport metadata prevents middleboxes (like routers
+and firewalls) from tampering with or optimizing packets in ways that
+inadvertently break modern protocol features—a problem known as
+"protocol ossification." For developers, this built-in security
+simplifies configuration and guarantees that asset delivery remains
+secure without sacrificing transmission speed.</p>
+<h3 id="impact-on-core-web-vitals-and-development">Impact on Core Web
+Vitals and Development</h3>
+<p>The adoption of HTTP/3 and QUIC directly improves key user experience
+metrics, particularly Google's Core Web Vitals:</p>
+<ul>
+<li><strong>Largest Contentful Paint (LCP):</strong> Faster zero-RTT
+handshakes and independent stream handling mean hero images and primary
+layout components load faster.</li>
+<li><strong>First Input Delay (FID) / Interaction to Next Paint
+(INP):</strong> Because non-blocking asset loading prioritizes critical
+JavaScript execution, the main thread frees up sooner for user
+interactions.</li>
+<li><strong>Cumulative Layout Shift (CLS):</strong> Accelerated font and
+CSS delivery reduces visual reflows caused by late-arriving stylesheets
+and web fonts.</li>
+</ul>
+<p>By deploying HTTP/3 via modern content delivery networks (CDNs) and
+cloud edge providers, web developers can achieve near-instant asset
+delivery worldwide, ensuring pages render smoothly regardless of user
+network volatility.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

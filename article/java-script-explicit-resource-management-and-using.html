@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Explicit Resource Management and Using - web-development</title>
+    <meta name="description" content="Explicit resource management introduces the using keyword to modern JavaScript and TypeScript, fundamentally changing how applications manage the lifecycle of non-memory and hybrid resources. This article explores how the using declaration standardizes d">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/java-script-explicit-resource-management-and-using">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="JavaScript Explicit Resource Management and Using - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/java-script-explicit-resource-management-and-using" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Explicit resource management introduces the using keyword to modern JavaScript and TypeScript, fundamentally changing how applications manage the lifecycle of non-memory and hybrid resources. This article explores how the using declaration standardizes d" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="javascript-explicit-resource-management-and-using">JavaScript
+Explicit Resource Management and Using</h1>
+<p>Explicit resource management introduces the <code>using</code>
+keyword to modern JavaScript and TypeScript, fundamentally changing how
+applications manage the lifecycle of non-memory and hybrid resources.
+This article explores how the <code>using</code> declaration
+standardizes deterministic cleanup, removes error-prone boilerplate from
+the codebase, and prevents resource exhaustion and memory leaks
+associated with unreleased references in web applications.</p>
+<h3 id="the-problem-with-traditional-resource-cleanup">The Problem with
+Traditional Resource Cleanup</h3>
+<p>JavaScript relies on an automatic garbage collector (GC) to reclaim
+memory when objects are no longer reachable. However, the garbage
+collector only tracks memory allocation—it does not track external
+resources such as open database connections, file handles, WebSockets,
+DOM event listeners, or <code>AbortController</code> instances.</p>
+<p>Historically, developers have managed these resources manually using
+<code>try...finally</code> blocks:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> socket <span class="op">=</span> <span class="fu">openWebSocket</span>()<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  socket<span class="op">.</span><span class="fu">send</span>(<span class="st">&quot;data&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>} <span class="cf">finally</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  socket<span class="op">.</span><span class="fu">close</span>()<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>While effective for single resources, this pattern quickly breaks
+down in complex web applications. Managing multiple concurrent resources
+leads to heavily nested <code>try...finally</code> blocks (often called
+"cleanup pyramids"), redundant code, and accidental omission of cleanup
+calls when errors or early returns occur. Unreleased references in
+long-running Single Page Applications (SPAs) or Node.js services
+eventually lead to memory leaks, socket exhaustion, and degraded
+performance.</p>
+<h3 id="how-the-using-declaration-works">How the <code>using</code>
+Declaration Works</h3>
+<p>Explicit Resource Management (a TC39 ECMAScript feature implemented
+in modern runtimes and TypeScript 5.2+) introduces a standardized
+disposal protocol through two well-known symbols:</p>
+<ul>
+<li><code>Symbol.dispose</code>: Defines synchronous cleanup logic for
+an object.</li>
+<li><code>Symbol.asyncDispose</code>: Defines asynchronous cleanup logic
+returning a Promise.</li>
+</ul>
+<p>The <code>using</code> keyword declares a variable whose cleanup
+method (<code>[Symbol.dispose]()</code>) is automatically executed as
+soon as execution leaves the containing block scope—regardless of
+whether the block finishes normally, encounters a <code>return</code>,
+or throws an exception.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> TempSubscription {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">constructor</span>(target<span class="op">,</span> <span class="bu">event</span><span class="op">,</span> handler) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">target</span> <span class="op">=</span> target<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">event</span> <span class="op">=</span> <span class="bu">event</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">handler</span> <span class="op">=</span> handler<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="bu">event</span><span class="op">,</span> handler)<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  [<span class="bu">Symbol</span><span class="op">.</span><span class="at">dispose</span>]() {</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="at">target</span><span class="op">.</span><span class="fu">removeEventListener</span>(<span class="kw">this</span><span class="op">.</span><span class="at">event</span><span class="op">,</span> <span class="kw">this</span><span class="op">.</span><span class="at">handler</span>)<span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">trackUserActions</span>() {</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  using subscription <span class="op">=</span> <span class="kw">new</span> <span class="fu">TempSubscription</span>(<span class="bu">window</span><span class="op">,</span> <span class="st">&quot;click&quot;</span><span class="op">,</span> handleClick)<span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Perform tasks...</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>} <span class="co">// subscription[Symbol.dispose]() runs immediately when exiting this block</span></span></code></pre></div>
+<h3 id="eliminating-nested-scopes-and-human-error">Eliminating Nested
+Scopes and Human Error</h3>
+<p>Because cleanup is tied to lexical scope, the <code>using</code>
+declaration flattens nested error-handling structures. Developers can
+initialize multiple resources linearly without worrying about ordering
+the teardown steps:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">processData</span>() {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  using reader <span class="op">=</span> <span class="fu">getFileReader</span>()<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  using writer <span class="op">=</span> <span class="fu">getFileWriter</span>()<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  writer<span class="op">.</span><span class="fu">write</span>(reader<span class="op">.</span><span class="fu">read</span>())<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>} <span class="co">// Both writer and reader are disposed of in reverse order of declaration</span></span></code></pre></div>
+<p>If an error is thrown anywhere in <code>processData</code>, the
+runtime guarantees that both <code>writer</code> and <code>reader</code>
+are closed, preventing leaked descriptors and dangling memory
+handles.</p>
+<h3 id="handling-asynchronous-cleanup-with-await-using">Handling
+Asynchronous Cleanup with <code>await using</code></h3>
+<p>Many web APIs and backend services require asynchronous teardown,
+such as flushing buffers or closing network channels. The
+<code>await using</code> declaration accommodates this pattern by
+calling <code>[Symbol.asyncDispose]()</code> and pausing execution until
+cleanup resolves:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">syncDatabase</span>() {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> using client <span class="op">=</span> <span class="cf">await</span> pool<span class="op">.</span><span class="fu">connect</span>()<span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">await</span> client<span class="op">.</span><span class="fu">query</span>(<span class="st">&quot;UPDATE accounts SET active = true&quot;</span>)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>} <span class="co">// client[Symbol.asyncDispose]() is awaited automatically at scope exit</span></span></code></pre></div>
+<h3 id="impact-on-web-development-and-memory-management">Impact on Web
+Development and Memory Management</h3>
+<ol type="1">
+<li><strong>Guaranteed Execution:</strong> Unlike GC finalizers
+(<code>FinalizationRegistry</code>), which run unpredictably,
+<code>using</code> executes deterministically the moment an execution
+context terminates.</li>
+<li><strong>Preventing Retained Closures:</strong> Forgotten event
+listeners and uncancelled subscriptions frequently retain closures
+containing references to parent scopes, preventing the garbage collector
+from reclaiming entire component trees. Automating disposal ensures
+these closures are decoupled promptly.</li>
+<li><strong>API Standardization:</strong> It creates a universal
+interface for third-party libraries. Any utility—whether an animation
+frame loop, a Web Worker bridge, or an RxJS subscription—can implement
+<code>Symbol.dispose</code> to integrate directly into the language's
+native lifecycle semantics.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

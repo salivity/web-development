@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Presentation API to Cast to Secondary Screens - web-development</title>
+    <meta name="description" content="The Presentation API enables web applications to extend their user interface to secondary displays, such as connected monitors, smart TVs, or wireless casting devices like Chromecasts. By establishing a bridge between a controlling web page and a separat">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-presentation-api-to-cast-to-secondary-screens">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Presentation API to Cast to Secondary Screens - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-presentation-api-to-cast-to-secondary-screens" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Presentation API enables web applications to extend their user interface to secondary displays, such as connected monitors, smart TVs, or wireless casting devices like Chromecasts. By establishing a bridge between a controlling web page and a separat" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-presentation-api-to-cast-to-secondary-screens">Using
+Presentation API to Cast to Secondary Screens</h1>
+<p>The Presentation API enables web applications to extend their user
+interface to secondary displays, such as connected monitors, smart TVs,
+or wireless casting devices like Chromecasts. By establishing a bridge
+between a controlling web page and a separate receiving web page, the
+API allows developers to deliver dual-screen experiences—such as slide
+presentations, video players with remote controls, or gaming dashboards.
+This article explains the core architecture of the Presentation API, how
+it discovers external displays, initiates connections, and facilitates
+real-time data exchange across screens.</p>
+<h3 id="core-architecture-controller-and-receiver">Core Architecture:
+Controller and Receiver</h3>
+<p>The Presentation API operates on a dual-role architecture:</p>
+<ol type="1">
+<li><strong>The Controller:</strong> The primary web application running
+on the user's main device (such as a laptop or smartphone). It requests
+the presentation, selects the target screen, and sends control messages
+or state updates.</li>
+<li><strong>The Receiver:</strong> A distinct HTML document loaded
+directly onto the secondary display. This page receives instructions
+from the controller and renders the presentation view, free from
+controller-specific UI like buttons or speaker notes.</li>
+</ol>
+<h3 id="detecting-device-availability">Detecting Device
+Availability</h3>
+<p>Before offering cast functionality to the user, the controller page
+checks whether a compatible display is accessible on the network or via
+hardware cables.</p>
+<p>Developers instantiate a <code>PresentationRequest</code> object,
+providing the URL of the receiver page:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> presentationRequest <span class="op">=</span> <span class="kw">new</span> <span class="fu">PresentationRequest</span>([<span class="st">&#39;https://example.com/receiver.html&#39;</span>])<span class="op">;</span></span></code></pre></div>
+<p>Using the <code>getAvailability()</code> method, the application
+observes device availability:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>presentationRequest<span class="op">.</span><span class="fu">getAvailability</span>()</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">then</span>(availability <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Show or hide the cast button based on availability</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    castButton<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">display</span> <span class="op">=</span> availability<span class="op">.</span><span class="at">value</span> <span class="op">?</span> <span class="st">&#39;inline-block&#39;</span> <span class="op">:</span> <span class="st">&#39;none&#39;</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    availability<span class="op">.</span><span class="at">onchange</span> <span class="op">=</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      castButton<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">display</span> <span class="op">=</span> availability<span class="op">.</span><span class="at">value</span> <span class="op">?</span> <span class="st">&#39;inline-block&#39;</span> <span class="op">:</span> <span class="st">&#39;none&#39;</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  })</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="op">.</span><span class="fu">catch</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Availability monitoring is not supported; show button by default</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    castButton<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">display</span> <span class="op">=</span> <span class="st">&#39;inline-block&#39;</span><span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span></code></pre></div>
+<h3 id="initiating-the-cast-session">Initiating the Cast Session</h3>
+<p>When a user clicks the cast trigger, the application invokes
+<code>presentationRequest.start()</code>. Because casting involves
+hardware access and external networks, browsers require this call to be
+triggered directly by a user gesture, such as a button click.</p>
+<p>Calling <code>start()</code> prompts the browser's native
+device-picker dialog, allowing the user to select the target display
+(e.g., an HDMI-connected monitor, AirPlay receiver, or Google Cast
+target). Once selected, the browser launches the receiver URL on that
+screen and returns a <code>PresentationConnection</code> object to the
+controller:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>castButton<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">try</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> connection <span class="op">=</span> <span class="cf">await</span> presentationRequest<span class="op">.</span><span class="fu">start</span>()<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">setupConnection</span>(connection)<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">catch</span> (error) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Connection failed or was cancelled by the user:&#39;</span><span class="op">,</span> error)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="two-way-communication-between-screens">Two-Way Communication
+Between Screens</h3>
+<p>Once established, the <code>PresentationConnection</code> functions
+similarly to a WebSocket. Both the controlling page and the receiving
+page can send text strings, JSON payloads, or binary data (such as
+<code>Blob</code> or <code>ArrayBuffer</code>) back and forth.</p>
+<h4 id="on-the-controller">On the Controller:</h4>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">setupConnection</span>(connection) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Send state or commands</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  connection<span class="op">.</span><span class="fu">send</span>(<span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({ <span class="dt">command</span><span class="op">:</span> <span class="st">&#39;PLAY_MEDIA&#39;</span><span class="op">,</span> <span class="dt">timestamp</span><span class="op">:</span> <span class="dv">120</span> }))<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Listen for messages from the receiver</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  connection<span class="op">.</span><span class="at">onmessage</span> <span class="op">=</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> data <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(<span class="bu">event</span><span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Status from secondary display:&#39;</span><span class="op">,</span> data)<span class="op">;</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Monitor connection states (connected, closed, terminated)</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>  connection<span class="op">.</span><span class="at">onterminate</span> <span class="op">=</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&#39;Presentation session ended.&#39;</span>)<span class="op">;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="on-the-receiver">On the Receiver:</h4>
+<p>The receiver page accesses the incoming connection through the
+<code>navigator.presentation.receiver</code> property:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="bu">navigator</span><span class="op">.</span><span class="at">presentation</span><span class="op">.</span><span class="at">receiver</span>) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">navigator</span><span class="op">.</span><span class="at">presentation</span><span class="op">.</span><span class="at">receiver</span><span class="op">.</span><span class="at">connectionList</span><span class="op">.</span><span class="fu">then</span>(list <span class="kw">=&gt;</span> {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    list<span class="op">.</span><span class="at">connections</span><span class="op">.</span><span class="fu">forEach</span>(connection <span class="kw">=&gt;</span> {</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">listenToController</span>(connection)<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    })<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    list<span class="op">.</span><span class="at">onconnectionavailable</span> <span class="op">=</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">listenToController</span>(<span class="bu">event</span><span class="op">.</span><span class="at">connection</span>)<span class="op">;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">listenToController</span>(connection) {</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  connection<span class="op">.</span><span class="at">onmessage</span> <span class="op">=</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> message <span class="op">=</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(<span class="bu">event</span><span class="op">.</span><span class="at">data</span>)<span class="op">;</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (message<span class="op">.</span><span class="at">command</span> <span class="op">===</span> <span class="st">&#39;PLAY_MEDIA&#39;</span>) {</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>      <span class="fu">playVideoAt</span>(message<span class="op">.</span><span class="at">timestamp</span>)<span class="op">;</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Notify the controller that the receiver is ready</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>  connection<span class="op">.</span><span class="fu">send</span>(<span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({ <span class="dt">status</span><span class="op">:</span> <span class="st">&#39;READY&#39;</span> }))<span class="op">;</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="session-reconnection-and-termination">Session Reconnection and
+Termination</h3>
+<p>The Presentation API supports session persistence. If a controller
+page is refreshed or accidentally closed, it can reconnect to an ongoing
+session using
+<code>presentationRequest.reconnect(presentationId)</code>.</p>
+<p>When the user chooses to stop casting, either party can close the
+message channel via <code>connection.close()</code> or completely shut
+down the receiver instance on the remote screen using
+<code>connection.terminate()</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

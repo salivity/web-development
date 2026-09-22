@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Optimize INP on Complex Dashboards - web-development</title>
+    <meta name="description" content="Optimizing Interaction to Next Paint (INP) on complex dashboards requires addressing the delays that occur between user interactions—such as clicking filters, toggling tabs, or adjusting date ranges—and the resulting visual updates. Because dashboard">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-optimize-inp-on-complex-dashboards">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Optimize INP on Complex Dashboards - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-optimize-inp-on-complex-dashboards" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Optimizing Interaction to Next Paint (INP) on complex dashboards requires addressing the delays that occur between user interactions—such as clicking filters, toggling tabs, or adjusting date ranges—and the resulting visual updates. Because dashboard" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-optimize-inp-on-complex-dashboards">How to Optimize INP
+on Complex Dashboards</h1>
+<p>Optimizing Interaction to Next Paint (INP) on complex dashboards
+requires addressing the delays that occur between user interactions—such
+as clicking filters, toggling tabs, or adjusting date ranges—and the
+resulting visual updates. Because dashboards process dense datasets and
+render multiple visual components simultaneously, main-thread blocking
+is common. Web development teams improve INP by splitting long
+JavaScript tasks, offloading data processing, optimizing component
+re-renders, and decoupling user feedback from heavy visual computations
+to ensure interactions consistently respond within 200 milliseconds.</p>
+<h3 id="break-up-long-tasks-on-the-main-thread">Break Up Long Tasks on
+the Main Thread</h3>
+<p>The primary cause of poor INP is long JavaScript tasks (tasks
+exceeding 50ms) blocking the main thread, preventing the browser from
+rendering the next frame. When an interaction triggers complex rendering
+or data transformation, teams break the execution into smaller
+chunks.</p>
+<ul>
+<li><strong>Use <code>scheduler.yield()</code> or microtask
+yielding:</strong> Modern browsers support
+<code>scheduler.yield()</code>, which temporarily pauses execution to
+allow the browser to process pending user input and paint updates before
+resuming the task. For older browsers, falling back to
+<code>setTimeout(..., 0)</code> or <code>requestAnimationFrame</code>
+provides a similar effect.</li>
+<li><strong>Chunk data processing:</strong> When processing thousands of
+rows for charts or summary cards, process the data in batches rather
+than in a single synchronous loop.</li>
+</ul>
+<h3 id="provide-immediate-visual-feedback">Provide Immediate Visual
+Feedback</h3>
+<p>INP measures the time until the <em>very next paint</em> after an
+interaction, not the time until the entire operation completes.
+Providing an immediate visual state allows the browser to present a
+frame quickly.</p>
+<ul>
+<li><strong>Decouple input state from computational state:</strong> When
+a user clicks a dropdown, tab, or toggle, update the component's
+immediate active/pressed state synchronously.</li>
+<li><strong>Defer expensive updates:</strong> Defer the rendering of
+associated data visualizations using framework utilities like React’s
+<code>useTransition</code> or <code>startTransition</code>. This marks
+updates as non-blocking, allowing the UI to remain responsive while
+heavy charts compute in the background.</li>
+<li><strong>Show targeted loading indicators:</strong> Display
+lightweight skeletons or spinner states for individual widgets
+immediately, rather than freezing the screen while waiting for the
+entire dashboard to calculate changes.</li>
+</ul>
+<h3 id="offload-data-transformations-to-web-workers">Offload Data
+Transformations to Web Workers</h3>
+<p>Dashboards frequently perform client-side aggregations, filtering,
+parsing, and sorting. Executing these operations on the main thread
+guarantees high INP scores during user interactions.</p>
+<ul>
+<li><strong>Delegate to Web Workers:</strong> Move heavy operations
+(such as calculating rolling averages, grouping timeseries data, or
+formatting large JSON payloads) to background Web Workers.</li>
+<li><strong>Stream results back:</strong> Workers can compute results
+independently and post clean, render-ready payloads back to the main
+thread, keeping the UI interactive.</li>
+</ul>
+<h3 id="minimize-dom-size-and-render-costs">Minimize DOM Size and Render
+Costs</h3>
+<p>A large Document Object Model (DOM) increases the cost of browser
+style calculations, layouts, and paints. Complex dashboards often suffer
+from DOM bloat due to detailed SVG charts, complex tables, and deeply
+nested layout wrappers.</p>
+<ul>
+<li><strong>Implement virtualization:</strong> For large datasets,
+render only the rows, columns, or cards currently visible in the
+viewport using virtual scrolling libraries.</li>
+<li><strong>Use <code>content-visibility: auto</code>:</strong> Apply
+CSS <code>content-visibility: auto</code> to off-screen widgets and
+lower dashboard sections. This skips rendering work for elements outside
+the viewport until the user scrolls them into view.</li>
+<li><strong>Optimize SVG and Canvas usage:</strong> Heavy SVG
+visualizations add thousands of nodes to the DOM. Switching complex
+visualizations (such as heatmaps, high-density scatter plots, or network
+graphs) to HTML5 Canvas or WebGL removes these elements from the DOM
+tree, significantly lowering paint times.</li>
+</ul>
+<h3 id="prevent-unnecessary-component-re-renders">Prevent Unnecessary
+Component Re-renders</h3>
+<p>In single-page application (SPA) dashboards, a state change in one
+widget can trigger cascading re-renders across unaffected
+components.</p>
+<ul>
+<li><strong>Scope state locally:</strong> Avoid placing local
+interaction states (such as hover states, filter dropdown toggles, or
+search inputs) in global stores. Keep state localized to the smallest
+possible sub-tree.</li>
+<li><strong>Memoize expensive components:</strong> Use component
+memoization (<code>React.memo</code>, Vue’s <code>v-once</code> /
+<code>computed</code>) to prevent rendering dashboard cards whose
+underlying data has not changed.</li>
+<li><strong>Optimize context providers:</strong> Split broad state
+contexts into smaller, granular providers to prevent components from
+re-rendering when irrelevant slices of state update.</li>
+</ul>
+<h3 id="monitor-and-profile-real-user-interactions">Monitor and Profile
+Real User Interactions</h3>
+<p>Lab tools often miss real-world INP issues that depend on hardware
+variance, extension overhead, and large user sessions.</p>
+<ul>
+<li><strong>Real User Monitoring (RUM):</strong> Capture field data via
+the <code>web-vitals</code> library to log the exact user interaction,
+target element, and phase breakdown (input delay, processing time,
+presentation delay) for sub-par interactions.</li>
+<li><strong>Chrome DevTools Performance Panel:</strong> Profile
+interactions by recording performance traces using CPU throttling. Look
+for long red bars indicating long tasks immediately following input
+events to locate offending functions.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

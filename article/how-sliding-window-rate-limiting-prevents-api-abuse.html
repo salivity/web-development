@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Sliding Window Rate Limiting Prevents API Abuse - web-development</title>
+    <meta name="description" content="Rate-limiting is essential for protecting public APIs from denial-of-service attacks, credential stuffing, scraping, and resource exhaustion. Among the various algorithms available, the sliding window counter approach stands out as a balanced solution th">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-sliding-window-rate-limiting-prevents-api-abuse">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Sliding Window Rate Limiting Prevents API Abuse - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-sliding-window-rate-limiting-prevents-api-abuse" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rate-limiting is essential for protecting public APIs from denial-of-service attacks, credential stuffing, scraping, and resource exhaustion. Among the various algorithms available, the sliding window counter approach stands out as a balanced solution th" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-sliding-window-rate-limiting-prevents-api-abuse">How Sliding
+Window Rate Limiting Prevents API Abuse</h1>
+<p>Rate-limiting is essential for protecting public APIs from
+denial-of-service attacks, credential stuffing, scraping, and resource
+exhaustion. Among the various algorithms available, the sliding window
+counter approach stands out as a balanced solution that offers strict
+boundary enforcement with minimal memory overhead. This article explains
+how the sliding window counter algorithm functions, why it surpasses
+simpler rate-limiting techniques, and how its implementation effectively
+secures public web applications against malicious and excessive
+traffic.</p>
+<h3 id="the-vulnerability-of-fixed-window-limits">The Vulnerability of
+Fixed Window Limits</h3>
+<p>To understand the necessity of sliding window counters, one must
+first look at the traditional fixed window counter. In a fixed window
+model, a user might be permitted 100 requests per minute, resetting at
+every exact minute mark (e.g., 12:00, 12:01).</p>
+<p>Malicious actors can exploit this boundary condition by sending 100
+requests at 12:00:59 followed by another 100 requests at 12:01:00. While
+the system registers 100 requests in each separate window, the server
+actually receives 200 requests within a two-second interval. This
+traffic spike can overwhelm backend services, degrade database
+performance, and facilitate brute-force attempts without triggering the
+rate limiter.</p>
+<h3 id="how-sliding-window-counters-work">How Sliding Window Counters
+Work</h3>
+<p>The sliding window counter algorithm blends the low memory footprint
+of a fixed window counter with the precision of a sliding log. Instead
+of strictly evaluating the current time block, it estimates request
+volume by incorporating a weighted average of the preceding window.</p>
+<p>The calculation operates on a simple formula:</p>
+<p><span class="math display">\[\text{Estimated Requests} =
+(\text{Previous Window Count} \times \text{Overlap Ratio}) +
+\text{Current Window Count}\]</span></p>
+<p>For example, assume a limit of 100 requests per 60-second window:</p>
+<ol type="1">
+<li>A client makes 80 requests in the previous 60-second window.</li>
+<li>The current window is 15 seconds in (meaning 25% of the current
+window has elapsed, leaving a 75% overlap with the preceding rolling
+timeframe).</li>
+<li>The client has already sent 30 requests in the current window.</li>
+<li>The rate limiter calculates the rolling volume: <span
+class="math inline">\((80 \times 0.75) + 30 = 60 + 30 = 90\)</span>
+requests.</li>
+</ol>
+<p>Since 90 is below the 100-request threshold, the request is allowed.
+If the result exceeds 100, the request is rejected immediately.</p>
+<h3 id="why-sliding-window-counters-prevent-abuse">Why Sliding Window
+Counters Prevent Abuse</h3>
+<h4 id="eliminating-boundary-bursts">Eliminating Boundary Bursts</h4>
+<p>By weighting the previous window against the current elapsed time,
+traffic spikes across arbitrary boundaries are smoothed out. Attackers
+cannot double their throughput at transition boundaries, ensuring that
+the defined rate limit is consistently respected across any continuous
+moving window of time.</p>
+<h4 id="mitigating-high-velocity-attacks">Mitigating High-Velocity
+Attacks</h4>
+<p>Public endpoints—such as login portals, checkout routes, and search
+APIs—are prime targets for credential stuffing and data scraping.
+Sliding window counters restrict automated scripts to a consistent,
+manageable velocity, rendering brute-force attacks computationally
+inefficient and easily detectable by downstream security monitors.</p>
+<h4 id="low-latency-and-memory-efficiency">Low Latency and Memory
+Efficiency</h4>
+<p>Unlike the sliding log algorithm, which stores a timestamp for every
+individual request and can quickly consume immense amounts of RAM under
+heavy traffic, the sliding window counter requires storing only two
+integer counters per user or IP address (the current window count and
+the previous window count). This makes it suitable for high-throughput
+public systems where rate checks must occur within milliseconds.</p>
+<h3 id="architectural-implementation">Architectural Implementation</h3>
+<p>In public web architectures, sliding window counters are typically
+implemented at the edge—either within an API gateway, a reverse proxy
+(such as NGINX), or an in-memory data store like Redis.</p>
+<p>When using Redis:</p>
+<ul>
+<li>Two keys per client are maintained using hashes or simple strings
+with time-to-live (TTL) expiries equal to twice the window size.</li>
+<li>Atomic operations (via Redis transactions or Lua scripts) calculate
+the weighted sum and increment the current window count.</li>
+<li>If the calculated rate exceeds the configured limit, the application
+terminates the request immediately and returns an
+<code>HTTP 429 Too Many Requests</code> status code, accompanied by a
+<code>Retry-After</code> header indicating when the client may resume
+sending traffic.</li>
+</ul>
+<p>Implementing sliding window counter rate-limiting provides robust,
+scalable protection that prevents abuse while ensuring consistent
+quality of service for legitimate web consumers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

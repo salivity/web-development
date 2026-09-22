@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Designing Idempotent Payment Webhooks - web-development</title>
+    <meta name="description" content="In modern e-commerce and fintech architectures, payment gateways rely on webhooks to notify merchant servers about asynchronous transaction updates. Because network protocols operate on an "at-least-once" delivery model, transient network failures and se">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/designing-idempotent-payment-webhooks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Designing Idempotent Payment Webhooks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/designing-idempotent-payment-webhooks" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In modern e-commerce and fintech architectures, payment gateways rely on webhooks to notify merchant servers about asynchronous transaction updates. Because network protocols operate on an "at-least-once" delivery model, transient network failures and se" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="designing-idempotent-payment-webhooks">Designing Idempotent
+Payment Webhooks</h1>
+<p>In modern e-commerce and fintech architectures, payment gateways rely
+on webhooks to notify merchant servers about asynchronous transaction
+updates. Because network protocols operate on an "at-least-once"
+delivery model, transient network failures and service timeouts
+frequently cause payment providers to resend identical webhook events.
+This article explains how web development engineers implement
+idempotency patterns—including unique event tracking, distributed
+locking, atomic database operations, and state machine validations—to
+ensure payment events are safely processed exactly once without risking
+duplicate charges or order fulfillments.</p>
+<h3 id="the-problem-of-at-least-once-delivery">The Problem of
+At-Least-Once Delivery</h3>
+<p>Payment service providers (PSPs) like Stripe, PayPal, and Adyen
+require a fast <code>200 OK</code> HTTP status response from your server
+to acknowledge successful webhook receipt. If your application takes too
+long to process the payload, or if a network drop occurs before the
+provider receives the acknowledgment, the provider assumes the delivery
+failed and retries.</p>
+<p>Without idempotency safeguards, receiving the same
+<code>charge.successful</code> or <code>payment_intent.succeeded</code>
+event twice could trigger two product shipments, double-credit a
+customer's wallet balance, or trigger duplicate downstream API
+calls.</p>
+<h3 id="1-utilizing-provider-event-identifiers">1. Utilizing Provider
+Event Identifiers</h3>
+<p>Every webhook payload includes a globally unique event identifier
+(for example, Stripe's <code>evt_123456789</code>). Idempotency design
+begins by treating this identifier as an immutable idempotency key.</p>
+<p>Engineers persist incoming event IDs into a dedicated ledger table
+(e.g., <code>processed_webhook_events</code>) that tracks the lifecycle
+of the event:</p>
+<ul>
+<li><strong><code>event_id</code></strong>: The unique string ID
+provided by the PSP.</li>
+<li><strong><code>status</code></strong>: Current execution state
+(<code>processing</code>, <code>completed</code>,
+<code>failed</code>).</li>
+<li><strong><code>created_at</code></strong>: Timestamp for tracking and
+cache invalidation.</li>
+<li><strong><code>response_payload</code></strong>: Cached response data
+to return on duplicate requests.</li>
+</ul>
+<h3 id="2-atomic-database-constraints">2. Atomic Database
+Constraints</h3>
+<p>Application-level checks (like querying
+<code>SELECT id FROM events WHERE event_id = ?</code>) are vulnerable to
+race conditions if two identical requests hit two separate application
+workers at the same millisecond.</p>
+<p>To eliminate this vulnerability, engineers enforce unique constraints
+directly in the database engine:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">CREATE</span> <span class="kw">TABLE</span> webhook_events (</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    event_id <span class="dt">VARCHAR</span>(<span class="dv">255</span>) <span class="kw">PRIMARY</span> <span class="kw">KEY</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    status <span class="dt">VARCHAR</span>(<span class="dv">50</span>) <span class="kw">NOT</span> <span class="kw">NULL</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    created_at <span class="dt">TIMESTAMP</span> <span class="kw">WITH</span> <span class="dt">TIME</span> <span class="dt">ZONE</span> <span class="kw">DEFAULT</span> <span class="fu">CURRENT_TIMESTAMP</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>);</span></code></pre></div>
+<p>When an event arrives, the worker attempts an atomic insert:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">INSERT</span> <span class="kw">INTO</span> webhook_events (event_id, status) </span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">VALUES</span> (<span class="st">&#39;evt_123456789&#39;</span>, <span class="st">&#39;processing&#39;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">ON</span> CONFLICT (event_id) DO <span class="kw">NOTHING</span>;</span></code></pre></div>
+<p>If zero rows are affected by the query, the system immediately
+recognizes the event as already received or currently being
+processed.</p>
+<h3 id="3-distributed-locking-for-concurrent-deliveries">3. Distributed
+Locking for Concurrent Deliveries</h3>
+<p>In high-concurrency environments utilizing distributed microservices
+or serverless functions, identical webhook payloads can arrive
+simultaneously at different server instances. While database constraints
+handle persistent storage, distributed locks (commonly implemented via
+Redis using <code>SET key value NX PX</code>) provide a high-performance
+concurrency shield.</p>
+<ol type="1">
+<li>Extract the <code>event_id</code> from the request header or
+payload.</li>
+<li>Attempt to acquire a Redis lock on a key such as
+<code>lock:webhook:&lt;event_id&gt;</code> with a reasonable
+Time-to-Live (TTL) (e.g., 30 seconds).</li>
+<li>If the lock acquisition fails, another process is currently handling
+the event. The application drops the operation and returns
+<code>200 OK</code> or <code>429 Too Many Requests</code> (depending on
+whether the engine wants the provider to back off or mark the delivery
+complete).</li>
+<li>If the lock is acquired, the application processes the business
+logic and releases the lock upon completion.</li>
+</ol>
+<h3 id="4-enforcing-finite-state-machines">4. Enforcing Finite State
+Machines</h3>
+<p>A transaction should always move through a strictly defined set of
+states (e.g., <code>Pending</code> → <code>Authorized</code> →
+<code>Captured</code> → <code>Settled</code>). Designing orders with a
+finite state machine prevents illogical updates caused by out-of-order
+or duplicate webhook events.</p>
+<p>For example, an order in a <code>Captured</code> state must reject
+any incoming event that attempts to transition the status to
+<code>Captured</code> again. The update query itself should validate the
+current state:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> orders </span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> status <span class="op">=</span> <span class="st">&#39;paid&#39;</span>, updated_at <span class="op">=</span> NOW() </span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> <span class="kw">id</span> <span class="op">=</span> <span class="st">&#39;order_123&#39;</span> <span class="kw">AND</span> status <span class="op">=</span> <span class="st">&#39;pending&#39;</span>;</span></code></pre></div>
+<p>If the order is already marked as <code>paid</code>, the update query
+affects zero rows, safely neutralizing the duplicate event without
+executing side effects like sending confirmation emails or generating
+shipping labels.</p>
+<h3 id="5-returning-the-correct-acknowledgment-response">5. Returning
+the Correct Acknowledgment Response</h3>
+<p>When an idempotent check detects a duplicate event that has already
+been successfully processed, the webhook endpoint must still return an
+HTTP <code>200 OK</code> or <code>204 No Content</code> response to the
+payment provider.</p>
+<p>Returning a <code>4xx</code> or <code>5xx</code> error code tells the
+payment gateway that the event was not received properly, which causes
+the provider to continue retrying delivery under its exponential backoff
+policy, compounding load on your servers. A <code>200 OK</code> signals
+to the gateway that the message has reached its final destination and no
+further retries are necessary.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

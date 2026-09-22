@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Markdown Sanitization Prevents Stored XSS - web-development</title>
+    <meta name="description" content="User-generated Markdown is a standard feature in modern web applications, but it poses significant security risks if rendered without proper safeguards. Because standard Markdown specifications allow inline HTML, malicious actors can inject persistent ex">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-markdown-sanitization-prevents-stored-xss">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Markdown Sanitization Prevents Stored XSS - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-markdown-sanitization-prevents-stored-xss" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="User-generated Markdown is a standard feature in modern web applications, but it poses significant security risks if rendered without proper safeguards. Because standard Markdown specifications allow inline HTML, malicious actors can inject persistent ex" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-markdown-sanitization-prevents-stored-xss">How Markdown
+Sanitization Prevents Stored XSS</h1>
+<p>User-generated Markdown is a standard feature in modern web
+applications, but it poses significant security risks if rendered
+without proper safeguards. Because standard Markdown specifications
+allow inline HTML, malicious actors can inject persistent executable
+code into a web application's database. This article explains how
+Markdown sanitization neutralizes stored cross-site scripting (XSS)
+attacks by parsing, filtering, and validating user input before it
+reaches the victim's browser.</p>
+<h3 id="the-vulnerability-raw-html-in-markdown">The Vulnerability: Raw
+HTML in Markdown</h3>
+<p>Markdown was designed to be a lightweight formatting language that
+falls back to HTML for features not natively supported by its syntax.
+Most standard Markdown parsers compile raw HTML directly into the
+rendered output.</p>
+<p>When users can submit Markdown—such as in comments, forum posts, or
+documentation platforms—attackers can embed malicious elements alongside
+ordinary text:</p>
+<ul>
+<li><strong>Explicit Script Tags:</strong>
+<code>&lt;script&gt;stealCookies();&lt;/script&gt;</code></li>
+<li><strong>Event Handlers in Elements:</strong>
+<code>&lt;img src="invalid" onerror="maliciousFunction()"&gt;</code></li>
+<li><strong>Pseudo-Protocols in Links:</strong>
+<code>[Claim Reward](javascript:stealData())</code></li>
+</ul>
+<p>When these inputs are stored directly in a database and subsequently
+served to other users, they manifest as Stored XSS. The malicious
+payload executes automatically in the context of the victim's browser
+session, leading to stolen session tokens, unauthorized actions, or site
+defacement.</p>
+<h3 id="how-markdown-sanitization-eliminates-the-threat">How Markdown
+Sanitization Eliminates the Threat</h3>
+<p>Sanitization prevents stored attacks by systematically stripping or
+neutralizing dangerous executable code during the processing
+pipeline.</p>
+<h4 id="1-html-tree-construction-and-tag-filtering">1. HTML Tree
+Construction and Tag Filtering</h4>
+<p>Rather than relying on brittle regular expressions, robust sanitizers
+parse compiled Markdown output into a Document Object Model (DOM) tree
+or Abstract Syntax Tree (AST). The sanitizer walks the tree and applies
+an allowlist of safe elements (such as <code>&lt;p&gt;</code>,
+<code>&lt;strong&gt;</code>, <code>&lt;em&gt;</code>,
+<code>&lt;h1&gt;</code>, <code>&lt;ul&gt;</code>, and
+<code>&lt;li&gt;</code>). Any unauthorized tag—such as
+<code>&lt;script&gt;</code>, <code>&lt;iframe&gt;</code>,
+<code>&lt;object&gt;</code>, or <code>&lt;embed&gt;</code>—is completely
+stripped or escaped.</p>
+<h4 id="2-attribute-whitelisting">2. Attribute Whitelisting</h4>
+<p>Attackers frequently exploit standard HTML tags that are normally
+safe. For example, an <code>&lt;img&gt;</code> or <code>&lt;a&gt;</code>
+tag is harmless in isolation, but dangerous when paired with event
+handlers like <code>onload</code>, <code>onerror</code>, or
+<code>onmouseover</code>. A sanitizer inspects all attributes on allowed
+elements and discards any event handlers or unknown properties,
+retaining only benign attributes such as <code>href</code>,
+<code>src</code>, or <code>alt</code>.</p>
+<h4 id="3-protocol-and-uri-validation">3. Protocol and URI
+Validation</h4>
+<p>Standard Markdown syntax for links <code>[text](url)</code> and
+images <code>![alt](url)</code> can easily obscure JavaScript execution
+vectors. Sanitizers validate the URL scheme provided in these
+attributes. Safe protocols like <code>http:</code>, <code>https:</code>,
+and <code>mailto:</code> are permitted, while executable
+pseudo-protocols such as <code>javascript:</code>, <code>data:</code>,
+or <code>vbscript:</code> are stripped or replaced with safe
+fallbacks.</p>
+<h4 id="4-safe-context-transformation">4. Safe Context
+Transformation</h4>
+<p>Some sanitization approaches escape all HTML entities completely
+rather than parsing them, converting <code>&lt;</code> and
+<code>&gt;</code> into <code>&amp;lt;</code> and <code>&amp;gt;</code>.
+This preserves the exact characters the user typed, displaying the code
+snippet harmlessly as plain text without allowing the browser to
+interpret it as actionable markup.</p>
+<h3
+id="implementation-strategy-where-sanitization-occurs">Implementation
+Strategy: Where Sanitization Occurs</h3>
+<p>To successfully prevent stored XSS, sanitization must be applied
+correctly within the application lifecycle:</p>
+<ul>
+<li><strong>Sanitize After Compilation, Not Before:</strong> Sanitizing
+raw Markdown text prior to compilation often fails because Markdown
+parsers alter characters, expand shortcuts, and reassemble strings,
+potentially recreating valid HTML payloads from seemingly broken
+fragments. The standard best practice is:
+<code>Markdown Input -&gt; Markdown Parser -&gt; HTML Sanitizer -&gt; Safe HTML Output</code>.</li>
+<li><strong>Sanitize on the Server or at Render Time:</strong> While
+client-side sanitization libraries (such as DOMPurify) are critical for
+securing Single Page Applications before DOM insertion, server-side
+sanitization ensures that stored data is already neutralized, adding
+defense-in-depth across multiple client platforms.</li>
+</ul>
+<p>By stripping unauthorized tags, removing event-driven attributes, and
+strictly validating link protocols on the generated HTML, sanitization
+ensures that Markdown remains purely representational and incapable of
+executing unauthorized scripts in the browser.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

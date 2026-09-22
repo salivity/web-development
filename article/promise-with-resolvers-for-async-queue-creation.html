@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promise.withResolvers for Async Queue Creation - web-development</title>
+    <meta name="description" content="The introduction of Promise.withResolvers in ECMAScript 2024 fundamentally simplifies the management of asynchronous workflows by exposing the resolve and reject functions alongside the promise itself. In modern web development, asynchronous queues—str">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/promise-with-resolvers-for-async-queue-creation">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Promise.withResolvers for Async Queue Creation - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/promise-with-resolvers-for-async-queue-creation" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The introduction of Promise.withResolvers in ECMAScript 2024 fundamentally simplifies the management of asynchronous workflows by exposing the resolve and reject functions alongside the promise itself. In modern web development, asynchronous queues—str" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="promisewithresolvers-for-async-queue-creation">Promise.withResolvers
+for Async Queue Creation</h1>
+<p>The introduction of <code>Promise.withResolvers</code> in ECMAScript
+2024 fundamentally simplifies the management of asynchronous workflows
+by exposing the <code>resolve</code> and <code>reject</code> functions
+alongside the promise itself. In modern web development, asynchronous
+queues—structures that process tasks sequentially or throttle concurrent
+operations—traditionally required awkward scoping hacks to extract
+resolution capabilities from inside the <code>Promise</code>
+constructor. This article explains how
+<code>Promise.withResolvers</code> eliminates boilerplate, improves
+readability, and provides a robust pattern for building asynchronous
+queues.</p>
+<h3 id="the-problem-with-traditional-promise-scoping">The Problem with
+Traditional Promise Scoping</h3>
+<p>Historically, creating a promise whose resolution depends on an
+external event required an "inverted" design. You had to declare
+variables in an outer scope and assign them inside the executor function
+passed to the <code>Promise</code> constructor:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> resolveTask<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> rejectTask<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> taskPromise <span class="op">=</span> <span class="kw">new</span> <span class="bu">Promise</span>((resolve<span class="op">,</span> reject) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  resolveTask <span class="op">=</span> resolve<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  rejectTask <span class="op">=</span> reject<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>When building an asynchronous queue, consumers often request items
+before producers provide them. To handle this, the queue must hold
+pending promises in an internal buffer. Using the traditional pattern,
+extracting <code>resolve</code> for later execution led to repetitive
+boilerplate, cluttered scopes, and potential edge cases where the
+resolver functions might remain unassigned if an error occurred during
+instantiation.</p>
+<h3 id="how-promisewithresolvers-works">How
+<code>Promise.withResolvers</code> Works</h3>
+<p><code>Promise.withResolvers()</code> provides a direct, standardized
+mechanism to create a promise alongside its controls. Calling the method
+returns a plain JavaScript object containing three properties:</p>
+<ul>
+<li><code>promise</code>: The newly created <code>Promise</code>
+instance.</li>
+<li><code>resolve</code>: The function to fulfill the promise.</li>
+<li><code>reject</code>: The function to reject the promise.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> { promise<span class="op">,</span> resolve<span class="op">,</span> reject } <span class="op">=</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">withResolvers</span>()<span class="op">;</span></span></code></pre></div>
+<p>This direct access decouples the promise creation from the execution
+logic without requiring closure-based workarounds.</p>
+<h3 id="streamlining-an-asynchronous-queue">Streamlining an Asynchronous
+Queue</h3>
+<p>In an asynchronous queue, producers push data into the queue using an
+<code>enqueue</code> method, while consumers pull data using a
+<code>dequeue</code> method. If a consumer requests an item when the
+queue is empty, the consumer must receive a promise that resolves once a
+producer adds an item.</p>
+<p><code>Promise.withResolvers</code> makes this coordination
+straightforward. Instead of tracking disconnected resolver variables,
+the queue can store the resolver directly in a waiting list.</p>
+<p>Here is a streamlined implementation:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> AsyncQueue {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  #items <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  #waitingConsumers <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">enqueue</span>(item) {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="kw">this</span><span class="op">.</span>#<span class="at">waitingConsumers</span><span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Hand the item directly to the oldest waiting consumer</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="kw">const</span> { resolve } <span class="op">=</span> <span class="kw">this</span><span class="op">.</span>#<span class="at">waitingConsumers</span><span class="op">.</span><span class="fu">shift</span>()<span class="op">;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">resolve</span>(item)<span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Buffer the item until a consumer asks for it</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      <span class="kw">this</span><span class="op">.</span>#<span class="at">items</span><span class="op">.</span><span class="fu">push</span>(item)<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dequeue</span>() {</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="kw">this</span><span class="op">.</span>#<span class="at">items</span><span class="op">.</span><span class="at">length</span> <span class="op">&gt;</span> <span class="dv">0</span>) {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>      <span class="co">// Return buffered item immediately as a resolved promise</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">resolve</span>(<span class="kw">this</span><span class="op">.</span>#<span class="at">items</span><span class="op">.</span><span class="fu">shift</span>())<span class="op">;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">// No items available: create resolvers and wait</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">const</span> { promise<span class="op">,</span> resolve<span class="op">,</span> reject } <span class="op">=</span> <span class="bu">Promise</span><span class="op">.</span><span class="fu">withResolvers</span>()<span class="op">;</span></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span>#<span class="at">waitingConsumers</span><span class="op">.</span><span class="fu">push</span>({ resolve<span class="op">,</span> reject })<span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> promise<span class="op">;</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="key-advantages-in-modern-web-development">Key Advantages in
+Modern Web Development</h3>
+<ol type="1">
+<li><strong>Flatter, More Readable Code</strong>: Eliminating the nested
+executor callback removes unnecessary visual noise, making queue control
+flow direct and linear.</li>
+<li><strong>Simplified State Management</strong>: Queues can store the
+<code>{ resolve, reject }</code> control objects directly in queues or
+arrays, treating pending operations as first-class citizens.</li>
+<li><strong>Improved Resource Cleanup</strong>: With direct access to
+<code>reject</code>, cancelling operations or clearing the queue on
+component unmount or stream termination becomes trivial. A queue can
+iterate over all stored resolvers and reject pending promises with an
+<code>AbortError</code>.</li>
+<li><strong>Standardization</strong>: Replacing manual helper utilities
+or third-party deferred implementations with an official language
+standard improves performance and cross-team consistency across modern
+browsers and runtimes like Node.js and Deno.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

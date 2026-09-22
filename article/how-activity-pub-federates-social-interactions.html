@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How ActivityPub Federates Social Interactions - web-development</title>
+    <meta name="description" content="The ActivityPub protocol enables web development platforms to decentralize social networking by establishing a common standard for distributing content and interactions across independent servers. By providing a uniform format for data and communication,">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-activity-pub-federates-social-interactions">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How ActivityPub Federates Social Interactions - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-activity-pub-federates-social-interactions" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The ActivityPub protocol enables web development platforms to decentralize social networking by establishing a common standard for distributing content and interactions across independent servers. By providing a uniform format for data and communication," />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-activitypub-federates-social-interactions">How ActivityPub
+Federates Social Interactions</h1>
+<p>The ActivityPub protocol enables web development platforms to
+decentralize social networking by establishing a common standard for
+distributing content and interactions across independent servers. By
+providing a uniform format for data and communication, ActivityPub
+allows disparate applications—ranging from blogs and content management
+systems to microblogging and video-sharing networks—to interact as a
+unified network known as the fediverse. Users on one platform can
+seamlessly follow, comment on, like, and share content produced on an
+entirely separate platform without requiring an account on both.</p>
+<h3 id="the-foundation-actors-objects-and-activities">The Foundation:
+Actors, Objects, and Activities</h3>
+<p>ActivityPub relies on the ActivityStreams 2.0 data format, a JSON-LD
+specification that standardizes social interactions. At the core of this
+system are three primary concepts:</p>
+<ul>
+<li><strong>Actors:</strong> The entities performing actions, such as
+users, groups, bots, or applications. Each actor is identified by a
+unique URI.</li>
+<li><strong>Objects:</strong> The content being acted upon, including
+articles, notes, images, videos, or comments.</li>
+<li><strong>Activities:</strong> The actions taken by actors on objects,
+represented by standard verbs such as <code>Create</code>,
+<code>Update</code>, <code>Delete</code>, <code>Follow</code>,
+<code>Like</code>, and <code>Announce</code> (share/boost).</li>
+</ul>
+<p>By structuring data into these semantic primitives, web applications
+can interpret incoming content regardless of the software running on the
+sender's server.</p>
+<h3 id="delivery-via-inboxes-and-outboxes">Delivery via Inboxes and
+Outboxes</h3>
+<p>Federation occurs through two core HTTP-based endpoints that every
+ActivityPub actor maintains: an <strong>Inbox</strong> and an
+<strong>Outbox</strong>.</p>
+<ol type="1">
+<li><strong>The Outbox (Client-to-Server and Originating
+Federation):</strong> When a user creates content on a local platform,
+the client sends an activity to the user's outbox. The local server
+processes the activity, saves it locally, and determines which remote
+servers need to receive it based on the user's followers or explicitly
+targeted recipients.</li>
+<li><strong>The Inbox (Server-to-Server Federation):</strong> The
+originating server delivers the activity across the internet via an HTTP
+POST request to the inboxes of all recipient actors or servers. When a
+remote server receives an activity in an inbox, it parses the JSON-LD
+payload, validates it, and incorporates the interaction into its own
+local database and user interface.</li>
+</ol>
+<h3 id="identity-and-discovery-with-webfinger">Identity and Discovery
+with WebFinger</h3>
+<p>To facilitate cross-platform connections, ActivityPub relies on the
+WebFinger protocol. WebFinger maps human-readable identifiers—formatted
+similarly to email addresses, such as
+<code>@username@example.com</code>—to the actor's canonical HTTPS
+profile URI. This allows users across the fediverse to search for and
+follow creators hosted on completely different domains without needing
+to know the exact technical endpoints of the remote server.</p>
+<h3 id="authentication-and-trust-via-http-signatures">Authentication and
+Trust via HTTP Signatures</h3>
+<p>Because federated servers operate independently, security and
+authenticity are critical. ActivityPub platforms use asymmetric
+cryptography to secure interactions:</p>
+<ul>
+<li>Each actor possesses a public and private key pair.</li>
+<li>The actor’s public key is published within their publicly accessible
+ActivityStreams profile.</li>
+<li>When a server federates an activity to a remote inbox, it signs the
+HTTP request using its private key (HTTP Signatures).</li>
+<li>The receiving server fetches the sender’s public key to verify the
+cryptographic signature, ensuring that the payload was not tampered with
+in transit and genuinely originated from the claimed actor.</li>
+</ul>
+<h3 id="platform-interoperability">Platform Interoperability</h3>
+<p>By implementing ActivityPub, web developers can transform standalone
+websites into active participants in the fediverse. A developer can
+build a custom content management system where publishing a blog post
+automatically dispatches a <code>Create</code> activity to subscribers
+on platforms like Mastodon. When a Mastodon user replies to that post, a
+<code>Create</code> activity containing a <code>Note</code> object is
+posted back to the blog's inbox, allowing the comment to render natively
+under the original article. This architecture decouples social data from
+single-vendor silos, creating a resilient, interconnected web
+ecosystem.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

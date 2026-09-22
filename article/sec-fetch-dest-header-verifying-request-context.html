@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sec-Fetch-Dest Header: Verifying Request Context - web-development</title>
+    <meta name="description" content="This article explores how the Sec-Fetch-Dest header enables backend servers to determine the exact technical context in which an incoming HTTP request was initiated. It explains the mechanics of Fetch Metadata request headers, details how backends can id">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/sec-fetch-dest-header-verifying-request-context">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sec-Fetch-Dest Header: Verifying Request Context - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/sec-fetch-dest-header-verifying-request-context" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the Sec-Fetch-Dest header enables backend servers to determine the exact technical context in which an incoming HTTP request was initiated. It explains the mechanics of Fetch Metadata request headers, details how backends can id" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="sec-fetch-dest-header-verifying-request-context">Sec-Fetch-Dest
+Header: Verifying Request Context</h1>
+<p>This article explores how the <code>Sec-Fetch-Dest</code> header
+enables backend servers to determine the exact technical context in
+which an incoming HTTP request was initiated. It explains the mechanics
+of Fetch Metadata request headers, details how backends can identify the
+intended destination of a requested resource (such as a script, image,
+or document), and demonstrates how verifying this context prevents
+common web vulnerabilities like Cross-Site Script Inclusion (XSSI) and
+unauthorized resource embedding.</p>
+<h3 id="what-is-the-sec-fetch-dest-header">What is the Sec-Fetch-Dest
+Header?</h3>
+<p>The <code>Sec-Fetch-Dest</code> header is part of the W3C Fetch
+Metadata Request Headers specification. It is automatically attached by
+modern web browsers to outgoing HTTP requests to indicate the
+destination of the requested data—specifically, the HTML element or API
+that initiated the call.</p>
+<p>Because it belongs to the <code>Sec-</code> prefix family, the
+browser treats it as a forbidden header name. JavaScript running on the
+client side cannot modify or spoof this header using APIs like
+<code>fetch()</code> or <code>XMLHttpRequest</code>. This guarantees to
+the backend server that the value truthfully reflects the browser's
+execution context.</p>
+<h3 id="common-values-and-their-contexts">Common Values and Their
+Contexts</h3>
+<p>The value of <code>Sec-Fetch-Dest</code> changes depending on how the
+browser intends to consume the response:</p>
+<ul>
+<li><strong><code>document</code></strong>: The request is for a
+top-level HTML navigation (e.g., a user typing a URL or clicking a
+standard link).</li>
+<li><strong><code>iframe</code> / <code>frame</code></strong>: The
+request is intended to load within an embedded frame.</li>
+<li><strong><code>script</code></strong>: The resource is being fetched
+to execute as JavaScript via a <code>&lt;script&gt;</code> tag.</li>
+<li><strong><code>image</code></strong>: The resource is loaded as an
+image (via <code>&lt;img&gt;</code>, CSS <code>background-image</code>,
+or SVG).</li>
+<li><strong><code>style</code></strong>: The resource is an external CSS
+stylesheet (<code>&lt;link rel="stylesheet"&gt;</code>).</li>
+<li><strong><code>empty</code></strong>: The request was initiated
+programmatically without a dedicated visual destination, commonly
+through <code>fetch()</code> or <code>XMLHttpRequest</code>.</li>
+</ul>
+<h3 id="how-backends-verify-request-context">How Backends Verify Request
+Context</h3>
+<p>Backend servers verify request context by comparing the declared
+destination in the <code>Sec-Fetch-Dest</code> header against the
+expected data type of the requested endpoint.</p>
+<h4 id="1-preventing-cross-site-script-inclusion-xssi">1. Preventing
+Cross-Site Script Inclusion (XSSI)</h4>
+<p>Sensitive JSON APIs containing user-specific data are often
+vulnerable to XSSI attacks, where a malicious site uses a
+<code>&lt;script src="https://api.example.com/user-data"&gt;</code> tag
+to read data via dynamic script execution.</p>
+<p>A backend server can inspect <code>Sec-Fetch-Dest</code> on endpoints
+that return JSON. If the incoming request contains
+<code>Sec-Fetch-Dest: script</code>, the server recognizes that the
+browser intends to execute the payload as executable code rather than
+consuming it via standard API calls. The server can immediately reject
+the request with an HTTP 403 Forbidden status.</p>
+<h4 id="2-blocking-malicious-resource-embedding">2. Blocking Malicious
+Resource Embedding</h4>
+<p>Attackers may embed internal assets, administrative interfaces, or
+sensitive files into unauthorized contexts on third-party sites (e.g.,
+loading an internal dashboard inside an <code>&lt;iframe&gt;</code> or
+an administrative export endpoint within an <code>&lt;img&gt;</code>
+tag).</p>
+<p>By evaluating <code>Sec-Fetch-Dest</code>, a server can enforce
+structural rules:</p>
+<ul>
+<li>An API endpoint that modifies state (like updating account details)
+should never arrive with a destination of <code>image</code>,
+<code>style</code>, or <code>script</code>.</li>
+<li>A sensitive HTML document meant only for direct user interaction
+should have a destination of <code>document</code>, rejecting requests
+marked as <code>iframe</code>.</li>
+</ul>
+<h4 id="3-enforcing-resource-isolation-policies">3. Enforcing Resource
+Isolation Policies</h4>
+<p>Backend middleware can implement comprehensive isolation rules
+combining <code>Sec-Fetch-Dest</code> with other Fetch Metadata headers,
+such as <code>Sec-Fetch-Site</code>.</p>
+<p>For instance, a backend policy can allow top-level navigation
+(<code>Sec-Fetch-Dest: document</code>) from external sites to let users
+follow inbound links, while strictly blocking any cross-site request
+where <code>Sec-Fetch-Dest</code> is set to <code>empty</code>,
+<code>script</code>, or <code>image</code>. This provides
+defense-in-depth against Cross-Site Request Forgery (CSRF) without
+relying exclusively on tokens.</p>
+<h3 id="backend-implementation-considerations">Backend Implementation
+Considerations</h3>
+<p>When verifying <code>Sec-Fetch-Dest</code> on the server:</p>
+<ul>
+<li><strong>Handle Missing Headers Gracefully:</strong> Older browsers
+or non-browser clients (such as mobile applications or server-to-server
+calls) do not send Fetch Metadata headers. Backend logic should decide
+whether to allow requests lacking the header based on the endpoint's
+threat profile.</li>
+<li><strong>Pair with Content-Type Validation:</strong>
+<code>Sec-Fetch-Dest</code> tells the server what the browser wants to
+do with the data, but the server must still set the appropriate
+<code>Content-Type</code> and
+<code>X-Content-Type-Options: nosniff</code> headers in its response to
+prevent MIME-confusion attacks on the client side.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

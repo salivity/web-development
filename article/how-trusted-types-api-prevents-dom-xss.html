@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Trusted Types API Prevents DOM XSS - web-development</title>
+    <meta name="description" content="DOM-based cross-site scripting (DOM XSS) remains one of the most prevalent and difficult-to-detect web vulnerabilities. The Trusted Types API provides a robust, browser-enforced defense mechanism that systematically mitigates DOM XSS by locking down dang">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-trusted-types-api-prevents-dom-xss">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Trusted Types API Prevents DOM XSS - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-trusted-types-api-prevents-dom-xss" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="DOM-based cross-site scripting (DOM XSS) remains one of the most prevalent and difficult-to-detect web vulnerabilities. The Trusted Types API provides a robust, browser-enforced defense mechanism that systematically mitigates DOM XSS by locking down dang" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-trusted-types-api-prevents-dom-xss">How Trusted Types API
+Prevents DOM XSS</h1>
+<p>DOM-based cross-site scripting (DOM XSS) remains one of the most
+prevalent and difficult-to-detect web vulnerabilities. The Trusted Types
+API provides a robust, browser-enforced defense mechanism that
+systematically mitigates DOM XSS by locking down dangerous DOM execution
+sinks. By requiring input passed to these sinks to be explicitly vetted
+and wrapped in typed objects rather than plain strings, Trusted Types
+shifts security enforcement from manual, error-prone code reviews
+directly to the browser runtime.</p>
+<h3 id="the-mechanism-of-dom-xss-and-dangerous-sinks">The Mechanism of
+DOM XSS and Dangerous Sinks</h3>
+<p>DOM XSS occurs when untrusted user data flows into an execution
+sink—an API endpoint in the browser that can execute arbitrary code.
+Common injection sinks include properties and methods such as:</p>
+<ul>
+<li><code>Element.innerHTML</code> and
+<code>Element.outerHTML</code></li>
+<li><code>document.write()</code></li>
+<li><code>location.href</code></li>
+<li><code>script.src</code></li>
+<li><code>eval()</code> and <code>setTimeout(string)</code></li>
+</ul>
+<p>Historically, web applications passed raw strings to these sinks. If
+an application failed to sanitize or validate input anywhere in a
+complex call stack, an attacker could inject malicious scripts that
+execute in the context of the user's session.</p>
+<h3 id="restricting-sinks-with-typed-objects">Restricting Sinks with
+Typed Objects</h3>
+<p>The Trusted Types API fundamentally alters how dangerous sinks
+behave. When enabled, the browser rejects plain string arguments passed
+to sensitive DOM APIs, throwing a runtime <code>TypeError</code>.
+Instead, these sinks will only accept one of three specialized,
+immutable objects:</p>
+<ol type="1">
+<li><strong><code>TrustedHTML</code></strong>: Required for sinks that
+parse and render HTML markup, such as <code>innerHTML</code>.</li>
+<li><strong><code>TrustedScript</code></strong>: Required for sinks that
+execute JavaScript directly, such as inline script contents or
+<code>eval()</code>.</li>
+<li><strong><code>TrustedScriptURL</code></strong>: Required for sinks
+that load external executable resources, such as creating a
+<code>&lt;script src="..."&gt;</code> element.</li>
+</ol>
+<p>Because developers cannot directly instantiate these objects using
+standard constructors, malicious payloads passed as raw strings are
+neutralized before they can be evaluated.</p>
+<h3 id="centralized-sanitization-through-policies">Centralized
+Sanitization Through Policies</h3>
+<p>Trusted Types objects can only be generated through explicitly
+defined policies. Using the
+<code>window.trustedTypes.createPolicy()</code> method, developers
+create a centralized ruleset that takes an untrusted string, applies
+sanitization or validation logic, and returns a verified Trusted Type
+instance.</p>
+<p>For example, a policy using a sanitizer library ensures that any HTML
+passed to it is stripped of active code:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> sanitizePolicy <span class="op">=</span> trustedTypes<span class="op">.</span><span class="fu">createPolicy</span>(<span class="st">&#39;sanitizer-policy&#39;</span><span class="op">,</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">createHTML</span><span class="op">:</span> (untrustedInput) <span class="kw">=&gt;</span> DOMPurify<span class="op">.</span><span class="fu">sanitize</span>(untrustedInput)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">// Throws a TypeError:</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>element<span class="op">.</span><span class="at">innerHTML</span> <span class="op">=</span> untrustedInput<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Successfully executes:</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> safeHTML <span class="op">=</span> sanitizePolicy<span class="op">.</span><span class="fu">createHTML</span>(untrustedInput)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>element<span class="op">.</span><span class="at">innerHTML</span> <span class="op">=</span> safeHTML<span class="op">;</span></span></code></pre></div>
+<p>This architecture centralizes security logic. Instead of auditing
+thousands of instances where raw strings are assigned to DOM sinks
+across an entire codebase, security teams only need to review the
+defined Trusted Types policies.</p>
+<h3 id="enforcement-via-content-security-policy">Enforcement via Content
+Security Policy</h3>
+<p>Trusted Types is deployed and enforced using the
+<code>Content-Security-Policy</code> (CSP) HTTP response header:</p>
+<ul>
+<li><strong>Enforcement mode</strong>:
+<code>Content-Security-Policy: require-trusted-types-for 'script';</code>
+locks down the sinks immediately, causing the browser to block any raw
+string assignments.</li>
+<li><strong>Allowlisting policies</strong>:
+<code>Content-Security-Policy: require-trusted-types-for 'script'; trusted-types sanitizer-policy;</code>
+specifies exactly which policies are allowed to create trusted objects,
+preventing unauthorized script execution via rogue policy creation.</li>
+<li><strong>Testing and migration</strong>: Using the
+<code>Content-Security-Policy-Report-Only</code> header allows
+developers to monitor violations and identify sinks across legacy
+applications without breaking existing functionality.</li>
+</ul>
+<p>By removing the reliance on developers remembering to sanitize data
+at every individual sink, the Trusted Types API provides structural
+immunity against DOM-based XSS vulnerabilities.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

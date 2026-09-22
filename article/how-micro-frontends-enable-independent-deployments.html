@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Micro-Frontends Enable Independent Deployments - web-development</title>
+    <meta name="description" content="Micro-frontends decompose monolithic user interfaces into smaller, semi-autonomous applications that work seamlessly together in a single browser session. In enterprise web development, this architectural approach transforms release processes by establis">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-micro-frontends-enable-independent-deployments">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Micro-Frontends Enable Independent Deployments - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-micro-frontends-enable-independent-deployments" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Micro-frontends decompose monolithic user interfaces into smaller, semi-autonomous applications that work seamlessly together in a single browser session. In enterprise web development, this architectural approach transforms release processes by establis" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-micro-frontends-enable-independent-deployments">How
+Micro-Frontends Enable Independent Deployments</h1>
+<p>Micro-frontends decompose monolithic user interfaces into smaller,
+semi-autonomous applications that work seamlessly together in a single
+browser session. In enterprise web development, this architectural
+approach transforms release processes by establishing decoupled
+continuous integration and continuous deployment (CI/CD) pipelines,
+enabling individual engineering teams to build, test, and release
+specific features autonomously. By isolating codebases, defining strict
+runtime integration contracts, and minimizing blast radiuses during
+updates, micro-frontends eliminate organizational deployment bottlenecks
+and accelerate delivery cycles at enterprise scale.</p>
+<h3 id="decoupled-codebases-and-dedicated-cicd-pipelines">Decoupled
+Codebases and Dedicated CI/CD Pipelines</h3>
+<p>In a traditional monolithic frontend architecture, all features,
+shared components, and configurations reside in a single repository or
+build artifact. Consequently, a modification to a single UI component
+requires compiling, bundling, and testing the entire platform.</p>
+<p>Micro-frontends solve this by segmenting the application by business
+domain (for example, checkout, search, or user profile). Each
+micro-frontend maintains its own:</p>
+<ul>
+<li><strong>Repository or Isolated Monorepo Workspace:</strong> Changes
+are tracked separately without triggering unrelated checks.</li>
+<li><strong>Build Scripts and Dependencies:</strong> Teams manage their
+own dependencies, preventing cross-organization package lock
+contention.</li>
+<li><strong>CI/CD Pipeline:</strong> Testing, artifact generation, and
+deployment occur on dedicated tracks. A commit to the checkout service
+only executes the pipeline associated with checkout.</li>
+</ul>
+<h3 id="runtime-integration-over-build-time-composition">Runtime
+Integration Over Build-Time Composition</h3>
+<p>Independent deployment relies fundamentally on how sub-applications
+integrate. While build-time integration (importing components as npm
+packages into a host container) requires redeploying the host for every
+package update, micro-frontends prioritize runtime integration.</p>
+<p>Using technologies such as Webpack Module Federation, native ES
+Modules, or dynamic <code>script</code> tag injection, the container
+shell fetches child applications dynamically at runtime. The host
+specifies an entry URL or manifest file rather than bundled code. When a
+team deploys a new version of a micro-frontend to a Content Delivery
+Network (CDN) or cloud storage bucket, the host automatically loads the
+latest assets upon the next user request without any rebuild or
+redeployment of the shell application.</p>
+<h3 id="reduction-of-the-blast-radius">Reduction of the Blast
+Radius</h3>
+<p>Enterprise releases often stall due to risk aversion; a defect
+introduced in an edge-case feature can disrupt critical business
+functions across the entire application. Micro-frontends mitigate this
+risk through technical isolation:</p>
+<ul>
+<li><strong>Localized Failure Domains:</strong> If an error occurs
+during the rollout of a micro-frontend, error boundaries within the host
+shell contain the failure, allowing the rest of the application to
+function normally.</li>
+<li><strong>Targeted Rollbacks:</strong> Reverting a release requires
+rolling back only the specific micro-frontend's assets or pointing the
+dynamic manifest to the previous stable build, taking seconds rather
+than the hours required to roll back a monolithic bundle.</li>
+<li><strong>Granular Canary Deployments:</strong> Enterprises can
+configure edge routing (via edge workers or CDN routing rules) to serve
+new versions of a specific micro-frontend to a small percentage of
+traffic, validating performance and stability before a complete
+rollout.</li>
+</ul>
+<h3 id="organizational-autonomy-and-parallel-velocity">Organizational
+Autonomy and Parallel Velocity</h3>
+<p>Deployment friction in large enterprises is frequently cultural
+rather than technical. Monoliths require coordinated "release trains,"
+cross-team regression testing sessions, and rigid change-approval
+processes.</p>
+<p>By aligning micro-frontends with decentralized domain teams,
+organizations eliminate the need for cross-team deployment
+synchronization. A team can release multiple times per day according to
+its own roadmap, provided it adheres to agreed-upon interface contracts
+and backward-compatibility standards. This separation of concerns allows
+enterprise teams to operate with the agility of independent startups
+while contributing to a unified user experience.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Database Write-Ahead Logging Guarantees ACID - web-development</title>
+    <meta name="description" content="Write-ahead logging (WAL) is a fundamental database technique that ensures data integrity and operational reliability in transaction-heavy web applications. By mandating that all state modifications are written and persisted to an append-only log on non-">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-database-write-ahead-logging-guarantees-acid">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Database Write-Ahead Logging Guarantees ACID - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-database-write-ahead-logging-guarantees-acid" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Write-ahead logging (WAL) is a fundamental database technique that ensures data integrity and operational reliability in transaction-heavy web applications. By mandating that all state modifications are written and persisted to an append-only log on non-" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-database-write-ahead-logging-guarantees-acid">How Database
+Write-Ahead Logging Guarantees ACID</h1>
+<p>Write-ahead logging (WAL) is a fundamental database technique that
+ensures data integrity and operational reliability in transaction-heavy
+web applications. By mandating that all state modifications are written
+and persisted to an append-only log on non-volatile storage before any
+corresponding changes are applied to the primary database files, WAL
+guarantees the core ACID properties—Atomicity, Consistency, Isolation,
+and Durability. This article explores the mechanical operation of
+write-ahead logging and details how it allows high-throughput systems to
+withstand abrupt process crashes and hardware failures without
+corrupting user data.</p>
+<h3 id="the-mechanics-of-write-ahead-logging">The Mechanics of
+Write-Ahead Logging</h3>
+<p>In high-concurrency web systems, writing updates directly to the
+database data files (such as B-trees or heap files) on every transaction
+introduces prohibitive random I/O overhead. To overcome this, modern
+databases modify data pages exclusively in volatile memory (the buffer
+pool) and defer flushing these "dirty pages" to disk.</p>
+<p>To prevent data loss from crashes while dirty pages reside solely in
+RAM, the database relies on the write-ahead log. Before the database
+engine confirms a transaction commit back to the web application, it
+creates an append-only record describing the exact state transition (or
+physical byte differences) and forces it to persistent storage using an
+operating system flush (such as the <code>fsync</code> system call).
+Because appending to a sequential log is orders of magnitude faster than
+random disk operations, systems maintain high throughput while ensuring
+an immutable paper trail exists before any actual tables are updated on
+disk.</p>
+<h3 id="guaranteeing-atomicity">Guaranteeing Atomicity</h3>
+<p>Atomicity requires that a transaction executes completely or not at
+all. In web development, a complex transaction—such as processing an
+e-commerce order that spans inventory reductions, balance debits, and
+notification queues—can fail midway due to network partitions,
+deadlocks, or server reboots.</p>
+<p>WAL maintains both "redo" and "undo" information for each
+transaction:</p>
+<ul>
+<li><strong>Redo entries</strong> record the changes necessary to
+reapply the transaction.</li>
+<li><strong>Undo entries</strong> record the original values required to
+revert modifications.</li>
+</ul>
+<p>If an error or manual abort occurs mid-transaction, the database
+engine reads the undo records sequentially backward to revert any
+uncommitted modifications already mirrored in the buffer cache. If the
+server crashes abruptly, the recovery process scans the log during
+restart, identifies incomplete transactions that lack a final
+<code>COMMIT</code> marker, and applies the undo logs to ensure partial
+writes never reach the canonical state.</p>
+<h3 id="ensuring-durability">Ensuring Durability</h3>
+<p>Durability guarantees that once a web application receives
+confirmation that a transaction has succeeded, its changes will persist
+indefinitely, even in the event of an immediate total power loss.</p>
+<p>WAL achieves durability by decoupling transaction commits from data
+page flushes:</p>
+<ol type="1">
+<li>When a transaction commits, its commit log record is flushed to the
+WAL file on disk.</li>
+<li>The database confirms the commit to the application client.</li>
+<li>The underlying modified data pages remain in memory and are written
+to disk later in batches during a process known as
+<strong>checkpointing</strong>.</li>
+</ol>
+<p>If the system crashes before dirty pages are written to the database
+files, the recovery manager re-reads the WAL sequentially starting from
+the last known checkpoint. It re-executes all committed transactions
+(the redo phase) to bring the table data on disk up to the exact state
+it was in at the moment of the crash.</p>
+<h3 id="supporting-consistency-and-isolation">Supporting Consistency and
+Isolation</h3>
+<p>While isolation is primarily enforced through concurrency control
+mechanisms like Multi-Version Concurrency Control (MVCC) or Two-Phase
+Locking (2PL), WAL provides the operational foundation required to
+support these mechanisms.</p>
+<ul>
+<li><strong>Consistency:</strong> By ensuring that transactions are
+atomic and durable, WAL guarantees that the database moves exclusively
+from one valid state to another. In-flight transactions that would
+otherwise leave the database in an illegal or partially updated state
+are reliably rolled back during recovery, preserving all foreign keys,
+unique constraints, and schema invariants.</li>
+<li><strong>Isolation:</strong> In MVCC engines (such as those used by
+PostgreSQL or MySQL InnoDB), creating new row versions requires atomic
+coordination. WAL records the creation and deprecation timestamps or
+transaction IDs for these row versions. If multiple web workers attempt
+conflicting writes, WAL ensures that serialization failures or lock
+timeouts can unwind their localized changes cleanly without exposing
+intermediate or uncommitted row versions to concurrent
+transactions.</li>
+</ul>
+<h3 id="architectural-benefits-for-web-development">Architectural
+Benefits for Web Development</h3>
+<p>For high-traffic web applications, the primary advantage of
+write-ahead logging is the ability to sustain intense transaction
+volumes without sacrificing data guarantees. By converting random writes
+into sequential disk I/O at commit time, WAL frees the database engine
+to manage background I/O asynchronously. This architecture ensures web
+services achieve low latency, predictable response times, and
+bulletproof disaster-recovery capabilities under peak operational
+loads.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Accessible Name Computation Works - web-development</title>
+    <meta name="description" content="The accessible name computation algorithm is the standardized set of rules web browsers use to determine the text label assigned to an HTML element within the accessibility tree. Assistive technologies, such as screen readers, rely on this accessible nam">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-accessible-name-computation-works">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Accessible Name Computation Works - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-accessible-name-computation-works" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The accessible name computation algorithm is the standardized set of rules web browsers use to determine the text label assigned to an HTML element within the accessibility tree. Assistive technologies, such as screen readers, rely on this accessible nam" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-accessible-name-computation-works">How Accessible Name
+Computation Works</h1>
+<p>The accessible name computation algorithm is the standardized set of
+rules web browsers use to determine the text label assigned to an HTML
+element within the accessibility tree. Assistive technologies, such as
+screen readers, rely on this accessible name to inform users what an
+element is and what it does. This article outlines the step-by-step
+hierarchy browsers follow to calculate an accessible name, from
+high-priority ARIA attributes down to native HTML semantics and fallback
+attributes.</p>
+<h3 id="1-hidden-elements-and-css-display-rules">1. Hidden Elements and
+CSS Display Rules</h3>
+<p>Before calculating a name, the browser determines if the element
+itself is hidden from the accessibility tree. Elements styled with
+<code>display: none</code> or <code>visibility: hidden</code>, or marked
+with <code>aria-hidden="true"</code>, are generally ignored by the
+algorithm unless explicitly referenced by another element through an ID
+reference.</p>
+<h3 id="2-the-aria-labelledby-attribute">2. The
+<code>aria-labelledby</code> Attribute</h3>
+<p>The highest priority in the computation order is
+<code>aria-labelledby</code>.</p>
+<ul>
+<li>If an element includes <code>aria-labelledby</code>, the browser
+looks up the space-separated list of element IDs specified in its
+value.</li>
+<li>The browser extracts the text content of those referenced elements
+and concatenates them to form the accessible name.</li>
+<li><code>aria-labelledby</code> can reference elements that are hidden
+with <code>display: none</code> or <code>aria-hidden="true"</code>,
+allowing developers to create dedicated, invisible labeling nodes if
+needed.</li>
+</ul>
+<h3 id="3-the-aria-label-attribute">3. The <code>aria-label</code>
+Attribute</h3>
+<p>If <code>aria-labelledby</code> is absent or resolves to an empty
+string, the browser checks for the <code>aria-label</code>
+attribute.</p>
+<ul>
+<li>The exact string value provided inside <code>aria-label</code>
+becomes the accessible name.</li>
+<li>When present, <code>aria-label</code> completely overrides any
+internal text or native labels the element contains.</li>
+</ul>
+<h3 id="4-native-html-labeling-semantics">4. Native HTML Labeling
+Semantics</h3>
+<p>If no ARIA labeling attributes are present, the browser evaluates
+native HTML markup designed for labeling:</p>
+<ul>
+<li><strong>Form Controls:</strong> Elements like
+<code>&lt;input&gt;</code>, <code>&lt;select&gt;</code>, and
+<code>&lt;textarea&gt;</code> derive their name from an associated
+<code>&lt;label&gt;</code> element mapped via the <code>for</code> and
+<code>id</code> attributes, or by wrapping the control inside a
+<code>&lt;label&gt;</code>.</li>
+<li><strong>Images:</strong> An <code>&lt;img&gt;</code> element derives
+its name from the <code>alt</code> attribute.</li>
+<li><strong>Tables and Figures:</strong> A <code>&lt;table&gt;</code>
+derives its name from its nested <code>&lt;caption&gt;</code>, and a
+<code>&lt;figure&gt;</code> derives its name from a nested
+<code>&lt;figcaption&gt;</code>.</li>
+<li><strong>Fieldsets:</strong> A <code>&lt;fieldset&gt;</code> derives
+its name from its child <code>&lt;legend&gt;</code>.</li>
+</ul>
+<h3 id="5-name-from-subtree-content">5. Name from Subtree Content</h3>
+<p>Certain elements allow their accessible name to be derived directly
+from their child nodes (known as "name from contents").</p>
+<ul>
+<li>This rule applies to elements such as <code>&lt;a&gt;</code>,
+<code>&lt;button&gt;</code>, <code>&lt;summary&gt;</code>, and headings
+(<code>&lt;h1&gt;</code>–<code>&lt;h6&gt;</code>).</li>
+<li>The browser traverses the DOM subtree of the element and
+concatenates visible text nodes.</li>
+<li>If a child element inside the subtree has its own accessible name
+(such as an embedded image with an <code>alt</code> attribute), that
+name is factored into the parent element’s overall accessible name.</li>
+</ul>
+<h3 id="6-fallback-attributes">6. Fallback Attributes</h3>
+<p>When none of the previous criteria yield a valid name, the browser
+falls back to secondary attributes:</p>
+<ul>
+<li><strong>The <code>title</code> Attribute:</strong> The browser uses
+the element's <code>title</code> attribute value.</li>
+<li><strong>The <code>placeholder</code> Attribute:</strong> For form
+inputs, the browser may use the <code>placeholder</code> text as a last
+resort, though relying on placeholders for accessible names is
+discouraged because it provides a suboptimal user experience.</li>
+</ul>
+<p>If all steps in the algorithm fail to locate a valid source of text,
+the element is left without an accessible name, rendering it an
+unlabelled control to screen readers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

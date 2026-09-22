@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing Blind SQL Injection in Dynamic Search Filters - web-development</title>
+    <meta name="description" content="Dynamic search filters are a frequent target for blind SQL injection because they often dynamically assemble database queries based on multiple optional user inputs. In a blind SQL injection attack, adversaries infer sensitive data or database structures">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/preventing-blind-sql-injection-in-dynamic-search-filters">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing Blind SQL Injection in Dynamic Search Filters - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/preventing-blind-sql-injection-in-dynamic-search-filters" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Dynamic search filters are a frequent target for blind SQL injection because they often dynamically assemble database queries based on multiple optional user inputs. In a blind SQL injection attack, adversaries infer sensitive data or database structures" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="preventing-blind-sql-injection-in-dynamic-search-filters">Preventing
+Blind SQL Injection in Dynamic Search Filters</h1>
+<p>Dynamic search filters are a frequent target for blind SQL injection
+because they often dynamically assemble database queries based on
+multiple optional user inputs. In a blind SQL injection attack,
+adversaries infer sensitive data or database structures by observing
+conditional application behavior or inducing measurable time delays
+rather than viewing visible database errors. Defending against these
+vulnerabilities requires a combination of secure query construction,
+strict input handling, and database-level hardening to ensure dynamic
+querying does not expose underlying databases to extraction attacks.</p>
+<h3 id="parameterized-dynamic-queries">Parameterized Dynamic
+Queries</h3>
+<p>The primary defense against SQL injection is the separation of query
+logic from user data through parameterized queries (prepared
+statements). While developers often resort to string concatenation when
+building search filters with variable numbers of parameters, modern
+database libraries support dynamic parameterization. Instead of
+concatenating raw values, the application should build the base query
+string with placeholders (e.g., <code>?</code> or <code>$1</code>) and
+append the corresponding user values to a secure parameter list executed
+by the database engine.</p>
+<h3 id="allow-listing-for-non-parameterizable-tokens">Allow-Listing for
+Non-Parameterizable Tokens</h3>
+<p>Search features often allow users to filter by specific fields or
+sort results by dynamic columns and directions (e.g., <code>ASC</code>
+or <code>DESC</code>). Because SQL syntax standards do not permit query
+placeholders for structural identifiers like column names, table names,
+or sort clauses, parameterization cannot be applied directly to these
+components.</p>
+<p>To secure dynamic identifiers:</p>
+<ul>
+<li>Maintain a strict, hard-coded dictionary or enum of allowable column
+names within the application layer.</li>
+<li>Map generic client-side keys (such as <code>sort=date</code>) to
+validated database columns (such as <code>created_at</code>).</li>
+<li>Reject or fall back to a safe default if the supplied input does not
+strictly match the allow-list.</li>
+</ul>
+<h3 id="structured-query-builders-and-orms">Structured Query Builders
+and ORMs</h3>
+<p>Leveraging robust Query Builders or Object-Relational Mappers (ORMs)
+mitigates dynamic concatenation risks. Query builders provide high-level
+abstractions that compose complex conditional filters (<code>AND</code>,
+<code>OR</code>, <code>LIKE</code>) programmatically while managing
+parameter binding automatically under the hood. When using an ORM or
+query builder, avoid using raw SQL fragments, escape clauses, or
+unescaped string interpolations inside wrapper functions.</p>
+<h3 id="strict-data-typing-and-validation">Strict Data Typing and
+Validation</h3>
+<p>Dynamic search filters receive varied data types, such as integers,
+dates, ranges, and strings. Enforcing strict schema validation before
+the data touches any query logic reduces the attack surface:</p>
+<ul>
+<li>Cast numeric identifiers, pagination offsets, and limits directly to
+integers.</li>
+<li>Parse date ranges into standardized date/time objects.</li>
+<li>Restrict free-text search fields using length limits and pattern
+matching to disallow SQL control characters where they serve no valid
+business purpose.</li>
+</ul>
+<h3 id="database-hardening-and-least-privilege">Database Hardening and
+Least Privilege</h3>
+<p>Mitigate the impact of potential vulnerabilities by restricting
+database permissions:</p>
+<ul>
+<li>Run the application under a database account with minimal necessary
+privileges, restricting access only to the views or tables required for
+searching.</li>
+<li>Disable administrative stored procedures, multi-statement
+executions, and diagnostic utilities that facilitate blind, time-based
+attacks (such as sleep or benchmark functions) if the environment
+allows.</li>
+<li>Apply rate limiting to search endpoints to hinder automated blind
+SQL injection tools, which rely on sending thousands of iterative
+requests to extract data character by character.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

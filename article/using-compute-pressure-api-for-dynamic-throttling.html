@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Compute Pressure API for Dynamic Throttling - web-development</title>
+    <meta name="description" content="The Compute Pressure API enables web applications to observe the current system utilization state—including CPU usage and thermal conditions—directly from the browser. By leveraging this real-time telemetry, engineering teams can implement dynamic wo">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-compute-pressure-api-for-dynamic-throttling">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Compute Pressure API for Dynamic Throttling - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-compute-pressure-api-for-dynamic-throttling" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Compute Pressure API enables web applications to observe the current system utilization state—including CPU usage and thermal conditions—directly from the browser. By leveraging this real-time telemetry, engineering teams can implement dynamic wo" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-compute-pressure-api-for-dynamic-throttling">Using Compute
+Pressure API for Dynamic Throttling</h1>
+<p>The Compute Pressure API enables web applications to observe the
+current system utilization state—including CPU usage and thermal
+conditions—directly from the browser. By leveraging this real-time
+telemetry, engineering teams can implement dynamic workload throttling
+strategies to maintain stable frame rates, prevent device overheating,
+and extend battery life. This article outlines key architectural
+strategies for monitoring hardware pressure states and automatically
+scaling computational demands in modern web applications.</p>
+<h2 id="understanding-compute-pressure-states">Understanding Compute
+Pressure States</h2>
+<p>The Compute Pressure API exposes system health through states
+categorized primarily as <code>nominal</code>, <code>fair</code>,
+<code>serious</code>, and <code>critical</code>.</p>
+<ul>
+<li><strong>Nominal:</strong> The system operates under minimal load,
+allowing full feature availability and maximum compute capacity.</li>
+<li><strong>Fair:</strong> The system is under moderate utilization;
+minor adjustments can preemptively prevent performance degradation.</li>
+<li><strong>Serious:</strong> The system is experiencing substantial
+pressure, signaling that hardware throttling may be imminent unless
+workloads decrease.</li>
+<li><strong>Critical:</strong> The system is overburdened, requiring
+immediate reduction of compute tasks to avoid severe UI freezes and
+thermal throttling.</li>
+</ul>
+<p>Using an <code>Observer</code> pattern, applications listen for these
+state changes and trigger corresponding adaptation tiers.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> observer <span class="op">=</span> <span class="kw">new</span> <span class="fu">PressureObserver</span>((records) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> latestRecord <span class="op">=</span> records[records<span class="op">.</span><span class="at">length</span> <span class="op">-</span> <span class="dv">1</span>]<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">adjustAppWorkload</span>(latestRecord<span class="op">.</span><span class="at">state</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}<span class="op">,</span> { <span class="dt">sampleInterval</span><span class="op">:</span> <span class="dv">1000</span> })<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>observer<span class="op">.</span><span class="fu">observe</span>(<span class="st">&#39;cpu&#39;</span>)<span class="op">;</span></span></code></pre></div>
+<h2 id="strategy-1-tiered-rendering-and-graphics-scaling">Strategy 1:
+Tiered Rendering and Graphics Scaling</h2>
+<p>Graphics-intensive applications using Canvas, WebGL, or WebGPU can
+dynamically scale their visual complexity based on the observed pressure
+state:</p>
+<ul>
+<li><strong>Dynamic Resolution Scaling (DRS):</strong> When pressure
+reaches <code>serious</code> or <code>critical</code>, reduce the
+rendering resolution (e.g., from 1080p to 720p) while maintaining the
+display canvas dimensions via CSS upscaling.</li>
+<li><strong>Post-Processing Disabling:</strong> Turn off non-essential
+graphical enhancements such as bloom, motion blur, anti-aliasing, and
+real-time shadows during elevated load states.</li>
+<li><strong>Frame Rate Capping:</strong> Drop the target rendering loop
+from 60 or 120 FPS down to 30 FPS when entering <code>serious</code>
+states to drastically lower GPU and CPU cycles.</li>
+</ul>
+<h2 id="strategy-2-adaptive-media-and-webrtc-pipelines">Strategy 2:
+Adaptive Media and WebRTC Pipelines</h2>
+<p>Real-time communication platforms (e.g., video conferencing tools)
+consume significant CPU resources for media processing. Teams can
+throttle these workloads dynamically:</p>
+<ul>
+<li><strong>Video Quality Adjustment:</strong> Reduce local capture
+framerates, lower outbound video bitrates, or switch from
+higher-complexity codecs to hardware-accelerated profiles when pressure
+shifts past <code>nominal</code>.</li>
+<li><strong>Disabling Heavy ML Visual Effects:</strong> Features like
+virtual backgrounds, face filters, and background blur rely on intensive
+client-side neural networks. Drop visual segmentation fidelity, run
+inference every <span class="math inline">\(n\)</span>-th frame instead
+of continuously, or temporarily prompt the user that background effects
+have been disabled to preserve system stability.</li>
+</ul>
+<h2 id="strategy-3-throttling-web-workers-and-batch-processing">Strategy
+3: Throttling Web Workers and Batch Processing</h2>
+<p>Background tasks should yield priority to main-thread UI operations
+during periods of high computational pressure:</p>
+<ul>
+<li><strong>Concurrency Management:</strong> Limit the number of
+concurrent Web Workers processing computational tasks (such as
+client-side data transformation, parsing large JSON files, or image
+encoding).</li>
+<li><strong>Chunking and Deferral:</strong> Break monolithic data tasks
+into smaller micro-tasks using <code>requestIdleCallback</code> or
+<code>scheduler.yield()</code>. During <code>critical</code> pressure,
+pause non-urgent tasks entirely until the state returns to
+<code>fair</code> or <code>nominal</code>.</li>
+<li><strong>Telemetry and Analytics Delays:</strong> Postpone
+client-side telemetry flushes, analytics aggregation, and pre-fetching
+of speculative assets when compute capacity is constrained.</li>
+</ul>
+<h2 id="strategy-4-edge-to-cloud-offloading">Strategy 4: Edge-to-Cloud
+Offloading</h2>
+<p>Applications executing client-side machine learning inference (via
+WebAssembly or WebNN) can adopt a hybrid execution model:</p>
+<ul>
+<li><strong>Model Switching:</strong> Switch dynamically from a
+heavy-weight client model to an ultra-lightweight, quantized alternative
+when the pressure moves from <code>nominal</code> to
+<code>fair</code>.</li>
+<li><strong>Cloud Fallback:</strong> Under <code>serious</code> and
+<code>critical</code> conditions, redirect computational payloads (e.g.,
+document parsing, transcription, complex calculations) from the client
+device to cloud serverless endpoints, trading network bandwidth to
+alleviate local hardware stress.</li>
+</ul>
+<h2 id="avoiding-flapping-with-hysteresis">Avoiding Flapping with
+Hysteresis</h2>
+<p>Directly binding computational changes to pressure updates can cause
+rapid cycling (flapping) between throttled and unthrottled states. To
+prevent this, apply stabilization controls:</p>
+<ul>
+<li><strong>Time-Based Debouncing:</strong> Require a lower pressure
+state to persist for a minimum threshold (e.g., 5 to 10 seconds) before
+restoring full feature sets.</li>
+<li><strong>Step-Down, Jump-Up Logic:</strong> Throttle workloads
+aggressively upon the first signal of <code>serious</code> or
+<code>critical</code>, but restore workloads gradually, tier-by-tier, as
+the system normalizes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

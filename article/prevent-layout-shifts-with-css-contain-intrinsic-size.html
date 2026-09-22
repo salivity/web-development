@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent Layout Shifts with CSS contain-intrinsic-size - web-development</title>
+    <meta name="description" content="The CSS contain-intrinsic-size property eliminates Cumulative Layout Shift (CLS) on lazy-loaded and off-screen elements by establishing explicit fallback dimensions before the actual content renders. When used alongside size containment features like con">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-layout-shifts-with-css-contain-intrinsic-size">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent Layout Shifts with CSS contain-intrinsic-size - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-layout-shifts-with-css-contain-intrinsic-size" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS contain-intrinsic-size property eliminates Cumulative Layout Shift (CLS) on lazy-loaded and off-screen elements by establishing explicit fallback dimensions before the actual content renders. When used alongside size containment features like con" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="prevent-layout-shifts-with-css-contain-intrinsic-size">Prevent
+Layout Shifts with CSS contain-intrinsic-size</h1>
+<p>The CSS <code>contain-intrinsic-size</code> property eliminates
+Cumulative Layout Shift (CLS) on lazy-loaded and off-screen elements by
+establishing explicit fallback dimensions before the actual content
+renders. When used alongside size containment features like
+<code>content-visibility: auto</code>, it reserves the required vertical
+and horizontal space in the document flow. This ensures that when
+delayed or asynchronous assets finally load, the surrounding page layout
+remains perfectly stable rather than jumping abruptly.</p>
+<h2 id="the-cause-of-layout-shifts-in-delayed-elements">The Cause of
+Layout Shifts in Delayed Elements</h2>
+<p>When elements are deferred—whether through native lazy-loading,
+JavaScript-driven data fetching, or the
+<code>content-visibility: auto</code> property—the browser does not
+immediately calculate their full dimensions. By default, an unrendered
+or empty element has a computed height of <code>0px</code>.</p>
+<p>As the user scrolls and the deferred element enters the viewport, the
+browser downloads the content, calculates the true box dimensions, and
+paints it. This sudden transition from zero height to the element's
+rendered height pushes all following content down the page. This
+phenomenon degrades the user experience and negatively impacts Google's
+Cumulative Layout Shift (CLS) metric in Core Web Vitals.</p>
+<h2 id="how-contain-intrinsic-size-solves-the-issue">How
+<code>contain-intrinsic-size</code> Solves the Issue</h2>
+<p>To prevent layout shifts, the browser needs to know how much space to
+allocate before the content exists. Standard width and height properties
+cannot always solve this, especially in responsive designs where
+components need to resize dynamically once rendered.</p>
+<p>The <code>contain-intrinsic-size</code> property acts as a
+placeholder size specifically for elements subject to size containment
+(such as <code>contain: size</code> or
+<code>content-visibility: auto</code>). It provides intrinsic dimensions
+that the browser uses exclusively while the element's contents are not
+being rendered.</p>
+<p>When the element is off-screen or unrendered:</p>
+<ol type="1">
+<li>The browser applies the dimensions defined in
+<code>contain-intrinsic-size</code>.</li>
+<li>The scrollbar and surrounding layout calculate page geometry using
+these placeholder sizes.</li>
+<li>No shifting occurs as the user navigates toward the element.</li>
+</ol>
+<p>Once the element enters the viewport and renders its contents, the
+placeholder size is replaced by the element's actual rendered
+dimensions.</p>
+<h2 id="syntax-and-implementation">Syntax and Implementation</h2>
+<p>The property accepts one or two values representing width and
+height.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Sets width to 100% of container, with an estimated height of 400px */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.lazy-card</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  content-visibility<span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">contain-intrinsic-size</span><span class="ch">:</span> <span class="bu">auto</span> <span class="dv">400</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="the-auto-keyword">The <code>auto</code> Keyword</h3>
+<p>Modern implementations support the <code>auto [length]</code> syntax
+(for example, <code>contain-intrinsic-size: auto 500px</code>). This
+provides an intelligent fallback:</p>
+<ul>
+<li><strong>Before rendering:</strong> The browser uses the provided
+length (e.g., <code>500px</code>) as the estimated intrinsic size.</li>
+<li><strong>After rendering:</strong> The browser remembers the
+element's actual rendered size.</li>
+<li><strong>If off-screen again:</strong> If the element moves out of
+view and is discarded from the render tree, the browser uses the
+previously recorded real size instead of the estimate, completely
+eliminating layout shifts during repeated scrolling.</li>
+</ul>
+<p>By reserving accurate layout space during asynchronous and deferred
+rendering, <code>contain-intrinsic-size</code> bridges the gap between
+performance optimization and visual stability.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Differential Serving for Modern and Legacy Browsers - web-development</title>
+    <meta name="description" content="Differential serving is an optimization strategy that delivers modern, lightweight JavaScript to capable browsers while simultaneously offering heavily polyfilled, transpiled bundles to older clients. This article explores how differential serving works,">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/differential-serving-for-modern-and-legacy-browsers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Differential Serving for Modern and Legacy Browsers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/differential-serving-for-modern-and-legacy-browsers" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Differential serving is an optimization strategy that delivers modern, lightweight JavaScript to capable browsers while simultaneously offering heavily polyfilled, transpiled bundles to older clients. This article explores how differential serving works," />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="differential-serving-for-modern-and-legacy-browsers">Differential
+Serving for Modern and Legacy Browsers</h1>
+<p>Differential serving is an optimization strategy that delivers
+modern, lightweight JavaScript to capable browsers while simultaneously
+offering heavily polyfilled, transpiled bundles to older clients. This
+article explores how differential serving works, the primary methods
+used to implement it, and how it enables engineering teams to leverage
+cutting-edge ECMAScript features without sacrificing backwards
+compatibility.</p>
+<h3 id="the-problem-with-universal-bundling">The Problem with Universal
+Bundling</h3>
+<p>For years, the standard approach to web compatibility was to compile
+all JavaScript down to ECMAScript 5 (ES5) and inject broad polyfills to
+ensure the application worked on obsolete platforms like Internet
+Explorer 11.</p>
+<p>While this guaranteed universal compatibility, it created significant
+drawbacks for the vast majority of users running modern browsers:</p>
+<ul>
+<li><strong>Bloated File Sizes:</strong> Transpiling modern syntax—such
+as async/await, classes, and arrow functions—into ES5 requires verbose
+helper functions that inflate bundle size.</li>
+<li><strong>Slower Execution:</strong> Modern browser engines natively
+optimize ES6+ syntax. Running polyfills and transpiled code forces
+modern engines to execute redundant and less efficient code paths.</li>
+<li><strong>Wasted Bandwidth:</strong> High-performance devices download
+mega-bytes of compatibility code they will never execute.</li>
+</ul>
+<h3 id="how-differential-serving-resolves-the-bottleneck">How
+Differential Serving Resolves the Bottleneck</h3>
+<p>Differential serving decouples the build output into two separate
+pipelines:</p>
+<ol type="1">
+<li><strong>Modern Bundle:</strong> Compiled targeting ES2015+ (or
+newer). It contains native syntax, fewer or zero polyfills, and runs
+with native browser optimizations.</li>
+<li><strong>Legacy Bundle:</strong> Compiled targeting ES5 or older
+browser baselines. It includes extensive polyfills and transpiled helper
+functions to ensure stability on older runtimes.</li>
+</ol>
+<p>By serving these bundles conditionally, developers eliminate
+technical debt for modern visitors while retaining complete
+functionality for legacy users.</p>
+<h3 id="implementation-methods">Implementation Methods</h3>
+<p>Teams typically implement differential serving using two primary
+approaches: client-side detection and server-side/edge detection.</p>
+<h4 id="1-the-module--nomodule-pattern-client-side">1. The
+<code>module</code> / <code>nomodule</code> Pattern (Client-Side)</h4>
+<p>The most common and standard way to implement differential serving
+uses native HTML script attributes:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Loaded by modern browsers that understand ES Modules --&gt;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> type=</span><span class="st">&quot;module&quot;</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;app.modern.js&quot;</span><span class="dt">&gt;&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Loaded by legacy browsers that do not support ES Modules --&gt;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> nomodule src</span><span class="op">=</span><span class="st">&quot;app.legacy.js&quot;</span><span class="dt">&gt;&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Browsers that support <code>&lt;script type="module"&gt;</code>
+automatically ignore any script tagged with the <code>nomodule</code>
+attribute. Conversely, older browsers that do not recognize
+<code>type="module"</code> will ignore the modern script entirely and
+execute the <code>nomodule</code> fallback script.</p>
+<p>Because the support boundary for native JavaScript modules roughly
+aligns with broad support for modern ECMAScript features, this pattern
+creates a clean dividing line without requiring custom runtime
+logic.</p>
+<h4 id="2-user-agent-and-edge-routing-server-side">2. User-Agent and
+Edge Routing (Server-Side)</h4>
+<p>Another approach relies on edge networks, CDNs, or server-side
+rendering (SSR) to inspect the client's <code>User-Agent</code> header
+before returning HTML:</p>
+<ul>
+<li>The server evaluates the incoming browser signature.</li>
+<li>If the browser meets modern engine criteria (e.g., Chrome 90+,
+Safari 15+), the server serves HTML containing links only to modern
+assets.</li>
+<li>If the browser is outdated or unverified, the server injects
+references to the legacy assets.</li>
+</ul>
+<p>This method completely avoids double-download edge cases found in
+certain transitional browsers and reduces HTML payload size, though it
+requires cache partitioning based on user-agent capabilities.</p>
+<h3 id="core-benefits-for-engineering-teams">Core Benefits for
+Engineering Teams</h3>
+<ul>
+<li><strong>Improved Core Web Vitals:</strong> Smaller modern bundles
+lead to faster Largest Contentful Paint (LCP) and lower Total Blocking
+Time (TBT) due to reduced JavaScript parsing and execution times.</li>
+<li><strong>Developer Productivity:</strong> Developers can freely write
+clean, modern code without manually restricting themselves to legacy
+syntax patterns or worrying about breaking legacy environments.</li>
+<li><strong>Predictable Sunsetting:</strong> As analytics show legacy
+browser traffic decreasing, teams can adjust their modern threshold or
+phase out the legacy pipeline entirely without refactoring application
+source code.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

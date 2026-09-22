@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stale-if-Error Trade-Offs for High Availability - web-development</title>
+    <meta name="description" content="The stale-if-error HTTP Cache-Control directive allows an edge cache, content delivery network (CDN), or browser to serve cached, expired responses when the origin server returns a 5xx error or fails to respond. While this policy dramatically improves pe">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/stale-if-error-trade-offs-for-high-availability">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Stale-if-Error Trade-Offs for High Availability - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/stale-if-error-trade-offs-for-high-availability" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The stale-if-error HTTP Cache-Control directive allows an edge cache, content delivery network (CDN), or browser to serve cached, expired responses when the origin server returns a 5xx error or fails to respond. While this policy dramatically improves pe" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="stale-if-error-trade-offs-for-high-availability">Stale-if-Error
+Trade-Offs for High Availability</h1>
+<p>The <code>stale-if-error</code> HTTP <code>Cache-Control</code>
+directive allows an edge cache, content delivery network (CDN), or
+browser to serve cached, expired responses when the origin server
+returns a 5xx error or fails to respond. While this policy dramatically
+improves perceived uptime and user experience during infrastructure
+outages, it introduces critical trade-offs regarding data freshness,
+observability, backend recovery, and state consistency.</p>
+<h3 id="resilience-vs-data-freshness">Resilience vs. Data Freshness</h3>
+<p>The primary advantage of <code>stale-if-error</code> is high
+availability. When an origin database crashes or a deployment fails, end
+users continue to see functional pages rather than a generic error
+code.</p>
+<p>The immediate trade-off is data accuracy. Serving stale data can have
+varying consequences depending on the resource:</p>
+<ul>
+<li><strong>Low Impact:</strong> Marketing pages, documentation, and
+blog posts remain usable even if the content is hours or days out of
+date.</li>
+<li><strong>High Impact:</strong> Financial balances, inventory levels,
+or breaking news updates become actively harmful when outdated. A user
+might purchase an item marked as in stock when the origin failure is
+masking inventory depletion.</li>
+</ul>
+<h3 id="observability-and-masked-failures">Observability and Masked
+Failures</h3>
+<p>When edge caches serve stale content upon detecting backend errors,
+user-facing error rates remain near zero. While this satisfies
+service-level objectives (SLOs) for end users, it can blind engineering
+teams to active failures.</p>
+<p>Traditional monitoring that relies on synthetic checks or client-side
+telemetry may report a healthy application while the origin server is in
+a crash loop. To counteract this, organizations must decouple
+edge-to-client metrics from edge-to-origin health metrics. Monitoring
+must explicitly alert on origin error spikes and cache-hit ratios for
+stale responses.</p>
+<h3 id="recovery-waves-and-cache-stampedes">Recovery Waves and Cache
+Stampedes</h3>
+<p>When an origin service experiences transient degradation,
+<code>stale-if-error</code> shields it from continuous user traffic.
+However, the directive can exacerbate recovery:</p>
+<ol type="1">
+<li><strong>Simultaneous Expiration:</strong> If a prolonged outage
+exceeds the configured <code>stale-if-error</code> window, all cached
+stale assets expire concurrently, causing a massive traffic spike
+(thundering herd) that can knock the recovering origin back
+offline.</li>
+<li><strong>Revalidation Overload:</strong> Once the origin recovers,
+edge nodes will immediately attempt to revalidate their stale assets
+simultaneously. Without request coalescing (collapsing identical pending
+requests into a single origin fetch), the burst of revalidations can
+trigger a secondary outage.</li>
+</ol>
+<h3 id="security-and-state-synchronization">Security and State
+Synchronization</h3>
+<p>The <code>stale-if-error</code> directive is often applied globally
+via edge CDN configurations, which risks exposing dynamic or sensitive
+content.</p>
+<p>If an authenticated endpoint or a route containing personalized user
+state is mistakenly cached with a fallback directive, users may receive
+outdated authorization states or corrupted session views. For example, a
+user who revokes account access or changes permissions might still see
+administrative panels if the edge masks an authorization failure by
+serving a previously cached response.</p>
+<h3 id="implementation-strategy">Implementation Strategy</h3>
+<p>To balance availability with correctness, teams should avoid applying
+blanket <code>stale-if-error</code> policies:</p>
+<ul>
+<li><strong>Scope by Content Type:</strong> Restrict aggressive stale
+windows to static or read-heavy public APIs. Keep the stale window
+narrow (e.g., minutes instead of days) for semi-dynamic data.</li>
+<li><strong>Exclude Sensitive Routes:</strong> Explicitly bypass
+<code>stale-if-error</code> for transactional, authenticated, and
+mutation-heavy endpoints using
+<code>Cache-Control: no-store, private</code>.</li>
+<li><strong>Pair with Asynchronous Revalidation:</strong> Combine
+<code>stale-if-error</code> with <code>stale-while-revalidate</code> and
+origin-shielding mechanisms to smooth out traffic spikes during both
+steady states and recovery phases.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

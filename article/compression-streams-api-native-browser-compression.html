@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Streams API: Native Browser Compression - web-development</title>
+    <meta name="description" content="The Compression Streams API provides web applications with native, standards-based capabilities to compress and decompress data streams directly within the browser. By leveraging built-in browser engines rather than heavy third-party JavaScript libraries">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/compression-streams-api-native-browser-compression">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compression Streams API: Native Browser Compression - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/compression-streams-api-native-browser-compression" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Compression Streams API provides web applications with native, standards-based capabilities to compress and decompress data streams directly within the browser. By leveraging built-in browser engines rather than heavy third-party JavaScript libraries" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="compression-streams-api-native-browser-compression">Compression
+Streams API: Native Browser Compression</h1>
+<p>The Compression Streams API provides web applications with native,
+standards-based capabilities to compress and decompress data streams
+directly within the browser. By leveraging built-in browser engines
+rather than heavy third-party JavaScript libraries, developers can
+significantly reduce client-side bundle sizes, conserve memory, and
+optimize network payloads before transmission.</p>
+<p>Historically, compressing data on the client side required importing
+external libraries such as Pako or bundling WebAssembly-compiled
+versions of zlib. These solutions increased JavaScript payload sizes and
+relied on substantial CPU overhead. The Compression Streams API resolves
+this by exposing native compression algorithms directly via standard
+JavaScript interfaces, integrating seamlessly with the WHATWG Streams
+standard.</p>
+<h3 id="core-interfaces-and-supported-formats">Core Interfaces and
+Supported Formats</h3>
+<p>The API introduces two primary built-in classes:</p>
+<ul>
+<li><strong><code>CompressionStream</code></strong>: A
+<code>TransformStream</code> that receives uncompressed data chunks and
+outputs a compressed stream.</li>
+<li><strong><code>DecompressionStream</code></strong>: A
+<code>TransformStream</code> that reverses the process, taking
+compressed chunks and outputting the original raw data.</li>
+</ul>
+<p>Both constructors accept an encoding format parameter. Modern browser
+implementations natively support:</p>
+<ul>
+<li><code>'gzip'</code>: Formats data using the standard Gstandard GZIP
+wrapper, commonly used across HTTP transactions.</li>
+<li><code>'deflate'</code>: Compresses using the raw DEFLATE algorithm
+wrapped with zlib metadata.</li>
+<li><code>'deflate-raw'</code>: Produces raw DEFLATE output without
+headers or checksums, ideal for custom binary protocols.</li>
+</ul>
+<h3 id="how-native-compression-operates">How Native Compression
+Operates</h3>
+<p>Because the API is built entirely on the Streams specification, it
+operates asynchronously and handles data sequentially in chunks rather
+than requiring entire payloads to be buffered in memory at once.</p>
+<p>To compress arbitrary text or binary data:</p>
+<ol type="1">
+<li><strong>Source to Stream</strong>: The data source (such as a
+string, <code>Blob</code>, or network response) is converted into a
+<code>ReadableStream</code>. For strings, a <code>TextEncoder</code>
+converts the text into <code>Uint8Array</code> bytes.</li>
+<li><strong>Piping Through the Transform</strong>: The
+<code>ReadableStream</code> is piped through an instance of
+<code>CompressionStream</code> via the <code>pipeThrough()</code>
+method.</li>
+<li><strong>Consumption</strong>: The output stream is consumed,
+typically by passing it directly to a <code>fetch()</code> request body,
+saving it via the File System Access API, or buffering it into an
+<code>ArrayBuffer</code> via a <code>Response</code> object.</li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">compressString</span>(text) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Convert the string into a byte stream</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> stream <span class="op">=</span> <span class="kw">new</span> <span class="bu">Blob</span>([text])<span class="op">.</span><span class="fu">stream</span>()<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Pipe through the native gzip compression stream</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> compressedStream <span class="op">=</span> stream<span class="op">.</span><span class="fu">pipeThrough</span>(<span class="kw">new</span> <span class="fu">CompressionStream</span>(<span class="st">&#39;gzip&#39;</span>))<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Read the compressed stream into an ArrayBuffer</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> response <span class="op">=</span> <span class="kw">new</span> <span class="fu">Response</span>(compressedStream)<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="cf">await</span> response<span class="op">.</span><span class="fu">arrayBuffer</span>()<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="primary-web-development-benefits">Primary Web Development
+Benefits</h3>
+<ul>
+<li><strong>Zero-Dependency Bundles</strong>: Eliminates thousands of
+lines of third-party compression code from client-side bundles,
+accelerating initial page load times.</li>
+<li><strong>Reduced Bandwidth on Uploads</strong>: Web applications
+processing large user-generated content (such as analytical logs,
+client-side database dumps, or complex JSON files) can compress payloads
+before sending them over the network via HTTP <code>POST</code> or
+<code>PUT</code>.</li>
+<li><strong>Memory Efficiency</strong>: By streaming data
+chunk-by-chunk, browsers can process large datasets without hitting
+memory limits or freezing the main thread.</li>
+<li><strong>Service Worker Integration</strong>: Service workers can
+decompress incoming resources on the fly or compress cache entries
+dynamically without external tooling.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

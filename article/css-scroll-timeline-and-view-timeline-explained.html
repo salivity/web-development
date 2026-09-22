@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Scroll-Timeline and View-Timeline Explained - web-development</title>
+    <meta name="description" content="CSS scroll-driven animations revolutionize web interactions by decoupling keyframe animations from traditional time-based durations and tying them directly to scroll progress. Through the scroll-timeline and view-timeline specifications, developers can c">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-scroll-timeline-and-view-timeline-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS Scroll-Timeline and View-Timeline Explained - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-scroll-timeline-and-view-timeline-explained" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="CSS scroll-driven animations revolutionize web interactions by decoupling keyframe animations from traditional time-based durations and tying them directly to scroll progress. Through the scroll-timeline and view-timeline specifications, developers can c" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-scroll-timeline-and-view-timeline-explained">CSS
+Scroll-Timeline and View-Timeline Explained</h1>
+<p>CSS scroll-driven animations revolutionize web interactions by
+decoupling keyframe animations from traditional time-based durations and
+tying them directly to scroll progress. Through the
+<code>scroll-timeline</code> and <code>view-timeline</code>
+specifications, developers can create complex, fluid scroll effects
+natively within CSS, removing the need for resource-intensive JavaScript
+scroll event listeners and significantly boosting rendering
+performance.</p>
+<h3 id="understanding-scroll-driven-animations">Understanding
+Scroll-Driven Animations</h3>
+<p>Traditionally, CSS animations run along a temporal timeline defined
+in seconds or milliseconds. The CSS Scroll-Driven Animations
+specification introduces progress-based timelines where 0% represents
+the start of a scroll container or element intersection, and 100%
+represents the end. Because these animations run natively in the
+browser's compositor thread, they do not block the main thread,
+effectively eliminating scroll jank and layout thrashing.</p>
+<h3 id="the-scroll-timeline-specification">The
+<code>scroll-timeline</code> Specification</h3>
+<p>The <code>scroll-timeline</code> links animation progress to the
+overall scroll position of a scroll container (the scrollport). As the
+user scrolls through the container from top to bottom (or left to
+right), the animation advances linearly from 0% to 100%.</p>
+<p>Key properties include:</p>
+<ul>
+<li><strong><code>scroll-timeline-name</code></strong>: Declares a
+custom identifier (e.g., <code>--page-scroll</code>) on the scroll
+container.</li>
+<li><strong><code>scroll-timeline-axis</code></strong>: Specifies the
+scroll direction to monitor (<code>block</code>, <code>inline</code>,
+<code>y</code>, or <code>x</code>). The default is
+<code>block</code>.</li>
+<li><strong><code>animation-timeline</code></strong>: Applied to the
+animated element, referencing the timeline name defined on the
+container.</li>
+</ul>
+<p>Alternatively, developers can use the shorthand function
+<code>scroll()</code> directly on the <code>animation-timeline</code>
+property to target the nearest ancestor scroller or the root viewport
+without explicitly naming the container.</p>
+<p><strong>Primary Use Cases:</strong></p>
+<ul>
+<li>Reading progress bars indicating article completion.</li>
+<li>Sticky navigation bars that shrink or change background color as the
+user leaves the top of the page.</li>
+<li>Parallax background layers moving at variable rates relative to page
+scroll.</li>
+</ul>
+<h3 id="the-view-timeline-specification">The <code>view-timeline</code>
+Specification</h3>
+<p>While <code>scroll-timeline</code> tracks the entire scroll
+container, <code>view-timeline</code> tracks an individual subject
+element's visibility as it enters, traverses, and leaves the visible
+scroll area (the scrollport).</p>
+<p>Key features include:</p>
+<ul>
+<li><strong><code>view-timeline-name</code></strong>: Applied directly
+to the subject element being observed (e.g.,
+<code>--revealing-image</code>).</li>
+<li><strong><code>view-timeline-axis</code></strong>: Specifies the
+scroll orientation, typically defaulting to <code>block</code>.</li>
+<li><strong><code>animation-range</code></strong>: Controls precisely
+when the animation starts and ends relative to the element's
+intersection with the scrollport. Ranges include <code>entry</code>
+(entering the view), <code>exit</code> (leaving the view), and
+<code>cover</code> (from entering to completely exiting).</li>
+</ul>
+<p>Like <code>scroll()</code>, the shorthand function
+<code>view()</code> can be declared directly within
+<code>animation-timeline</code> on the animated element.</p>
+<p><strong>Primary Use Cases:</strong></p>
+<ul>
+<li>Revealing cards, images, or headings with fade-in and scale effects
+as they enter the screen.</li>
+<li>Staggered list animations that trigger only when elements reach the
+viewport.</li>
+<li>Exit animations that blur or rotate elements as they scroll out of
+view.</li>
+</ul>
+<h3 id="practical-implementation">Practical Implementation</h3>
+<p>To create a global reading progress bar using
+<code>scroll()</code>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">@keyframes</span> stretch {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">from</span> { <span class="kw">transform</span><span class="ch">:</span> <span class="fu">scaleX(</span><span class="dv">0</span><span class="fu">)</span><span class="op">;</span> }</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">to</span> { <span class="kw">transform</span><span class="ch">:</span> <span class="fu">scaleX(</span><span class="dv">1</span><span class="fu">)</span><span class="op">;</span> }</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">.progress-bar</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">position</span><span class="ch">:</span> <span class="dv">fixed</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">top</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">left</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">width</span><span class="ch">:</span> <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="kw">height</span><span class="ch">:</span> <span class="dv">4</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transform-origin</span><span class="ch">:</span> <span class="dv">left</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">animation</span><span class="ch">:</span> <span class="dv">stretch</span> <span class="dv">linear</span><span class="op">;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  animation-timeline<span class="ch">:</span> scroll<span class="fu">(</span><span class="dv">root block</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>To reveal an image as it scrolls into view using
+<code>view()</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">@keyframes</span> fade-in {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">from</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transform</span><span class="ch">:</span> <span class="fu">translateY(</span><span class="dv">40</span><span class="dt">px</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">to</span> {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transform</span><span class="ch">:</span> <span class="fu">translateY(</span><span class="dv">0</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">animation</span><span class="ch">:</span> <span class="dv">fade-in linear</span> <span class="dv">both</span><span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  animation-timeline<span class="ch">:</span> view<span class="fu">()</span><span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  animation-range<span class="ch">:</span> <span class="dv">entry 20</span><span class="dt">%</span> <span class="dv">cover</span> <span class="dv">40</span><span class="dt">%</span><span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By leveraging <code>scroll-timeline</code> for container-level
+tracking and <code>view-timeline</code> for element-level intersection
+tracking, web developers can achieve precise, declarative, and
+high-performance interactive animations without relying on third-party
+JavaScript libraries.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

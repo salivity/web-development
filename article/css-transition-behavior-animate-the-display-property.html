@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS transition-behavior: Animate the Display Property - web-development</title>
+    <meta name="description" content="For years, animating elements entering or leaving the Document Object Model (DOM) required cumbersome JavaScript timeouts or non-semantic CSS visibility workarounds because the display property could not be transitioned. The introduction of the CSS trans">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-transition-behavior-animate-the-display-property">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS transition-behavior: Animate the Display Property - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-transition-behavior-animate-the-display-property" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="For years, animating elements entering or leaving the Document Object Model (DOM) required cumbersome JavaScript timeouts or non-semantic CSS visibility workarounds because the display property could not be transitioned. The introduction of the CSS trans" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-transition-behavior-animate-the-display-property">CSS
+transition-behavior: Animate the Display Property</h1>
+<p>For years, animating elements entering or leaving the Document Object
+Model (DOM) required cumbersome JavaScript timeouts or non-semantic CSS
+visibility workarounds because the <code>display</code> property could
+not be transitioned. The introduction of the CSS
+<code>transition-behavior</code> property solves this issue by enabling
+transitions on discrete properties like <code>display</code> and
+<code>content-visibility</code>. This article explains how
+<code>transition-behavior</code> works, why it is essential for modern
+web animation, and how to implement it alongside
+<code>@starting-style</code> to create seamless entry and exit
+transitions using pure CSS.</p>
+<h3 id="the-problem-with-discrete-properties">The Problem with Discrete
+Properties</h3>
+<p>In CSS, properties traditionally fall into two categories:
+interpolable and discrete. Interpolable properties, such as
+<code>opacity</code> or <code>transform</code>, possess continuous
+intermediate values that browsers can smoothly blend over time. In
+contrast, discrete properties—such as <code>display: none</code> versus
+<code>display: block</code>—switch abruptly with no mathematical
+midpoint.</p>
+<p>Historically, applying a transition to an element fading out to
+<code>display: none</code> caused the element to disappear immediately,
+cutting off any simultaneous opacity or transform transitions.</p>
+<h3 id="how-transition-behavior-works">How
+<code>transition-behavior</code> Works</h3>
+<p>The <code>transition-behavior</code> property, part of the CSS
+Transitions Level 2 specification, dictates whether transitions should
+apply to discrete properties. By default, its value is
+<code>normal</code>, which excludes discrete properties from transition
+effects.</p>
+<p>When set to <code>allow-discrete</code>, the browser alters the
+timing of state changes:</p>
+<ul>
+<li><strong>During Exit Animations:</strong> The discrete property
+change is deferred. If an element transitions from
+<code>display: block</code> to <code>display: none</code> alongside an
+<code>opacity</code> fade, the browser keeps <code>display: block</code>
+active until the duration of all running transitions has elapsed,
+switching to <code>display: none</code> only at the very end.</li>
+<li><strong>During Entry Animations:</strong> The browser applies the
+visible display state immediately at the start of the transition,
+allowing the visual properties to transition smoothly into place.</li>
+</ul>
+<p>You can set this property individually or via the
+<code>transition</code> shorthand:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Individual property */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>transition-behavior<span class="in">:</span> allow-discrete;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">/* Shorthand syntax */</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>transition<span class="in">:</span> display 0<span class="fu">.4s</span> allow-discrete<span class="op">,</span> opacity 0<span class="fu">.4s</span>;</span></code></pre></div>
+<h3 id="implementing-entry-and-exit-transitions">Implementing Entry and
+Exit Transitions</h3>
+<p>To transition an element entering the page from
+<code>display: none</code>, the browser needs to know the styles the
+element should transition <em>from</em> at the moment it becomes
+visible. This is handled using the <code>@starting-style</code>
+rule.</p>
+<p>Here is a practical implementation of an element transitioning into
+and out of the view:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">block</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transform</span><span class="ch">:</span> <span class="fu">translateY(</span><span class="dv">0</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transition</span><span class="ch">:</span> </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">opacity 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">transform 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">display 0.3</span><span class="dt">s</span> <span class="dv">allow-discrete</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co">/* Hidden state */</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">.card.is-hidden</span> {</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transform</span><span class="ch">:</span> <span class="fu">translateY(</span><span class="dv">20</span><span class="dt">px</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">/* Entry starting styles */</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="im">@starting-style</span> {</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.card</span> {</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transform</span><span class="ch">:</span> <span class="fu">translateY(</span><span class="dv">20</span><span class="dt">px</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In this setup:</p>
+<ol type="1">
+<li>When <code>.is-hidden</code> is removed, the element switches to
+<code>display: block</code> immediately, starts with the values defined
+in <code>@starting-style</code> (<code>opacity: 0</code>), and
+transitions to fully visible.</li>
+<li>When <code>.is-hidden</code> is added, <code>opacity</code> and
+<code>transform</code> begin animating immediately, while the change to
+<code>display: none</code> is held until the 0.3-second transition
+finishes.</li>
+</ol>
+<h3 id="benefits-in-modern-development">Benefits in Modern
+Development</h3>
+<p>The <code>transition-behavior: allow-discrete</code> property
+simplifies component architecture. It reduces reliance on JavaScript
+animation libraries and <code>transitionend</code> event listeners for
+routine UI components like modals, accordions, tooltips, and dialogs.
+Coupled with native elements like <code>&lt;dialog&gt;</code> and the
+Popover API, it provides a performant, accessible, and native mechanism
+for managing animated UI states directly in CSS.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

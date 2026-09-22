@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Protect Session Cookies from Interception - web-development</title>
+    <meta name="description" content="Session cookies are critical authentication tokens that, if exposed, allow attackers to impersonate legitimate users and compromise accounts. During development and transmission across networks, these sensitive credentials are vulnerable to man-in-the-mi">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-protect-session-cookies-from-interception">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Protect Session Cookies from Interception - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-protect-session-cookies-from-interception" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Session cookies are critical authentication tokens that, if exposed, allow attackers to impersonate legitimate users and compromise accounts. During development and transmission across networks, these sensitive credentials are vulnerable to man-in-the-mi" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-protect-session-cookies-from-interception">How to Protect
+Session Cookies from Interception</h1>
+<p>Session cookies are critical authentication tokens that, if exposed,
+allow attackers to impersonate legitimate users and compromise accounts.
+During development and transmission across networks, these sensitive
+credentials are vulnerable to man-in-the-middle (MitM) attacks,
+cross-site scripting (XSS), and eavesdropping if left unprotected.
+Protecting session cookies from being intercepted over insecure channels
+requires a defense-in-depth strategy combining specific cookie
+attributes, strict transport encryption, and secure local development
+configurations.</p>
+<h3 id="1-the-secure-attribute">1. The <code>Secure</code>
+Attribute</h3>
+<p>The <code>Secure</code> attribute instructs web browsers to never
+send the cookie over an unencrypted HTTP connection. When this flag is
+enabled, the browser will only transmit the cookie over an encrypted
+HTTPS connection. This prevents passive network sniffers and active
+attackers on insecure local networks or development environments from
+capturing plaintext session tokens.</p>
+<h3 id="2-the-httponly-attribute">2. The <code>HttpOnly</code>
+Attribute</h3>
+<p>While not directly tied to network transport, cross-site scripting
+(XSS) attacks often exploit insecure web channels to read cookies via
+JavaScript. Adding the <code>HttpOnly</code> attribute blocks
+client-side scripts—such as <code>document.cookie</code>—from accessing
+the session token. Even if an attacker injects malicious code through an
+insecure development API or unvalidated input, the session cookie
+remains inaccessible.</p>
+<h3 id="3-the-samesite-attribute">3. The <code>SameSite</code>
+Attribute</h3>
+<p>The <code>SameSite</code> attribute controls whether cookies are sent
+with cross-site requests, providing vital protection against Cross-Site
+Request Forgery (CSRF). It supports three settings:</p>
+<ul>
+<li><strong><code>Strict</code>:</strong> The cookie is withheld on all
+cross-site requests, only transmitting when the request originates from
+the same domain.</li>
+<li><strong><code>Lax</code>:</strong> The cookie is sent on top-level
+navigations (such as clicking an external link) while blocking it on
+background requests like images or iframes.</li>
+<li><strong><code>None</code>:</strong> The cookie is sent on all
+cross-site requests, but modern browsers require the <code>Secure</code>
+flag to accompany this setting.</li>
+</ul>
+<p>Setting <code>SameSite=Lax</code> or <code>SameSite=Strict</code>
+prevents unauthorized sites from leveraging active sessions over
+insecure web paths.</p>
+<h3 id="4-enforcing-transport-layer-security-https--hsts">4. Enforcing
+Transport Layer Security (HTTPS &amp; HSTS)</h3>
+<p>Cookies cannot be protected if the transport layer itself is
+compromised.</p>
+<ul>
+<li><strong>HTTPS Everywhere:</strong> All web traffic must be encrypted
+using modern TLS protocols. This applies to staging and development
+servers as well as production.</li>
+<li><strong>HTTP Strict Transport Security (HSTS):</strong> Deploying
+the <code>Strict-Transport-Security</code> header forces user agents to
+automatically convert all insecure <code>http://</code> URLs to secure
+<code>https://</code> URLs before making requests, completely closing
+the window for SSL-stripping attacks.</li>
+</ul>
+<h3 id="5-cookie-name-prefixes-__secure--and-__host-">5. Cookie Name
+Prefixes (<code>__Secure-</code> and <code>__Host-</code>)</h3>
+<p>Modern browsers recognize specific cookie name prefixes that enforce
+security rules directly within the client:</p>
+<ul>
+<li><strong><code>__Secure-</code>:</strong> Requires the cookie to be
+set with the <code>Secure</code> flag over an HTTPS connection.</li>
+<li><strong><code>__Host-</code>:</strong> Extends
+<code>__Secure-</code> by also enforcing that the cookie has no
+<code>Domain</code> attribute (locking it strictly to the specific host,
+preventing subdomains from accessing it) and requires the
+<code>Path</code> to be <code>/</code>.</li>
+</ul>
+<p>These prefixes prevent subdomain takeover attacks and accidental
+insecure overwrites during development.</p>
+<h3 id="6-secure-development-channel-practices">6. Secure Development
+Channel Practices</h3>
+<p>Relying on unencrypted <code>http://localhost</code> or external test
+environments exposes sensitive developer sessions. Development
+environments must implement the following safeguards:</p>
+<ul>
+<li><strong>Local TLS:</strong> Use locally trusted certificate
+authorities (such as <code>mkcert</code>) to run local environments over
+true HTTPS rather than plaintext HTTP.</li>
+<li><strong>Short Expiration Times:</strong> Configure short lifespans
+for session tokens to reduce the window of opportunity if a token is
+intercepted.</li>
+<li><strong>Token Invalidation:</strong> Implement robust session
+termination mechanisms that invalidate session tokens on both the server
+and client upon logout or detected network changes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

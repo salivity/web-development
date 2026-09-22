@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP/2 Multiplexing vs Domain Sharding Performance - web-development</title>
+    <meta name="description" content="HTTP/2 multiplexing fundamentally improves web performance by allowing multiple requests and responses to be sent concurrently over a single TCP connection. In contrast to HTTP/1.1, where developers relied on the artificial workaround of "domain sharding">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/http-2-multiplexing-vs-domain-sharding-performance">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="HTTP/2 Multiplexing vs Domain Sharding Performance - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/http-2-multiplexing-vs-domain-sharding-performance" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="HTTP/2 multiplexing fundamentally improves web performance by allowing multiple requests and responses to be sent concurrently over a single TCP connection. In contrast to HTTP/1.1, where developers relied on the artificial workaround of "domain sharding" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="http2-multiplexing-vs-domain-sharding-performance">HTTP/2
+Multiplexing vs Domain Sharding Performance</h1>
+<p>HTTP/2 multiplexing fundamentally improves web performance by
+allowing multiple requests and responses to be sent concurrently over a
+single TCP connection. In contrast to HTTP/1.1, where developers relied
+on the artificial workaround of "domain sharding" to bypass browser
+connection limits, HTTP/2 eliminates connection bottlenecks, reduces
+latency, and optimizes network utilization. This shift renders domain
+sharding obsolete and provides significant architectural and
+computational advantages.</p>
+<h3 id="the-limits-of-http11-and-domain-sharding">The Limits of HTTP/1.1
+and Domain Sharding</h3>
+<p>Under the HTTP/1.1 specification, browsers are restricted to
+downloading one resource at a time per TCP connection. If a request
+experiences network delay, all subsequent requests in that connection
+are stalled—a problem known as Head-of-Line (HoL) blocking at the
+application layer.</p>
+<p>To mitigate this, modern browsers permit roughly six concurrent TCP
+connections per origin. Web developers bypassed this ceiling using
+<strong>domain sharding</strong>: distributing static assets across
+multiple subdomains (e.g., <code>cdn1.example.com</code>,
+<code>cdn2.example.com</code>). While this technique increased the
+number of simultaneous downloads, it introduced significant performance
+overheads:</p>
+<ul>
+<li><strong>Additional DNS Lookups:</strong> Each unique subdomain
+requires a separate DNS resolution, increasing initial page load
+latency.</li>
+<li><strong>Redundant Handshakes:</strong> Every new domain requires its
+own TCP three-way handshake and TLS negotiation, adding multiple
+round-trip times (RTTs).</li>
+<li><strong>TCP Slow-Start Overhead:</strong> TCP connections ramp up
+throughput gradually via the slow-start algorithm. Multiple short-lived
+connections mean assets are rarely transferred at optimal network
+capacity.</li>
+</ul>
+<h3 id="how-http2-multiplexing-works">How HTTP/2 Multiplexing Works</h3>
+<p>HTTP/2 replaces the plain-text model of HTTP/1.1 with a binary
+framing layer. It breaks down requests and responses into independent,
+discrete binary frames. These frames are tagged with a stream identifier
+and interleaved over a single, persistent TCP connection.</p>
+<p>Because the client and server can interleave requests and assemble
+them asynchronously on the other end, a slow or large file transfer does
+not block the delivery of smaller, independent resources.</p>
+<h3 id="key-performance-advantages-of-multiplexing">Key Performance
+Advantages of Multiplexing</h3>
+<h4 id="1-drastic-latency-reduction">1. Drastic Latency Reduction</h4>
+<p>Multiplexing eliminates the need for multiple round-trips associated
+with opening extra connections. By delivering dozens or hundreds of
+assets over a single established connection, users save hundreds of
+milliseconds in DNS lookups, TCP handshakes, and TLS handshakes, which
+is particularly impactful on high-latency mobile networks.</p>
+<h4 id="2-optimized-tcp-congestion-control">2. Optimized TCP Congestion
+Control</h4>
+<p>Because HTTP/2 utilizes a single connection, the underlying TCP
+connection remains open and "warm." The connection passes through the
+slow-start phase once and stays at peak throughput capacity. In
+contrast, domain sharding splits bandwidth across multiple competing TCP
+connections, leading to inefficient network pipe utilization and buffer
+bloat.</p>
+<h4 id="3-reduced-memory-and-server-overhead">3. Reduced Memory and
+Server Overhead</h4>
+<p>Maintaining open sockets consumes RAM and CPU cycles on both the
+client and the web server. Domain sharding multiplies the number of open
+sockets by the number of sharded domains. Multiplexing condenses all
+traffic into a single socket per origin, freeing up server memory and
+drastically reducing CPU usage required for connection state tracking
+and TLS record processing.</p>
+<h4 id="4-native-stream-prioritization">4. Native Stream
+Prioritization</h4>
+<p>HTTP/2 multiplexing supports resource prioritization (dependency
+trees and weighting). The browser can request render-blocking assets,
+such as critical CSS and JavaScript, and instruct the server to
+prioritize those frames ahead of non-critical assets like below-the-fold
+images. Domain sharding cannot intelligently coordinate priorities
+across independent connections, often leading to non-critical assets
+starving vital resources of bandwidth.</p>
+<h4 id="5-simplified-infrastructure-and-better-cache-efficiency">5.
+Simplified Infrastructure and Better Cache Efficiency</h4>
+<p>Maintaining multiple subdomains requires additional certificate
+management, complex build pipelines, and intricate Content Delivery
+Network (CDN) configurations. Sharding can also degrade caching
+performance across proxies. Multiplexing allows developers to serve all
+assets from a single domain, simplifying cache invalidation, routing,
+and deployment architectures.</p>
+<p>Domain sharding is considered an anti-pattern in modern web
+development. HTTP/2 multiplexing resolves the structural constraints
+that made sharding necessary, delivering faster page loads, cleaner
+architecture, and superior resource efficiency across the web.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

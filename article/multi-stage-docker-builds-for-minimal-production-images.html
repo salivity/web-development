@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Stage Docker Builds for Minimal Production Images - web-development</title>
+    <meta name="description" content="Multi-stage Docker builds allow web development teams to separate compilation tools and intermediate dependencies from final production runtime environments. This article explains how teams implement multi-stage builds to dramatically reduce container im">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/multi-stage-docker-builds-for-minimal-production-images">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Multi-Stage Docker Builds for Minimal Production Images - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/multi-stage-docker-builds-for-minimal-production-images" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Multi-stage Docker builds allow web development teams to separate compilation tools and intermediate dependencies from final production runtime environments. This article explains how teams implement multi-stage builds to dramatically reduce container im" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="multi-stage-docker-builds-for-minimal-production-images">Multi-Stage
+Docker Builds for Minimal Production Images</h1>
+<p>Multi-stage Docker builds allow web development teams to separate
+compilation tools and intermediate dependencies from final production
+runtime environments. This article explains how teams implement
+multi-stage builds to dramatically reduce container image size, improve
+deployment speed, and eliminate security vulnerabilities caused by
+unnecessary development tooling.</p>
+<h3 id="the-problem-with-single-stage-builds">The Problem with
+Single-Stage Builds</h3>
+<p>In standard single-stage builds, everything needed to build an
+application—such as compilers, package managers, development libraries,
+and source code—remains inside the final container image. For modern web
+applications built with frameworks like React, Next.js, or Go-based
+APIs, this results in bloated images that often exceed several
+gigabytes. Larger images increase registry storage costs, slow down
+CI/CD pipelines, extend deployment times, and expand the attack surface
+by leaving build tools like <code>git</code>, <code>npm</code>, or
+<code>gcc</code> accessible in production.</p>
+<h3 id="how-multi-stage-builds-work">How Multi-Stage Builds Work</h3>
+<p>Multi-stage builds solve this problem by allowing multiple
+<code>FROM</code> instructions within a single <code>Dockerfile</code>.
+Each <code>FROM</code> instruction begins a new stage with a distinct
+base image. Teams can selectively copy build artifacts, compiled
+binaries, or optimized assets from one stage to another using the
+<code>COPY --from=&lt;stage_name&gt;</code> command, discarding
+intermediate layers, caches, and devDependencies along the way.</p>
+<h3 id="implementation-pattern">Implementation Pattern</h3>
+<p>Web development teams typically structure their Dockerfiles into
+three primary phases: base dependency management, compilation, and final
+runtime.</p>
+<p>Below is a standard multi-stage implementation for a Node.js web
+application:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode dockerfile"><code class="sourceCode dockerfile"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Stage 1: Dependency resolution and compilation</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> builder</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Install dependencies based on lockfile to leverage Docker layer caching</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> package.json package-lock.json ./</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">npm</span> ci</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy source code and build</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> . .</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">npm</span> run build</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove development dependencies to keep only production packages</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">npm</span> prune <span class="at">--production</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Stage 2: Minimal production runtime</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> node:20-alpine <span class="kw">AS</span> runner</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="kw">WORKDIR</span> /app</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Set production environment</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">ENV</span> NODE_ENV=production</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a non-root user for security</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="kw">RUN</span> <span class="ex">addgroup</span> <span class="at">-S</span> appgroup <span class="kw">&amp;&amp;</span> <span class="ex">adduser</span> <span class="at">-S</span> appuser <span class="at">-G</span> appgroup</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Copy only production dependencies and built assets from builder stage</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=builder</span> /app/package.json ./</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=builder</span> /app/node_modules ./node_modules</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">COPY</span> <span class="op">--from=builder</span> /app/dist ./dist</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Switch to non-root user</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="kw">USER</span> appuser</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">EXPOSE</span> 3000</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="kw">CMD</span> [<span class="st">&quot;node&quot;</span>, <span class="st">&quot;dist/main.js&quot;</span>]</span></code></pre></div>
+<p>For compiled languages like Go or Rust, the reduction is even more
+dramatic: teams compile the binary in a heavyweight build image and copy
+only the single static binary into a <code>scratch</code> or
+<code>distroless</code> image, producing an image size of less than 20
+megabytes.</p>
+<p>For static frontend sites (e.g., Vite, React, Vue), the builder stage
+runs <code>npm run build</code>, and the final stage uses an
+ultra-lightweight web server like Nginx Alpine, copying only the
+generated static HTML, CSS, and JavaScript files to
+<code>/usr/share/nginx/html</code>.</p>
+<h3 id="best-practices-for-minimal-images">Best Practices for Minimal
+Images</h3>
+<ol type="1">
+<li><strong>Use Minimal Base Images:</strong> Select minimal OS variants
+like <code>alpine</code> or Google's <code>distroless</code> images for
+the final runtime stage to strip out package managers, shells, and
+unnecessary utilities.</li>
+<li><strong>Order Commands for Cache Optimization:</strong> Place
+instructions that change infrequently (like copying
+<code>package.json</code> and installing dependencies) before copying
+the source code, preventing full dependency reinstalls on every code
+change.</li>
+<li><strong>Use <code>.dockerignore</code>:</strong> Exclude local
+<code>node_modules</code>, test files, <code>.git</code> directories,
+and environment files to keep build contexts small and prevent
+accidental leakage of sensitive files into layers.</li>
+<li><strong>Run as Non-Root:</strong> Ensure the final stage switches to
+a dedicated, unprivileged user (<code>USER nonroot</code> or
+<code>appuser</code>) to adhere to container security standards.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

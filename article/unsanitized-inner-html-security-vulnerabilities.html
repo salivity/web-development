@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unsanitized innerHTML Security Vulnerabilities - web-development</title>
+    <meta name="description" content="Assigning unsanitized user input directly to the DOM via innerHTML is a significant source of client-side web vulnerabilities. When browsers parse HTML strings passed through this property, any embedded scripts or executable markup run within the context">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/unsanitized-inner-html-security-vulnerabilities">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Unsanitized innerHTML Security Vulnerabilities - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/unsanitized-inner-html-security-vulnerabilities" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Assigning unsanitized user input directly to the DOM via innerHTML is a significant source of client-side web vulnerabilities. When browsers parse HTML strings passed through this property, any embedded scripts or executable markup run within the context" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="unsanitized-innerhtml-security-vulnerabilities">Unsanitized
+innerHTML Security Vulnerabilities</h1>
+<p>Assigning unsanitized user input directly to the DOM via
+<code>innerHTML</code> is a significant source of client-side web
+vulnerabilities. When browsers parse HTML strings passed through this
+property, any embedded scripts or executable markup run within the
+context of the user's session. This article outlines the primary
+security risks associated with unsanitized <code>innerHTML</code>
+assignments—chiefly Cross-Site Scripting (XSS), credential theft, DOM
+clobbering, and interface manipulation—and explains how to eliminate
+these attack vectors.</p>
+<h3 id="dom-based-cross-site-scripting-dom-xss">DOM-Based Cross-Site
+Scripting (DOM XSS)</h3>
+<p>The most prevalent and dangerous consequence of unsanitized
+<code>innerHTML</code> assignments is DOM-based Cross-Site Scripting.
+While modern HTML5 specifications prevent inline
+<code>&lt;script&gt;</code> tags inserted via <code>innerHTML</code>
+from executing automatically, attackers routinely bypass this protection
+using inline event handlers and error triggers.</p>
+<p>For example, injecting payloads such as
+<code>&lt;img src="invalid" onerror="alert(1)"&gt;</code> or
+<code>&lt;svg onload="alert(1)"&gt;</code> will cause the browser to
+parse the HTML, attempt to load the invalid resource, and immediately
+execute the attacker's JavaScript via the event handler. Once script
+execution is achieved, the attacker gains full control over the
+client-side context of the application.</p>
+<h3 id="session-hijacking-and-data-exfiltration">Session Hijacking and
+Data Exfiltration</h3>
+<p>When an attacker successfully executes arbitrary JavaScript through
+an <code>innerHTML</code> injection, they operate with the same
+permissions as the authenticated user. This access allows malicious
+scripts to:</p>
+<ul>
+<li><strong>Read Sensitive Storage:</strong> Access cookies not
+protected by the <code>HttpOnly</code> flag, as well as tokens and
+sensitive data stored in <code>localStorage</code> or
+<code>sessionStorage</code>.</li>
+<li><strong>Exfiltrate Data:</strong> Transmit session tokens, private
+user data, or application state to attacker-controlled servers using
+background network requests (such as <code>fetch()</code> or
+<code>XMLHttpRequest</code>).</li>
+<li><strong>Forge Actions:</strong> Perform unauthorized actions on
+behalf of the user, such as modifying account credentials, making
+unauthorized financial transactions, or altering profile details.</li>
+</ul>
+<h3 id="dom-clobbering">DOM Clobbering</h3>
+<p>Unsanitized <code>innerHTML</code> assignments can also lead to DOM
+clobbering, an attack where injected HTML manipulates global JavaScript
+variables and window properties.</p>
+<p>Browsers automatically create references on the <code>window</code>
+object for HTML elements with <code>id</code> or <code>name</code>
+attributes. An attacker injecting markup like
+<code>&lt;form id="config"&gt;&lt;input name="apiUrl" value="//malicious-domain.com"&gt;&lt;/form&gt;</code>
+can overwrite an existing <code>window.config.apiUrl</code> reference
+used by legitimate application scripts. When application logic later
+relies on this clobbered property to fetch scripts or endpoints, it can
+be redirected to load attacker-controlled resources without directly
+executing a script payload at the initial injection point.</p>
+<h3 id="phishing-and-ui-defacement">Phishing and UI Defacement</h3>
+<p>Attackers can use <code>innerHTML</code> injections to alter the
+visual presentation of a page dynamically:</p>
+<ul>
+<li><strong>Credential Harvesting:</strong> Injecting fake login forms
+or modal dialogs that prompt users to re-enter their passwords or
+multi-factor authentication codes.</li>
+<li><strong>Forced Redirections:</strong> Altering legitimate links or
+modifying <code>window.location</code> to silently redirect the user to
+a phishing website.</li>
+<li><strong>Reputational Damage:</strong> Modifying visible page
+content, headers, or messages to deface the application or present
+misleading information to end users.</li>
+</ul>
+<h3 id="safe-alternatives-to-innerhtml">Safe Alternatives to
+innerHTML</h3>
+<p>To prevent these vulnerabilities, developers should avoid using
+<code>innerHTML</code> for displaying untrusted or dynamic text. Safer
+development patterns include:</p>
+<ul>
+<li><strong>Using <code>textContent</code> or
+<code>innerText</code>:</strong> When rendering plain text, these
+properties ensure that the input is treated strictly as text rather than
+executable markup, rendering special characters harmless.</li>
+<li><strong>Safe DOM Construction:</strong> Use APIs such as
+<code>document.createElement()</code>,
+<code>Element.setAttribute()</code>, and <code>Node.appendChild()</code>
+to build UI structures programmatically.</li>
+<li><strong>Robust Sanitization:</strong> If raw HTML must be supported,
+pass the markup through a dedicated, battle-tested sanitization library
+like DOMPurify prior to insertion.</li>
+<li><strong>Trusted Types:</strong> Implement the Trusted Types API to
+enforce strict type checking on DOM sinks, preventing raw strings from
+being passed directly to <code>innerHTML</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

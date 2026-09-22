@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue-Green vs Canary Deployment: Key Differences - web-development</title>
+    <meta name="description" content="In modern web development, releasing software updates safely and without downtime is critical to maintaining high application availability. This article explores the core differences between two prominent deployment strategies: blue-green deployment and">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/blue-green-vs-canary-deployment-key-differences">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Blue-Green vs Canary Deployment: Key Differences - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/blue-green-vs-canary-deployment-key-differences" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In modern web development, releasing software updates safely and without downtime is critical to maintaining high application availability. This article explores the core differences between two prominent deployment strategies: blue-green deployment and" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="blue-green-vs-canary-deployment-key-differences">Blue-Green vs
+Canary Deployment: Key Differences</h1>
+<p>In modern web development, releasing software updates safely and
+without downtime is critical to maintaining high application
+availability. This article explores the core differences between two
+prominent deployment strategies: blue-green deployment and canary
+deployment. You will learn how each strategy functions, how they handle
+traffic routing, their respective costs and resource requirements,
+rollback mechanisms, and how to choose the right approach for your
+production environment.</p>
+<h2 id="what-is-blue-green-deployment">What is Blue-Green
+Deployment?</h2>
+<p>Blue-green deployment utilizes two identical production environments,
+traditionally labeled "Blue" and "Green." At any given time, only one
+environment is live and serving production traffic (for example,
+Blue).</p>
+<p>When a new release is ready:</p>
+<ol type="1">
+<li>The new version is deployed to the idle environment (Green).</li>
+<li>Quality assurance and automated testing are conducted directly on
+Green without affecting end users.</li>
+<li>Once validated, the router or load balancer switches all incoming
+traffic from Blue to Green.</li>
+<li>Blue becomes the new idle environment, serving as an immediate
+backup.</li>
+</ol>
+<p>If an unexpected failure occurs post-switch, rolling back is as
+simple as flipping the router configuration back to Blue.</p>
+<h2 id="what-is-canary-deployment">What is Canary Deployment?</h2>
+<p>Canary deployment introduces software updates gradually to a small
+subset of users before rolling them out to the entire infrastructure.
+The name stems from the historic practice of using canaries in coal
+mines to detect toxic gases early.</p>
+<p>The deployment process follows these steps:</p>
+<ol type="1">
+<li>The new version is deployed to a small number of servers or
+containers alongside the current production version.</li>
+<li>A small percentage of live traffic (e.g., 2% to 10%) is routed to
+the new release.</li>
+<li>System telemetry—such as error rates, CPU usage, and response
+latency—is closely monitored.</li>
+<li>If metrics remain healthy, the traffic allocation is incrementally
+increased (e.g., 25%, 50%, 100%) until the update fully replaces the
+older version.</li>
+</ol>
+<p>If metrics degrade at any point, traffic is instantly reverted to the
+stable baseline instances, exposing only a tiny fraction of users to the
+bug.</p>
+<h2 id="key-differences">Key Differences</h2>
+<h3 id="traffic-routing">Traffic Routing</h3>
+<ul>
+<li><strong>Blue-Green:</strong> Traffic switching is binary and
+instantaneous. 100% of user traffic moves from the old version to the
+new version at a single cutover point.</li>
+<li><strong>Canary:</strong> Traffic routing is incremental. Traffic is
+divided dynamically based on percentages, geographical regions, or
+specific user segments over a sustained evaluation period.</li>
+</ul>
+<h3 id="resource-utilization-and-cost">Resource Utilization and
+Cost</h3>
+<ul>
+<li><strong>Blue-Green:</strong> Requires double the infrastructure
+capacity to maintain two fully provisioned, identical environments
+simultaneously. This leads to higher infrastructure costs, especially
+for large-scale systems.</li>
+<li><strong>Canary:</strong> Uses infrastructure more efficiently. New
+versions run side-by-side on fractional capacity, requiring minimal
+additional computing resources during the rollout phase.</li>
+</ul>
+<h3 id="blast-radius-and-risk-management">Blast Radius and Risk
+Management</h3>
+<ul>
+<li><strong>Blue-Green:</strong> If an edge-case bug passes pre-release
+checks and goes live after the switch, 100% of your active users are
+immediately exposed to it until the traffic is switched back.</li>
+<li><strong>Canary:</strong> The blast radius of an undetected bug is
+strictly confined to the small percentage of users routed to the canary
+instances, preventing company-wide outages.</li>
+</ul>
+<h3 id="rollback-speed-and-complexity">Rollback Speed and
+Complexity</h3>
+<ul>
+<li><strong>Blue-Green:</strong> Rollback is instant and
+straightforward. Reverting a single DNS record or load balancer rule
+redirects all users back to the previously functioning environment.</li>
+<li><strong>Canary:</strong> Rollback requires reconfiguring traffic
+routing weights and terminating the canary instances. While fast, state
+synchronization and session draining can make the process slightly more
+complex than a binary switch.</li>
+</ul>
+<h3 id="database-migration-complexity">Database Migration
+Complexity</h3>
+<ul>
+<li><strong>Blue-Green:</strong> Schema changes can be challenging
+because the database must often support both environments simultaneously
+during the transition period, requiring backward-compatible
+migrations.</li>
+<li><strong>Canary:</strong> Database schemas must inherently support
+both the stable and canary versions concurrently over extended periods,
+requiring strict adherence to expand-and-contract schema design
+patterns.</li>
+</ul>
+<h2 id="summary-comparison">Summary Comparison</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Blue-Green Deployment</th>
+<th style="text-align: left;">Canary Deployment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Traffic Shift</strong></td>
+<td style="text-align: left;">Immediate (All-at-once)</td>
+<td style="text-align: left;">Gradual (Phased percentages)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Infrastructure Cost</strong></td>
+<td style="text-align: left;">High (Requires 2x environments)</td>
+<td style="text-align: left;">Low to Moderate (Incremental
+capacity)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Blast Radius</strong></td>
+<td style="text-align: left;">Entire user base</td>
+<td style="text-align: left;">Controlled subset of users</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Primary Advantage</strong></td>
+<td style="text-align: left;">Instant rollbacks and cutover</td>
+<td style="text-align: left;">Real-world testing with minimal risk</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Ideal For</strong></td>
+<td style="text-align: left;">Predictable, rapid releases</td>
+<td style="text-align: left;">High-traffic services and
+microservices</td>
+</tr>
+</tbody>
+</table>
+<h2 id="choosing-the-right-strategy">Choosing the Right Strategy</h2>
+<p>Choose <strong>blue-green deployment</strong> if you require
+instantaneous cutover, want zero downtime, have the budget to support
+duplicate infrastructure, and prefer complete testing isolation before
+exposing any user to changes.</p>
+<p>Choose <strong>canary deployment</strong> if you operate a
+high-traffic application, need to validate performance and stability
+under real-world production workloads, have strict resource limits, or
+want to minimize the risk of widespread service disruptions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Saga Pattern Manages Distributed Transactions - web-development</title>
+    <meta name="description" content="This article explores how modern web applications manage data consistency across microservices using the Saga pattern. Implementing distributed transactions through traditional two-phase commit protocols often results in performance bottlenecks and singl">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-saga-pattern-manages-distributed-transactions">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Saga Pattern Manages Distributed Transactions - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-saga-pattern-manages-distributed-transactions" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how modern web applications manage data consistency across microservices using the Saga pattern. Implementing distributed transactions through traditional two-phase commit protocols often results in performance bottlenecks and singl" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-saga-pattern-manages-distributed-transactions">How Saga
+Pattern Manages Distributed Transactions</h1>
+<p>This article explores how modern web applications manage data
+consistency across microservices using the Saga pattern. Implementing
+distributed transactions through traditional two-phase commit protocols
+often results in performance bottlenecks and single points of failure.
+The Saga pattern solves this by decomposing a global transaction into a
+sequence of isolated, local transactions managed by individual
+microservices. By relying on asynchronous messaging and compensating
+actions to handle rollbacks, the pattern ensures eventual consistency
+while preserving the scalability and fault tolerance intrinsic to
+microservice architectures.</p>
+<h3 id="the-challenge-of-distributed-transactions">The Challenge of
+Distributed Transactions</h3>
+<p>In microservices architecture, each service typically owns its
+private database to maintain loose coupling. However, business
+operations frequently span multiple services. In a monolithic system,
+standard ACID transactions manage this reliably via the database engine.
+In distributed environments, relying on distributed ACID protocols like
+Two-Phase Commit (2PC) introduces severe latency, blocking locks, and
+fragility, as all participating nodes must be available simultaneously
+to commit.</p>
+<h3 id="how-the-saga-pattern-works">How the Saga Pattern Works</h3>
+<p>The Saga pattern replaces a single distributed transaction with a
+series of distinct local transactions:</p>
+<ol type="1">
+<li><strong>Local Execution:</strong> Each service involved in the saga
+executes its own local transaction to update its private database.</li>
+<li><strong>Event Dispatch:</strong> Once a local transaction commits,
+the service publishes an event or message to trigger the next step.</li>
+<li><strong>Chained Processing:</strong> The downstream service consumes
+the event, executes its local transaction, and produces another event
+until the business flow completes.</li>
+</ol>
+<p>Because transactions commit locally at each step, system resources
+are not locked globally across network boundaries, which significantly
+improves throughput.</p>
+<h3 id="handling-failures-with-compensating-transactions">Handling
+Failures with Compensating Transactions</h3>
+<p>If any step in the sequence fails—due to business rule violations,
+payment rejections, or network errors—the saga cannot execute an
+automatic database-level rollback across previously updated services.
+Instead, it relies on compensating transactions.</p>
+<p>A compensating transaction is an explicitly coded operation that
+logically undoes the side effects of a previously committed local
+transaction. For example, if an inventory service successfully reserves
+stock, but the subsequent payment service fails, the saga initiates a
+compensating action in the inventory service to release the reserved
+items.</p>
+<h3 id="implementation-strategies">Implementation Strategies</h3>
+<p>Web architectures generally implement the Saga pattern using one of
+two coordination models:</p>
+<h4 id="1-choreography-event-driven">1. Choreography (Event-Driven)</h4>
+<p>In a choreographed saga, there is no central controller.
+Participating services listen to domain events and independently decide
+when to execute local transactions and publish new events.</p>
+<ul>
+<li><strong>Best for:</strong> Simple workflows with few participants
+(2–4 services) where avoiding a single point of coordination is
+preferred.</li>
+<li><strong>Trade-offs:</strong> Can become difficult to trace and debug
+as business workflows grow in complexity, increasing the risk of cyclic
+dependencies.</li>
+</ul>
+<h4 id="2-orchestration-command-driven">2. Orchestration
+(Command-Driven)</h4>
+<p>In an orchestrated saga, a dedicated service or workflow engine acts
+as the orchestrator. The orchestrator sends explicit command messages to
+each participating service, receives execution results, and directs the
+next operational step or initiates compensating actions upon
+failure.</p>
+<ul>
+<li><strong>Best for:</strong> Complex workflows involving multiple
+services or state-dependent conditional paths.</li>
+<li><strong>Trade-offs:</strong> Introduces an additional component to
+manage and risks centralizing too much business logic if not properly
+designed.</li>
+</ul>
+<h3 id="key-considerations">Key Considerations</h3>
+<p>Implementing Sagas requires designing services to handle non-isolated
+states, as data updates are visible to other queries before the entire
+saga completes. Systems must enforce idempotency so that duplicate
+messages do not cause unintended duplicate actions, and developers must
+handle potential anomalies like dirty reads through eventual consistency
+design patterns. When executed correctly, the Saga pattern provides a
+robust, scalable framework for managing mission-critical transactional
+workflows across modern distributed web applications.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

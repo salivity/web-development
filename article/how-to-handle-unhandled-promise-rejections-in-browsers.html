@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Handle Unhandled Promise Rejections in Browsers - web-development</title>
+    <meta name="description" content="Unhandled promise rejections occur when an asynchronous operation fails within a JavaScript application without an attached error handler, often leading to broken UI states and degraded user experiences. In production environments, web development engine">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-handle-unhandled-promise-rejections-in-browsers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Handle Unhandled Promise Rejections in Browsers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-handle-unhandled-promise-rejections-in-browsers" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Unhandled promise rejections occur when an asynchronous operation fails within a JavaScript application without an attached error handler, often leading to broken UI states and degraded user experiences. In production environments, web development engine" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-handle-unhandled-promise-rejections-in-browsers">How to
+Handle Unhandled Promise Rejections in Browsers</h1>
+<p>Unhandled promise rejections occur when an asynchronous operation
+fails within a JavaScript application without an attached error handler,
+often leading to broken UI states and degraded user experiences. In
+production environments, web development engineers capture, monitor, and
+mitigate these silent failures using browser-native event listeners,
+automated telemetry pipelines, robust linting rules, and centralized
+application performance monitoring (APM) tools. This guide details the
+technical mechanisms engineers use to identify these rejections across
+various browsers and neutralize them before they impact users.</p>
+<h3 id="the-global-detection-mechanism">The Global Detection
+Mechanism</h3>
+<p>Modern browsers provide a dedicated window-level event to intercept
+rejected promises that lack a local <code>.catch()</code> block or a
+surrounding <code>try...catch</code> statement. Engineers register an
+<code>unhandledrejection</code> event listener at the entry point of the
+application to centralize error capture:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;unhandledrejection&#39;</span><span class="op">,</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { reason<span class="op">,</span> promise } <span class="op">=</span> <span class="bu">event</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Prevent the default browser console error logging if desired</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="bu">event</span><span class="op">.</span><span class="fu">preventDefault</span>()<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Extract critical debugging data</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> errorMessage <span class="op">=</span> reason <span class="kw">instanceof</span> <span class="bu">Error</span> <span class="op">?</span> reason<span class="op">.</span><span class="at">message</span> <span class="op">:</span> <span class="bu">String</span>(reason)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> errorStack <span class="op">=</span> reason <span class="kw">instanceof</span> <span class="bu">Error</span> <span class="op">?</span> reason<span class="op">.</span><span class="at">stack</span> <span class="op">:</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Forward to a telemetry pipeline</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">reportErrorToService</span>({</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;UnhandledPromiseRejection&#39;</span><span class="op">,</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">message</span><span class="op">:</span> errorMessage<span class="op">,</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">stack</span><span class="op">:</span> errorStack<span class="op">,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">timestamp</span><span class="op">:</span> <span class="bu">Date</span><span class="op">.</span><span class="fu">now</span>()<span class="op">,</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>The event object exposes two critical properties:
+<code>event.promise</code> (the promise object that rejected) and
+<code>event.reason</code> (the value or error object passed to the
+rejection). Calling <code>event.preventDefault()</code> suppresses the
+default behavior of outputting an error message directly to the
+browser's developer console.</p>
+<h3 id="handling-worker-contexts">Handling Worker Contexts</h3>
+<p>Modern web applications frequently offload heavy computation or
+network synchronization to background threads. Because Web Workers and
+Service Workers run in isolated execution contexts, the top-level
+<code>window</code> object is unavailable.</p>
+<p>Engineers monitor workers by attaching listeners to the global worker
+scope (<code>self</code>):</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Inside a Web Worker or Service Worker context</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>self<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;unhandledrejection&#39;</span><span class="op">,</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Transmit error details back to the main thread or directly to an API</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fetch</span>(<span class="st">&#39;/api/logs/worker-error&#39;</span><span class="op">,</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">method</span><span class="op">:</span> <span class="st">&#39;POST&#39;</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">body</span><span class="op">:</span> <span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>({</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">workerType</span><span class="op">:</span> self <span class="kw">instanceof</span> <span class="bu">ServiceWorkerGlobalScope</span> <span class="op">?</span> <span class="st">&#39;ServiceWorker&#39;</span> <span class="op">:</span> <span class="st">&#39;WebWorker&#39;</span><span class="op">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">reason</span><span class="op">:</span> <span class="bu">event</span><span class="op">.</span><span class="at">reason</span><span class="op">?.</span><span class="at">message</span> <span class="op">||</span> <span class="bu">String</span>(<span class="bu">event</span><span class="op">.</span><span class="at">reason</span>)<span class="op">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">stack</span><span class="op">:</span> <span class="bu">event</span><span class="op">.</span><span class="at">reason</span><span class="op">?.</span><span class="at">stack</span><span class="op">,</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    })<span class="op">,</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">headers</span><span class="op">:</span> { <span class="st">&#39;Content-Type&#39;</span><span class="op">:</span> <span class="st">&#39;application/json&#39;</span> }<span class="op">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="addressing-rejection-tracking-and-late-resolution">Addressing
+Rejection Tracking and Late Resolution</h3>
+<p>A promise rejection might technically be unhandled at the instant it
+fails, but handled later in the execution cycle. To prevent false
+alarms, browsers implement a paired event:
+<code>rejectionhandled</code>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;rejectionhandled&#39;</span><span class="op">,</span> (<span class="bu">event</span>) <span class="kw">=&gt;</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Notify telemetry that a previously logged rejection was handled late</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cancelReportedError</span>(<span class="bu">event</span><span class="op">.</span><span class="at">promise</span>)<span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Production tracking libraries maintain an in-memory queue of
+unhandled promises with a brief debounce window (typically 50–100
+milliseconds). If <code>rejectionhandled</code> fires for that specific
+promise instance within the window, the error report is discarded,
+preventing redundant bug tickets and noisy alerts.</p>
+<h3 id="managing-cross-origin-script-errors">Managing Cross-Origin
+Script Errors</h3>
+<p>When asynchronous code fails inside an external script loaded from a
+CDN or a different origin without proper Cross-Origin Resource Sharing
+(CORS) headers, browsers redact the error details to prevent information
+leakage. In these scenarios, <code>event.reason</code> may evaluate to
+generic strings like <code>"Script error."</code> with no usable stack
+trace.</p>
+<p>Engineers resolve this issue by ensuring third-party assets meet two
+conditions:</p>
+<ol type="1">
+<li>The script tag includes the <code>crossorigin="anonymous"</code>
+attribute.</li>
+<li>The server hosting the asset returns the
+<code>Access-Control-Allow-Origin: *</code> (or specific origin)
+response header.</li>
+</ol>
+<h3 id="automated-reporting-and-telemetry-architecture">Automated
+Reporting and Telemetry Architecture</h3>
+<p>Transmitting error payloads synchronously on every failure can
+degrade network performance or fail completely during browser
+termination. In production environments, engineers implement resilient
+delivery patterns:</p>
+<ul>
+<li><strong>Beacon API:</strong> For mission-critical telemetry that
+must reliably dispatch even if the user closes the tab immediately after
+an error, engineers use
+<code>navigator.sendBeacon('/api/log', data)</code>.</li>
+<li><strong>Payload Batching:</strong> Non-fatal rejections are stored
+in memory and dispatched in batches periodically using idle browser
+callbacks such as <code>requestIdleCallback()</code> to minimize thread
+contention.</li>
+<li><strong>APM Integration:</strong> Teams integrate dedicated
+monitoring SDKs (such as Sentry, Datadog, or Bugsnag) which
+automatically wrap native promises, normalize stack traces across
+different browser engines (V8, Gecko, WebKit), and correlate failures
+with deployment versions and user session replays.</li>
+</ul>
+<h3 id="prevention-strategies-at-build-time">Prevention Strategies at
+Build Time</h3>
+<p>While detection is critical, high-performing teams apply preventative
+measures to prevent unhandled rejections from reaching production:</p>
+<ul>
+<li><strong>Strict Static Analysis:</strong> Enforcing ESLint rules such
+as <code>@typescript-eslint/no-floating-promises</code> requires
+developers to either <code>await</code>, <code>.catch()</code>, or
+explicitly return every promise instance.</li>
+<li><strong>Global Fallback Boundaries:</strong> In component-driven
+frameworks like React, Vue, or Angular, engineers route uncaught promise
+rejections into state managers or error boundaries to present graceful
+fallback UI rather than leaving the interface in a frozen or broken
+state.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

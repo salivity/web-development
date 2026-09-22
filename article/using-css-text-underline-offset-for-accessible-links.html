@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using CSS text-underline-offset for Accessible Links - web-development</title>
+    <meta name="description" content="The CSS text-underline-offset property allows developers to adjust the vertical distance between text and its underline, significantly enhancing readability and web accessibility. By moving the underline away from the text baseline, this property prevent">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-css-text-underline-offset-for-accessible-links">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using CSS text-underline-offset for Accessible Links - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-css-text-underline-offset-for-accessible-links" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS text-underline-offset property allows developers to adjust the vertical distance between text and its underline, significantly enhancing readability and web accessibility. By moving the underline away from the text baseline, this property prevent" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-css-text-underline-offset-for-accessible-links">Using CSS
+text-underline-offset for Accessible Links</h1>
+<p>The CSS <code>text-underline-offset</code> property allows developers
+to adjust the vertical distance between text and its underline,
+significantly enhancing readability and web accessibility. By moving the
+underline away from the text baseline, this property prevents visual
+collisions with letter descenders, making hyperlinked text easier to
+distinguish and read for users with low vision, dyslexia, or cognitive
+impairments.</p>
+<h3 id="why-link-underlines-matter-for-accessibility">Why Link
+Underlines Matter for Accessibility</h3>
+<p>According to the Web Content Accessibility Guidelines (WCAG), links
+within blocks of text must not rely solely on color to convey their
+function. Underlining remains the most universally recognized visual
+indicator for clickable links. However, default browser underlines often
+cut directly through letter descenders—such as the tails of "g," "j,"
+"p," "q," and "y"—creating visual noise that disrupts reading flow.</p>
+<h3 id="the-role-of-text-underline-offset">The Role of
+<code>text-underline-offset</code></h3>
+<p>The <code>text-underline-offset</code> property solves this issue by
+specifying how far below the text baseline an underline should sit.
+Instead of relying on awkward workarounds like
+<code>border-bottom</code> or <code>box-shadow</code>, which treat
+decorative borders as box model elements,
+<code>text-underline-offset</code> modifies the native text decoration
+itself.</p>
+<p>By introducing negative space between the glyphs and the underline,
+the property achieves three critical accessibility benefits:</p>
+<ul>
+<li><strong>Eliminates Visual Collisions:</strong> It prevents
+underlines from cutting through descenders, preserving the natural shape
+of letters.</li>
+<li><strong>Improves Legibility:</strong> Enhanced letterform clarity
+benefits users with reading disabilities, such as dyslexia, who rely on
+distinct character shapes to process text.</li>
+<li><strong>Maintains Semantic Intent:</strong> Because it modifies
+native <code>text-decoration</code>, screen magnifiers and high-contrast
+modes render the links more reliably than custom border-based
+hacks.</li>
+</ul>
+<h3 id="implementation-and-best-practices">Implementation and Best
+Practices</h3>
+<p>To implement <code>text-underline-offset</code> effectively for
+accessibility, use relative units such as <code>em</code> or
+<code>rem</code> rather than fixed pixels. Relative units ensure that
+the spacing scales proportionally whenever a user resizes the text or
+zooms in with a browser.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>a {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">text-decoration-line</span><span class="ch">:</span> <span class="dv">underline</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">text-decoration-thickness</span><span class="ch">:</span> <span class="dv">0.125</span><span class="dt">em</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">text-underline-offset</span><span class="ch">:</span> <span class="dv">0.25</span><span class="dt">em</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">text-decoration-skip-ink</span><span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>A recommended offset range is typically between <code>0.15em</code>
+and <code>0.3em</code>. Setting the offset too high can visually detach
+the line from the text, confusing users about which line of text the
+underline belongs to. When combined with
+<code>text-decoration-thickness</code> and
+<code>text-decoration-skip-ink</code>,
+<code>text-underline-offset</code> delivers high-contrast, highly
+legible links that meet modern inclusive design standards.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

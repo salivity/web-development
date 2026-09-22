@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS place-items: Center Align Grid and Flexbox - web-development</title>
+    <meta name="description" content="Centering content both horizontally and vertically has historically required verbose rules, nested wrappers, or complex margin hacks. The modern CSS place-items shorthand streamlines this process by combining two alignment properties into a single declar">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-place-items-center-align-grid-and-flexbox">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS place-items: Center Align Grid and Flexbox - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-place-items-center-align-grid-and-flexbox" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Centering content both horizontally and vertically has historically required verbose rules, nested wrappers, or complex margin hacks. The modern CSS place-items shorthand streamlines this process by combining two alignment properties into a single declar" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-place-items-center-align-grid-and-flexbox">CSS place-items:
+Center Align Grid and Flexbox</h1>
+<p>Centering content both horizontally and vertically has historically
+required verbose rules, nested wrappers, or complex margin hacks. The
+modern CSS <code>place-items</code> shorthand streamlines this process
+by combining two alignment properties into a single declaration,
+allowing developers to achieve flawless bi-directional centering in CSS
+Grid and maintain clean alignment in Flexbox layouts with minimal
+code.</p>
+<h3 id="understanding-place-items">Understanding place-items</h3>
+<p>The <code>place-items</code> property is a shorthand that sets both
+<code>align-items</code> (block axis) and <code>justify-items</code>
+(inline axis) simultaneously. Its syntax accepts either two values—one
+for each axis—or a single value that applies to both:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Sets align-items: center and justify-items: center */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>place-items<span class="in">:</span> center;</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">/* Sets align-items: start and justify-items: center */</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>place-items<span class="in">:</span> start center;</span></code></pre></div>
+<p>When given a single value like <code>center</code>, modern browser
+layout engines distribute the alignment instruction across both
+dimensions uniformly.</p>
+<h3 id="perfect-centering-in-css-grid">Perfect Centering in CSS
+Grid</h3>
+<p>The cleanest implementation of <code>place-items</code> appears in
+CSS Grid. To completely center a single child element—or multiple
+children—inside a parent container, only two CSS declarations are
+required:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.container</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">grid</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">place-items</span><span class="ch">:</span> <span class="dv">center</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This replaces legacy patterns that relied on relative positioning
+with coordinate transforms or explicit width-and-height calculations.
+Because <code>justify-items</code> and <code>align-items</code> both
+function natively within grid containers,
+<code>place-items: center</code> centers content along both the row and
+column axes immediately, accommodating dynamic widths and heights
+without layout shifts.</p>
+<h3 id="behavior-in-flexbox-layouts">Behavior in Flexbox Layouts</h3>
+<p>In Flexbox, the CSS Box Alignment Module Level 3 specifies how
+<code>place-items</code> behaves. While <code>align-items</code>
+controls alignment along the cross-axis, Flexbox handles main-axis
+distribution primarily through <code>justify-content</code> rather than
+<code>justify-items</code>.</p>
+<p>Applying <code>place-items: center</code> to a flex container
+immediately resolves the cross-axis centering
+(<code>align-items: center</code>). When paired with
+<code>justify-content: center</code>—or when using the companion
+shorthand <code>place-content: center</code>—developers achieve total
+alignment control across flex items with standard, predictable
+syntax.</p>
+<h3 id="why-place-items-streamlines-development">Why place-items
+Streamlines Development</h3>
+<ol type="1">
+<li><strong>Reduced Boilerplate:</strong> Consolidating multiple axis
+rules into a single property cuts CSS verbosity and decreases stylesheet
+file size across large projects.</li>
+<li><strong>Improved Readability:</strong> Code intent is immediately
+clear to other engineers scanning the stylesheet;
+<code>place-items: center</code> explicitly states that items within
+that container belong in the middle.</li>
+<li><strong>Fewer Positioning Hacks:</strong> Eliminates the need for
+absolute positioning, zero-inset margins, or wrapper elements solely
+created for layout alignment.</li>
+<li><strong>Consistency Across Modules:</strong> Standardizes alignment
+terminology under the CSS Box Alignment Module, unifying how developers
+manipulate items regardless of whether the surrounding layout is
+grid-based or flex-based.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

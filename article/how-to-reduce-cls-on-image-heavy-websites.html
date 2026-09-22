@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Reduce CLS on Image-Heavy Websites - web-development</title>
+    <meta name="description" content="Cumulative Layout Shift (CLS) is a critical Core Web Vitals metric that measures visual stability, and image-heavy websites are particularly prone to high scores due to assets loading asynchronously. This article outlines the most effective strategies we">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-reduce-cls-on-image-heavy-websites">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Reduce CLS on Image-Heavy Websites - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-reduce-cls-on-image-heavy-websites" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Cumulative Layout Shift (CLS) is a critical Core Web Vitals metric that measures visual stability, and image-heavy websites are particularly prone to high scores due to assets loading asynchronously. This article outlines the most effective strategies we" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-reduce-cls-on-image-heavy-websites">How to Reduce CLS on
+Image-Heavy Websites</h1>
+<p>Cumulative Layout Shift (CLS) is a critical Core Web Vitals metric
+that measures visual stability, and image-heavy websites are
+particularly prone to high scores due to assets loading asynchronously.
+This article outlines the most effective strategies web development
+teams can implement to stabilize page layouts, including assigning
+explicit image dimensions, leveraging modern CSS layout rules, using
+aspect ratios, and optimizing how responsive media loads.</p>
+<h3 id="1-always-include-explicit-width-and-height-attributes">1. Always
+Include Explicit Width and Height Attributes</h3>
+<p>The most frequent cause of CLS on media-rich pages is the absence of
+dimension attributes on <code>&lt;img&gt;</code> tags. When width and
+height are omitted, the browser cannot determine the required space
+until the image file finishes downloading, causing surrounding content
+to jump abruptly.</p>
+<p>Always define <code>width</code> and <code>height</code> attributes
+directly in the HTML:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">img</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;product.jpg&quot;</span><span class="ot"> width</span><span class="op">=</span><span class="st">&quot;800&quot;</span><span class="ot"> height</span><span class="op">=</span><span class="st">&quot;600&quot;</span><span class="ot"> alt</span><span class="op">=</span><span class="st">&quot;Product Name&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Modern browsers use these attributes to calculate the image's default
+aspect ratio before the asset downloads, reserving the exact amount of
+screen space needed.</p>
+<h3 id="2-use-the-modern-css-aspect-ratio-property">2. Use the Modern
+CSS <code>aspect-ratio</code> Property</h3>
+<p>For responsive layouts where images scale based on viewport width,
+use the CSS <code>aspect-ratio</code> property. This approach prevents
+shifts even when using relative units like percentages.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.responsive-image</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">width</span><span class="ch">:</span> <span class="dv">100</span><span class="dt">%</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">height</span><span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">aspect-ratio</span><span class="ch">:</span> <span class="dv">16</span> / <span class="dv">9</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>By specifying the aspect ratio in your CSS, the browser calculates
+the height automatically based on the container width, preventing layout
+collapse while the image is fetching.</p>
+<h3 id="3-reserve-space-with-skeleton-screens-or-placeholders">3.
+Reserve Space with Skeleton Screens or Placeholders</h3>
+<p>If your application loads images dynamically via JavaScript or an
+API, reserve the container space in advance using CSS placeholders,
+skeleton loaders, or low-quality image placeholders (LQIP).</p>
+<p>Set a <code>min-height</code> or explicit dimensions on the image
+wrapper element:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.image-wrapper</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">min-height</span><span class="ch">:</span> <span class="dv">300</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">background-color</span><span class="ch">:</span> <span class="cn">#f0f0f0</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This guarantees that the space is occupied from the initial DOM
+render, eliminating layout shifts when dynamic media enters the
+viewport.</p>
+<h3 id="4-optimize-responsive-images-with-srcset-and-sizes">4. Optimize
+Responsive Images with <code>srcset</code> and <code>sizes</code></h3>
+<p>Serving incorrectly sized images can delay rendering and exacerbate
+shift issues. Use <code>srcset</code> and <code>sizes</code> to serve
+the appropriate resolution for the user's screen density and viewport
+width.</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">img</span><span class="ot"> </span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ot">  src</span><span class="op">=</span><span class="st">&quot;photo-800.jpg&quot;</span><span class="ot"> </span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ot">  srcset</span><span class="op">=</span><span class="st">&quot;photo-400.jpg 400w, photo-800.jpg 800w, photo-1200.jpg 1200w&quot;</span><span class="ot"> </span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="ot">  sizes</span><span class="op">=</span><span class="st">&quot;(max-width: 600px) 100vw, 50vw&quot;</span><span class="ot"> </span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="ot">  width</span><span class="op">=</span><span class="st">&quot;800&quot;</span><span class="ot"> </span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="ot">  height</span><span class="op">=</span><span class="st">&quot;600&quot;</span><span class="ot"> </span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="ot">  alt</span><span class="op">=</span><span class="st">&quot;Gallery item&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Providing accurate <code>sizes</code> hints ensures the browser
+selects the correct image file quickly and allocates the appropriate
+dimensions without recalculating after download.</p>
+<h3 id="5-preload-critical-above-the-fold-images">5. Preload Critical
+Above-the-Fold Images</h3>
+<p>Images located above the fold (such as hero banners or primary
+product photos) should load as early as possible. Late-rendering hero
+images are a common trigger for layout displacement and high Largest
+Contentful Paint (LCP) times.</p>
+<p>Preload these assets in your document <code>&lt;head&gt;</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">link</span><span class="ot"> rel</span><span class="op">=</span><span class="st">&quot;preload&quot;</span><span class="ot"> as</span><span class="op">=</span><span class="st">&quot;image&quot;</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;hero.webp&quot;</span><span class="ot"> fetchpriority</span><span class="op">=</span><span class="st">&quot;high&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>Pair this with <code>fetchpriority="high"</code> on the image element
+itself, and avoid applying <code>loading="lazy"</code> to any image
+visible in the initial viewport.</p>
+<h3 id="6-implement-native-lazy-loading-correctly">6. Implement Native
+Lazy Loading Correctly</h3>
+<p>Lazy loading offscreen images saves bandwidth and speeds up
+rendering, but improperly configured lazy loading can cause shifts when
+users scroll quickly.</p>
+<p>Always combine <code>loading="lazy"</code> with explicit dimension
+attributes or aspect-ratio styling:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">img</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;footer-graphic.jpg&quot;</span><span class="ot"> loading</span><span class="op">=</span><span class="st">&quot;lazy&quot;</span><span class="ot"> width</span><span class="op">=</span><span class="st">&quot;400&quot;</span><span class="ot"> height</span><span class="op">=</span><span class="st">&quot;300&quot;</span><span class="ot"> alt</span><span class="op">=</span><span class="st">&quot;Graphic&quot;</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>This guarantees that the browser maintains the layout scroll position
+accurately as unseen images load in the background.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reduce DNS Lookup Latency to Speed Up Page Loads - web-development</title>
+    <meta name="description" content="DNS lookup latency represents the initial bottleneck in the web page loading process, occurring before a single byte of content can be transferred. This article covers essential strategies to reduce DNS resolution times, including implementing resource h">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/reduce-dns-lookup-latency-to-speed-up-page-loads">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Reduce DNS Lookup Latency to Speed Up Page Loads - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/reduce-dns-lookup-latency-to-speed-up-page-loads" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="DNS lookup latency represents the initial bottleneck in the web page loading process, occurring before a single byte of content can be transferred. This article covers essential strategies to reduce DNS resolution times, including implementing resource h" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="reduce-dns-lookup-latency-to-speed-up-page-loads">Reduce DNS
+Lookup Latency to Speed Up Page Loads</h1>
+<p>DNS lookup latency represents the initial bottleneck in the web page
+loading process, occurring before a single byte of content can be
+transferred. This article covers essential strategies to reduce DNS
+resolution times, including implementing resource hints, reducing
+third-party domains, selecting high-performance Anycast DNS providers,
+optimizing Time-to-Live (TTL) values, and leveraging modern HTTP
+protocols to streamline network performance.</p>
+<h3 id="implement-dns-prefetching-and-preconnect">Implement DNS
+Prefetching and Preconnect</h3>
+<p>Browsers can resolve domain names before a user explicitly triggers a
+navigation or resource download. By adding
+<code>&lt;link rel="dns-prefetch" href="//example.com"&gt;</code> to the
+HTML <code>&lt;head&gt;</code>, you instruct the browser to resolve the
+target domain's IP address in the background.</p>
+<p>For critical third-party resources needed immediately (such as fonts
+or primary CDNs), upgrade this to
+<code>&lt;link rel="preconnect" href="https://example.com"&gt;</code>.
+Preconnect performs the DNS lookup, TCP handshake, and TLS negotiation
+in advance, eliminating several round-trip times (RTTs) before the
+browser requests the asset.</p>
+<h3 id="minimize-unique-third-party-domains">Minimize Unique Third-Party
+Domains</h3>
+<p>Every distinct domain referenced in your markup (e.g., ad networks,
+analytics scripts, external fonts, social widgets) triggers its own DNS
+resolution. A typical page referencing ten different domains may incur
+up to ten separate DNS lookups if they are not already cached.</p>
+<ul>
+<li>Self-host critical assets, such as web fonts and analytics scripts,
+on your primary domain.</li>
+<li>Audit third-party scripts regularly and remove obsolete tracking
+tags or redundant libraries.</li>
+<li>Consolidate external assets into a smaller footprint of centralized
+CDNs.</li>
+</ul>
+<h3 id="migrate-to-a-managed-anycast-dns-provider">Migrate to a Managed
+Anycast DNS Provider</h3>
+<p>Default DNS servers provided by domain registrars or standard web
+hosts are often slow, lack global distribution, and introduce
+significant latency for geographically distant users. Switch to an
+enterprise Anycast DNS network (such as Cloudflare, AWS Route 53, or
+Google Cloud DNS). Anycast routes user queries to the physically closest
+nameserver, reducing the round-trip network time required to return an
+IP address.</p>
+<h3 id="optimize-time-to-live-ttl-values">Optimize Time-to-Live (TTL)
+Values</h3>
+<p>The DNS TTL determines how long recursive resolvers and local
+browsers cache your DNS records before querying your authoritative
+nameserver again.</p>
+<ul>
+<li><strong>Static, stable assets:</strong> Set TTL values higher (e.g.,
+24 hours to 7 days, or 86,400 to 604,800 seconds). High TTLs maximize
+the likelihood that subsequent visits will hit a warm local DNS cache,
+completely eliminating lookup latency.</li>
+<li><strong>Dynamic or failure-prone infrastructure:</strong> If you
+need the ability to quickly reroute traffic during a server failure or
+migration, balance reliability with latency by setting TTLs between 300
+and 3,600 seconds.</li>
+</ul>
+<h3 id="eliminate-domain-sharding-in-favor-of-http2-and-http3">Eliminate
+Domain Sharding in Favor of HTTP/2 and HTTP/3</h3>
+<p>Historically, developers used domain sharding (splitting assets
+across <code>static1.example.com</code>,
+<code>static2.example.com</code>, etc.) to bypass the browser's limit of
+six simultaneous connections per domain under HTTP/1.1. Each shard
+required an independent DNS lookup. Under modern HTTP/2 and HTTP/3
+protocols, browsers multiplex hundreds of requests over a single
+persistent connection. Serving all static assets from the apex domain or
+a single subdomain removes redundant DNS lookups while taking full
+advantage of connection reuse.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scalable Directory Structures for Enterprise Web Apps - web-development</title>
+    <meta name="description" content="Structuring directory layouts in large-scale enterprise web applications requires moving beyond trivial framework defaults to architectures that promote modularity, maintainability, and domain encapsulation. As teams grow and codebases expand to hundreds">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/scalable-directory-structures-for-enterprise-web-apps">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Scalable Directory Structures for Enterprise Web Apps - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/scalable-directory-structures-for-enterprise-web-apps" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Structuring directory layouts in large-scale enterprise web applications requires moving beyond trivial framework defaults to architectures that promote modularity, maintainability, and domain encapsulation. As teams grow and codebases expand to hundreds" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="scalable-directory-structures-for-enterprise-web-apps">Scalable
+Directory Structures for Enterprise Web Apps</h1>
+<p>Structuring directory layouts in large-scale enterprise web
+applications requires moving beyond trivial framework defaults to
+architectures that promote modularity, maintainability, and domain
+encapsulation. As teams grow and codebases expand to hundreds of
+thousands of lines, traditional layer-first organizations (grouping
+purely by controllers, views, or services) fail due to high coupling and
+cognitive overhead. This guide outlines how enterprise engineering teams
+transition to feature-driven architectures, design self-contained
+modules, isolate shared logic, and use monorepos to scale applications
+efficiently.</p>
+<h3 id="the-pitfalls-of-layer-first-grouping">The Pitfalls of
+Layer-First Grouping</h3>
+<p>Standard starter templates typically recommend grouping files by
+technical role:</p>
+<pre class="text"><code>src/
+├── components/
+├── controllers/
+├── services/
+├── views/
+└── utils/</code></pre>
+<p>In large enterprise applications, this structure degrades quickly.
+Implementing a single business capability, such as updating user billing
+details, forces engineers to navigate half a dozen disparate folders.
+Discoverability declines, merge conflicts increase, and boundaries
+between unrelated business domains blur.</p>
+<h3 id="the-standard-feature-first-architecture">The Standard:
+Feature-First Architecture</h3>
+<p>Enterprise applications overwhelmingly favor a feature-first (or
+domain-driven) architecture. In this model, code is organized around
+business domains rather than technical responsibilities. Each domain
+acts as an autonomous module containing its own routing, UI, state, API
+integration, and tests.</p>
+<pre class="text"><code>src/
+├── app/
+│   ├── routes/
+│   └── providers/
+├── features/
+│   ├── authentication/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── types/
+│   │   └── index.ts
+│   ├── billing/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── services/
+│   │   ├── types/
+│   │   └── index.ts
+│   └── reporting/
+├── shared/
+│   ├── components/
+│   ├── hooks/
+│   ├── utils/
+│   └── types/</code></pre>
+<h4 id="anatomical-breakdown-of-a-feature-module">Anatomical Breakdown
+of a Feature Module</h4>
+<p>Every feature directory represents a self-contained unit:</p>
+<ul>
+<li><strong><code>api/</code></strong>: Network requests, queries,
+mutations, and backend contract definitions specific to the
+feature.</li>
+<li><strong><code>components/</code></strong>: UI elements used
+exclusively within this specific domain.</li>
+<li><strong><code>hooks/</code> or <code>services/</code></strong>:
+Business logic, state management, and orchestration.</li>
+<li><strong><code>types/</code></strong>: Domain models, schemas, and
+static type declarations.</li>
+<li><strong><code>index.ts</code> (Public API):</strong> The entry point
+that explicitly defines what the feature exports to the rest of the
+application. Everything not exported here remains internal to the
+feature module.</li>
+</ul>
+<h3 id="handling-cross-cutting-concerns-core-vs-shared">Handling
+Cross-Cutting Concerns: Core vs. Shared</h3>
+<p>Enterprise layouts must explicitly define where code lives when it is
+not tied to a single feature. Engineers typically separate this into two
+distinct layers: <code>core</code> and <code>shared</code>.</p>
+<h4 id="the-core-directory">The <code>core/</code> Directory</h4>
+<p>The <code>core</code> directory holds global, singleton-like
+dependencies that are instantiated once at application startup. This
+logic is critical for app execution but is rarely touched during
+day-to-day feature development.</p>
+<ul>
+<li>Global authentication interceptors and base HTTP clients.</li>
+<li>Top-level error boundaries and logging infrastructure.</li>
+<li>Route guards and base environment configurations.</li>
+</ul>
+<h4 id="the-shared-directory">The <code>shared/</code> Directory</h4>
+<p>The <code>shared</code> (or <code>common</code>) directory contains
+reusable, stateless building blocks that any feature can import.</p>
+<ul>
+<li><strong>Primitive UI Components</strong>: Buttons, inputs, modals,
+and design-system tokens that contain zero domain knowledge.</li>
+<li><strong>Pure Utility Functions</strong>: Date formatters, math
+utilities, and validation helpers.</li>
+<li><strong>Global Types</strong>: Universal primitives shared across
+multiple bounded contexts.</li>
+</ul>
+<h3 id="enterprise-monorepos-and-workspace-layouts">Enterprise Monorepos
+and Workspace Layouts</h3>
+<p>When applications support multiple platforms (web, mobile,
+administrative portals), enterprises transition from a single monolithic
+directory to a workspace-based monorepo layout using tools like
+Turborepo, Nx, or pnpm workspaces.</p>
+<pre class="text"><code>repo-root/
+├── apps/
+│   ├── customer-portal/
+│   │   ├── src/
+│   │   └── package.json
+│   └── admin-dashboard/
+│       ├── src/
+│       └── package.json
+├── packages/
+│   ├── ui-system/
+│   │   ├── src/
+│   │   └── package.json
+│   ├── api-client/
+│   │   ├── src/
+│   │   └── package.json
+│   ├── config-eslint/
+│   └── tsconfig/
+├── package.json
+└── pnpm-workspace.yaml</code></pre>
+<p>This layout separates deployable targets (<code>apps/</code>) from
+reusable libraries (<code>packages/</code>). The UI system, analytics
+wrappers, and API client libraries are maintained independently with
+distinct dependency graphs, preventing duplicated logic across
+teams.</p>
+<h3 id="enforcing-architectural-boundaries">Enforcing Architectural
+Boundaries</h3>
+<p>A directory structure is only effective if its boundaries are
+mechanically enforced. Enterprise engineering teams implement strict
+automated safeguards to prevent layout degradation:</p>
+<ol type="1">
+<li><strong>Explicit Public Interfaces</strong>: Features must import
+from another feature's entry point (<code>features/billing</code>),
+never from its internal implementation details
+(<code>features/billing/components/internal-card.tsx</code>).</li>
+<li><strong>Linting Rules</strong>: ESLint plugins such as
+<code>eslint-plugin-boundaries</code> or
+<code>eslint-plugin-import</code> enforce directional dependencies. For
+instance, code in <code>shared/</code> is strictly prohibited from
+importing code from <code>features/</code>.</li>
+<li><strong>Circular Dependency Detection</strong>: CI pipelines run
+automated checks to catch circular dependencies at build time, ensuring
+modules remain decoupled and independently testable.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

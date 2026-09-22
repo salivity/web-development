@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS @starting-style for Entry Transitions - web-development</title>
+    <meta name="description" content="The CSS @starting-style at-rule solves a long-standing limitation in web development by enabling smooth entry transitions for elements appearing on a page, entering the top layer, or toggling from display: none. Historically, CSS transitions required an">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-starting-style-for-entry-transitions">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS @starting-style for Entry Transitions - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-starting-style-for-entry-transitions" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS @starting-style at-rule solves a long-standing limitation in web development by enabling smooth entry transitions for elements appearing on a page, entering the top layer, or toggling from display: none. Historically, CSS transitions required an" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-starting-style-for-entry-transitions">CSS @starting-style
+for Entry Transitions</h1>
+<p>The CSS <code>@starting-style</code> at-rule solves a long-standing
+limitation in web development by enabling smooth entry transitions for
+elements appearing on a page, entering the top layer, or toggling from
+<code>display: none</code>. Historically, CSS transitions required an
+element to already exist in the DOM with an established style state,
+making it impossible to animate an element immediately upon mounting or
+display toggling without JavaScript timing hacks. This article explores
+the mechanics of <code>@starting-style</code>, its role in entry and
+exit lifecycles, and how it pairs with discrete property transitions to
+create seamless UI animations.</p>
+<h3 id="the-problem-animating-initial-rendering">The Problem: Animating
+Initial Rendering</h3>
+<p>CSS transitions work by interpolating between two distinct states
+over a duration. When an element is added to the DOM or changed from
+<code>display: none</code> to another display value (such as
+<code>block</code> or <code>flex</code>), the browser evaluates its
+initial styles and renders them instantly. Because there is no
+previously rendered frame to compare against, standard transition rules
+fail to trigger, resulting in an abrupt visual pop rather than a fluid
+animation.</p>
+<p>Developers traditionally resolved this limitation using JavaScript by
+rendering the element hidden, forcing a reflow or waiting for an
+animation frame, and then adding an active class to trigger the
+transition.</p>
+<h3 id="how-starting-style-works">How <code>@starting-style</code>
+Works</h3>
+<p>The <code>@starting-style</code> at-rule provides a native,
+declarative way to define the element's style state before its first
+style update. When the browser computes the styles for an element that
+is becoming visible, it reads the properties within
+<code>@starting-style</code> as the base state, immediately
+interpolating them toward the element’s standard styles.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Base state of the element when visible */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.dialog</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transform</span><span class="ch">:</span> <span class="fu">scale(</span><span class="dv">1</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transition</span><span class="ch">:</span> <span class="dv">opacity 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">,</span> <span class="dv">transform 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">/* Starting state applied before initial render */</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">@starting-style</span> {</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.dialog</span> {</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">transform</span><span class="ch">:</span> <span class="fu">scale(</span><span class="dv">0.9</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In this example, when <code>.dialog</code> is inserted into the
+document, the browser assigns it an <code>opacity</code> of
+<code>0</code> and a <code>scale</code> of <code>0.9</code> before
+animating it to an <code>opacity</code> of <code>1</code> and a
+<code>scale</code> of <code>1</code>.</p>
+<h3 id="pairing-with-discrete-transitions-for-display-changes">Pairing
+with Discrete Transitions for Display Changes</h3>
+<p>While <code>@starting-style</code> defines the starting values for
+properties like <code>opacity</code> or <code>transform</code>,
+transitioning from <code>display: none</code> requires an additional
+property: <code>transition-behavior: allow-discrete</code>.</p>
+<p>By default, discrete properties like <code>display</code> switch
+values instantly at the start or end of an animation. By permitting
+discrete transitions, you instruct the browser to keep the element
+displayed until continuous transitions (like fading out) finish:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">block</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">transition</span><span class="ch">:</span> <span class="dv">opacity 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">,</span> <span class="dv">display 0.3</span><span class="dt">s</span> <span class="dv">ease</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  transition-behavior<span class="ch">:</span> <span class="dv">allow-discrete</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">.card.hidden</span> {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="im">@starting-style</span> {</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">.card</span> {</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="kw">opacity</span><span class="ch">:</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="entry-vs-exit-transitions">Entry vs. Exit Transitions</h3>
+<p>It is important to note the specific boundary of
+<code>@starting-style</code>:</p>
+<ul>
+<li><strong>Entry Transitions:</strong> <code>@starting-style</code>
+applies <em>only</em> to the entry phase. It defines the state from
+which an element transitions when moving from not rendered to
+rendered.</li>
+<li><strong>Exit Transitions:</strong> Exit transitions do not use
+<code>@starting-style</code>. Instead, the exit state is handled by
+standard class updates (such as an <code>.is-closing</code> class) or
+pseudo-classes while <code>transition-behavior: allow-discrete</code>
+ensures the element remains visible throughout the closing animation
+duration.</li>
+</ul>
+<h3 id="top-layer-elements-and-popovers">Top-Layer Elements and
+Popovers</h3>
+<p>The <code>@starting-style</code> rule plays a critical role in native
+HTML elements such as <code>&lt;dialog&gt;</code> and elements
+leveraging the Popover API. When a dialog opens using
+<code>.showModal()</code>, it enters the browser's top layer. Combining
+<code>@starting-style</code> with the <code>overlay</code> property
+allows dialog backdrops and popovers to smoothly fade into view and
+dismiss without relying on complex third-party animation libraries.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

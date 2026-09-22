@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risks of JWS Without Algorithm Verification - web-development</title>
+    <meta name="description" content="Failing to enforce strict cryptographic algorithm verification in JSON Web Signatures (JWS) creates severe security vulnerabilities, including signature bypasses and arbitrary token forgery. When web applications implicitly trust the algorithm declared w">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/risks-of-jws-without-algorithm-verification">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Risks of JWS Without Algorithm Verification - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/risks-of-jws-without-algorithm-verification" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Failing to enforce strict cryptographic algorithm verification in JSON Web Signatures (JWS) creates severe security vulnerabilities, including signature bypasses and arbitrary token forgery. When web applications implicitly trust the algorithm declared w" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="risks-of-jws-without-algorithm-verification">Risks of JWS
+Without Algorithm Verification</h1>
+<p>Failing to enforce strict cryptographic algorithm verification in
+JSON Web Signatures (JWS) creates severe security vulnerabilities,
+including signature bypasses and arbitrary token forgery. When web
+applications implicitly trust the algorithm declared within the token
+header instead of validating it against an expected server-side
+standard, attackers can manipulate tokens to impersonate users, tamper
+with data, and bypass authentication mechanisms entirely.</p>
+<h3 id="the-critical-role-of-the-algorithm-header">The Critical Role of
+the Algorithm Header</h3>
+<p>A JSON Web Signature consists of three parts: a header, a payload,
+and a signature. The header typically contains an <code>alg</code>
+(algorithm) parameter, which specifies the cryptographic method used to
+sign the token, such as <code>HS256</code> (HMAC with SHA-256) or
+<code>RS256</code> (RSA Signature with SHA-256). The verification
+process relies on this mathematical operation to ensure the payload has
+not been altered. However, when the verifying server relies solely on
+the token's incoming <code>alg</code> header to determine how to verify
+the signature, the application surrenders cryptographic control to the
+client.</p>
+<h3 id="the-none-algorithm-bypass">The "None" Algorithm Bypass</h3>
+<p>The JWS specification includes an algorithm identifier labeled
+<code>none</code>, designed for unsecured data where integrity
+guarantees are unnecessary. If an application library does not
+explicitly reject the <code>none</code> algorithm during signature
+verification, an attacker can modify the token payload—such as changing
+an account ID or user role to "admin"—set the <code>alg</code> header to
+<code>none</code>, and strip the signature entirely. Because the
+verifier sees the <code>none</code> algorithm requested in the header,
+it skips cryptographic verification and treats the tampered payload as
+valid, granting unauthorized access.</p>
+<h3 id="algorithm-confusion-attacks-asymmetric-to-symmetric">Algorithm
+Confusion Attacks (Asymmetric to Symmetric)</h3>
+<p>Another common threat is the algorithm confusion or key-confusion
+attack, frequently observed when systems switch between asymmetric
+algorithms like <code>RS256</code> and symmetric algorithms like
+<code>HS256</code>.</p>
+<p>In an asymmetric configuration, the server signs tokens using a
+private key and verifies them using a public key. Because the public key
+is not secret, attackers have access to it. If the verifying backend
+accepts both asymmetric and symmetric algorithms without strict
+verification, an attacker can:</p>
+<ol type="1">
+<li>Change the header from <code>RS256</code> to
+<code>HS256</code>.</li>
+<li>Sign the modified token using the server's publicly available RSA
+public key as the HMAC secret key.</li>
+<li>Submit the token to the server.</li>
+</ol>
+<p>The server, reading <code>HS256</code> from the header, verifies the
+signature using HMAC with its own public key, which it mistakenly treats
+as a shared secret. The verification succeeds, allowing attackers to
+forge arbitrary tokens.</p>
+<h3 id="identity-spoofing-and-data-tampering">Identity Spoofing and Data
+Tampering</h3>
+<p>The ultimate consequence of omitting algorithm verification is the
+complete loss of data integrity and authenticity. In modern web
+architectures, JWS is commonly used for authorization tokens (such as
+JSON Web Tokens), session state storage, and identity federation. When
+verification is broken:</p>
+<ul>
+<li><strong>Privilege Escalation:</strong> Attackers alter user
+identifiers, scopes, or administrative flags.</li>
+<li><strong>Identity Spoofing:</strong> Malicious actors generate valid
+signatures for any identity without needing genuine credentials.</li>
+<li><strong>State Tampering:</strong> Any application logic relying on
+claims inside the payload becomes vulnerable to manipulation.</li>
+</ul>
+<h3 id="remediation-strategies">Remediation Strategies</h3>
+<p>To eliminate these vulnerabilities, developers must enforce strict
+cryptographic boundaries within their applications:</p>
+<ul>
+<li><strong>Whitelist Algorithms:</strong> Hardcode the specific
+algorithm (e.g., exclusively <code>RS256</code> or <code>ES256</code>)
+the application expects to verify, rejecting any token that specifies a
+different algorithm.</li>
+<li><strong>Reject Insecure Types:</strong> Explicitly disable and
+reject the <code>none</code> algorithm in both verification libraries
+and security policies.</li>
+<li><strong>Decouple Key Retrieval:</strong> Ensure the key chosen for
+verification is tied directly to the application configuration and trust
+store, rather than dynamically selected based on client-controlled
+headers.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

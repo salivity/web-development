@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advantages of CSS Logical Units vi and vb - web-development</title>
+    <meta name="description" content="CSS logical viewport units, specifically vi (viewport inline) and vb (viewport block), provide a responsive sizing mechanism that adapts automatically to different writing modes and text directions. While traditional units like vw and vh are tied strictl">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/advantages-of-css-logical-units-vi-and-vb">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Advantages of CSS Logical Units vi and vb - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/advantages-of-css-logical-units-vi-and-vb" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="CSS logical viewport units, specifically vi (viewport inline) and vb (viewport block), provide a responsive sizing mechanism that adapts automatically to different writing modes and text directions. While traditional units like vw and vh are tied strictl" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="advantages-of-css-logical-units-vi-and-vb">Advantages of CSS
+Logical Units vi and vb</h1>
+<p>CSS logical viewport units, specifically <code>vi</code> (viewport
+inline) and <code>vb</code> (viewport block), provide a responsive
+sizing mechanism that adapts automatically to different writing modes
+and text directions. While traditional units like <code>vw</code> and
+<code>vh</code> are tied strictly to physical screen axes—horizontal
+width and vertical height—logical units respond to the reading flow of
+the document. This article explores how adopting <code>vi</code> and
+<code>vb</code> streamlines internationalization, reduces redundant
+code, and creates truly resilient layouts in multi-directional web
+development.</p>
+<h3 id="automatic-adaptation-to-writing-modes">Automatic Adaptation to
+Writing Modes</h3>
+<p>Traditional viewport units assume a standard horizontal writing mode,
+such as left-to-right (LTR) in English or right-to-left (RTL) in Arabic.
+In these contexts, the inline axis aligns with horizontal width, and the
+block axis aligns with vertical height.</p>
+<p>However, when working with vertical scripts (such as traditional
+Japanese, Chinese, or Mongolian using
+<code>writing-mode: vertical-rl</code> or <code>vertical-lr</code>),
+physical dimensions become counterintuitive:</p>
+<ul>
+<li><code>1vi</code> represents 1% of the viewport's inline dimension.
+In horizontal modes, this equates to 1% of the viewport width. In
+vertical modes, it automatically switches to 1% of the viewport
+height.</li>
+<li><code>1vb</code> represents 1% of the viewport's block dimension. In
+horizontal modes, this equates to 1% of the viewport height. In vertical
+modes, it automatically switches to 1% of the viewport width.</li>
+</ul>
+<p>Because <code>vi</code> and <code>vb</code> dynamically remap based
+on the active <code>writing-mode</code>, elements size themselves
+predictably relative to content flow rather than physical screen
+borders.</p>
+<h3 id="streamlined-codebases-without-redundant-overrides">Streamlined
+Codebases Without Redundant Overrides</h3>
+<p>Prior to logical viewport units, supporting both horizontal and
+vertical writing systems required writing duplicate utility classes or
+relying on context-specific overrides:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Legacy approach */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.hero-title</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-size</span><span class="ch">:</span> <span class="dv">5</span><span class="dt">vw</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="ex">[</span><span class="ss">writing-mode</span><span class="op">^=</span><span class="st">&quot;vertical&quot;</span><span class="ex">]</span> <span class="fu">.hero-title</span> {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-size</span><span class="ch">:</span> <span class="dv">5</span><span class="dt">vh</span><span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Using logical units eliminates the need for orientation-specific
+rules entirely:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Logical approach */</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.hero-title</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-size</span><span class="ch">:</span> <span class="dv">5</span><span class="dt">vi</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The single declaration scales typography proportionally to the length
+of the line of text, whether that line runs horizontally across the
+screen or vertically from top to bottom.</p>
+<h3 id="natural-harmony-with-modern-css-layouts">Natural Harmony with
+Modern CSS Layouts</h3>
+<p>CSS has systematically moved toward logical abstractions with
+properties like <code>inline-size</code> (replacing <code>width</code>),
+<code>block-size</code> (replacing <code>height</code>), and logical
+margin and padding equivalents (<code>margin-inline</code>,
+<code>padding-block</code>).</p>
+<p>Using physical units like <code>vw</code> or <code>vh</code>
+alongside logical properties introduces an architectural mismatch.
+Pairing logical dimensions with logical units ensures conceptual
+consistency across your entire design system:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">inline-size</span><span class="ch">:</span> <span class="dv">80</span><span class="dt">vi</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">max-block-size</span><span class="ch">:</span> <span class="dv">50</span><span class="dt">vb</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">padding-inline</span><span class="ch">:</span> <span class="dv">2</span><span class="dt">vi</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">padding-block</span><span class="ch">:</span> <span class="dv">2</span><span class="dt">vb</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This ensures that component constraints behave consistently
+regardless of whether the component is rendered in an LTR, RTL, or
+vertical container.</p>
+<h3 id="fluid-typography-across-global-scripts">Fluid Typography Across
+Global Scripts</h3>
+<p>Viewport-based typography using functions like <code>clamp()</code>
+often pairs font sizing with screen dimensions. By using <code>vi</code>
+instead of <code>vw</code>, fluid text sizes scale relative to the line
+length available to the reader:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>h1 {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">font-size</span><span class="ch">:</span> <span class="fu">clamp(</span><span class="dv">1.5</span><span class="dt">rem</span><span class="op">,</span> <span class="dv">4</span><span class="dt">vi</span> + <span class="dv">1</span><span class="dt">rem</span><span class="op">,</span> <span class="dv">3.5</span><span class="dt">rem</span><span class="fu">)</span><span class="op">;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>In horizontal layouts, this prevents text from expanding
+uncontrollably based on height. In vertical layouts, it ensures text
+scales with viewport height—which represents the primary reading
+dimension—preserving legibility across diverse device orientations and
+script types.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manifest V3 Background Scripts vs Service Workers - web-development</title>
+    <meta name="description" content="Chrome Extensions Manifest V3 fundamentally re-engineers extension architecture by replacing persistent background pages with ephemeral service workers. This transition enforces an event-driven execution model designed to enhance browser performance, red">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/manifest-v-3-background-scripts-vs-service-workers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Manifest V3 Background Scripts vs Service Workers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/manifest-v-3-background-scripts-vs-service-workers" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Chrome Extensions Manifest V3 fundamentally re-engineers extension architecture by replacing persistent background pages with ephemeral service workers. This transition enforces an event-driven execution model designed to enhance browser performance, red" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="manifest-v3-background-scripts-vs-service-workers">Manifest V3
+Background Scripts vs Service Workers</h1>
+<p>Chrome Extensions Manifest V3 fundamentally re-engineers extension
+architecture by replacing persistent background pages with ephemeral
+service workers. This transition enforces an event-driven execution
+model designed to enhance browser performance, reduce memory overhead,
+and strengthen user privacy. The shift eliminates long-standing
+paradigms—such as persistent in-memory global state and direct DOM
+access—requiring web developers to adopt asynchronous storage
+mechanisms, dedicated alarm APIs, and alternative techniques for
+DOM-dependent workflows.</p>
+<h3 id="the-shift-to-an-ephemeral-lifecycle">The Shift to an Ephemeral
+Lifecycle</h3>
+<p>In Manifest V2, background scripts operated within persistent
+background pages or event pages. These environments maintained an
+ongoing execution context for the duration of the browser session,
+consuming system memory continuously regardless of user activity.</p>
+<p>Under Manifest V3, background logic executes entirely within a Web
+Service Worker context. Service workers are stateless and short-lived:
+the browser spins them up only to handle registered events (such as user
+interactions, network triggers, or incoming messages) and terminates
+them shortly after the tasks finish. Developers can no longer rely on
+execution loops or continuously active listeners, requiring extensions
+to be strictly reactive.</p>
+<h3 id="loss-of-the-window-context-and-dom-access">Loss of the Window
+Context and DOM Access</h3>
+<p>Because background scripts now run inside a
+<code>ServiceWorkerGlobalScope</code> rather than a standard
+<code>Window</code> context:</p>
+<ul>
+<li>The global <code>window</code> object, <code>document</code>, and
+standard DOM manipulation APIs are completely unavailable.</li>
+<li>Libraries relying on the DOM or window APIs (such as older XML
+parsing libraries or specific authentication wrappers) fail to execute
+in the background context.</li>
+<li>For tasks requiring DOM parsing, audio playback, canvas operations,
+or clipboard interaction, developers must use the
+<code>chrome.offscreen</code> API. This API allows the service worker to
+programmatically create and tear down hidden documents to perform
+DOM-reliant work without keeping a full background page alive.</li>
+</ul>
+<h3
+id="state-management-from-global-variables-to-persistent-storage">State
+Management: From Global Variables to Persistent Storage</h3>
+<p>A major breaking change is the unreliability of global in-memory
+variables. In Manifest V2, a global variable declared in a background
+script retained its value until the browser closed. In Manifest V3, any
+global state is lost the moment the service worker goes idle and
+terminates.</p>
+<p>To maintain state, developers must explicitly persist data using:</p>
+<ul>
+<li><strong><code>chrome.storage.local</code></strong>: For data that
+persists across browser restarts.</li>
+<li><strong><code>chrome.storage.session</code></strong>: Introduced to
+hold non-sensitive or temporary state in memory for the duration of the
+browser session, surviving service worker restarts without writing to
+disk.</li>
+<li><strong>IndexedDB</strong>: For complex, large-scale, or structured
+relational datasets.</li>
+</ul>
+<p>Every event handler must now be capable of reconstructing its
+required state from storage before executing business logic.</p>
+<h3 id="asynchronous-timers-and-task-scheduling">Asynchronous Timers and
+Task Scheduling</h3>
+<p>Standard web timer APIs like <code>setTimeout()</code> and
+<code>setInterval()</code> are fundamentally incompatible with service
+worker lifecycles. If a service worker goes idle while a timer is
+pending, Chrome will shut down the worker, causing the timer to fail
+silently or be canceled.</p>
+<p>Task scheduling in Manifest V3 requires the
+<code>chrome.alarms</code> API. Alarms wake up the terminated service
+worker when the scheduled interval elapses, fire the corresponding event
+listener, and allow the worker to handle the operation before returning
+to an idle state.</p>
+<h3 id="message-passing-and-initialization">Message Passing and
+Initialization</h3>
+<p>Manifest V3 requires that all event listeners be registered
+synchronously at the top level of the service worker script. If an event
+listener is registered inside an asynchronous callback or condition,
+Chrome cannot map the incoming event to the dormant worker, resulting in
+dropped messages or unhandled events. Message passing patterns between
+content scripts, popups, and the service worker must be strictly
+asynchronous, leveraging promises and structured event dispatching to
+ensure reliable communication.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

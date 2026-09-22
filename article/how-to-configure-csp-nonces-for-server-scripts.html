@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Configure CSP Nonces for Server Scripts - web-development</title>
+    <meta name="description" content="This article outlines how web development teams implement and configure Content Security Policy (CSP) nonces to safely execute dynamically injected, server-rendered inline scripts. It covers the end-to-end architecture, starting from generating cryptogra">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-configure-csp-nonces-for-server-scripts">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Configure CSP Nonces for Server Scripts - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-configure-csp-nonces-for-server-scripts" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article outlines how web development teams implement and configure Content Security Policy (CSP) nonces to safely execute dynamically injected, server-rendered inline scripts. It covers the end-to-end architecture, starting from generating cryptogra" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-configure-csp-nonces-for-server-scripts">How to Configure
+CSP Nonces for Server Scripts</h1>
+<p>This article outlines how web development teams implement and
+configure Content Security Policy (CSP) nonces to safely execute
+dynamically injected, server-rendered inline scripts. It covers the
+end-to-end architecture, starting from generating cryptographically
+secure pseudorandom values per request, setting the appropriate HTTP
+response headers, passing the generated tokens through template
+contexts, and avoiding critical security pitfalls such as cache
+pollution.</p>
+<h3 id="1-generating-a-cryptographic-nonce-per-request">1. Generating a
+Cryptographic Nonce Per Request</h3>
+<p>A CSP nonce (number used once) must be unpredictable and unique for
+every individual HTTP request. Development teams implement server
+middleware to generate this token before any HTML rendering takes
+place.</p>
+<ul>
+<li>The value should be generated using a cryptographically secure
+pseudorandom number generator (CSPRNG), such as
+<code>crypto.randomBytes()</code> in Node.js,
+<code>secrets.token_urlsafe()</code> in Python, or
+<code>SecureRandom</code> in Java/Ruby.</li>
+<li>The raw entropy should be at least 128 bits (16 bytes), typically
+encoded as a Base64 or hexadecimal string.</li>
+<li>Static or reused nonces negate CSP protection entirely, rendering
+the application vulnerable to replay-based Cross-Site Scripting
+(XSS).</li>
+</ul>
+<h3 id="2-attaching-the-nonce-to-the-http-response-header">2. Attaching
+the Nonce to the HTTP Response Header</h3>
+<p>Once the nonce is created for an incoming request, the server must
+declare it within the <code>Content-Security-Policy</code> HTTP
+header.</p>
+<p>The directive format is:</p>
+<pre class="http"><code>Content-Security-Policy: script-src &#39;nonce-SEG1cGxlTm9uY2VWYWx1ZQ==&#39; &#39;strict-dynamic&#39;; object-src &#39;none&#39;; base-uri &#39;none&#39;;</code></pre>
+<p>Key considerations for the header definition:</p>
+<ul>
+<li>Enclose the prefix and value within single quotes:
+<code>'nonce-&lt;base64-value&gt;'</code>.</li>
+<li>Combining the nonce with <code>'strict-dynamic'</code> allows
+trusted scripts to load child dependencies automatically, reducing the
+need to whitelist third-party CDNs.</li>
+<li>Browsers that support CSP Level 3 will ignore
+<code>'unsafe-inline'</code> when a valid nonce is present, allowing
+teams to maintain backwards compatibility for older user agents by
+specifying both.</li>
+</ul>
+<h3 id="3-forwarding-the-nonce-through-the-request-context">3.
+Forwarding the Nonce Through the Request Context</h3>
+<p>To inject the nonce into the markup, the server framework must expose
+it to the rendering pipeline. Modern web frameworks handle this by
+attaching the nonce to the request-scoped context:</p>
+<ul>
+<li><strong>Express/Node.js:</strong> Stored on
+<code>res.locals.nonce</code>.</li>
+<li><strong>Next.js / SvelteKit:</strong> Stored in request headers via
+middleware and accessed within root layouts or server components.</li>
+<li><strong>Django:</strong> Injected via custom middleware into
+<code>request.csp_nonce</code>.</li>
+<li><strong>Spring Boot:</strong> Managed via request attributes in a
+servlet filter.</li>
+</ul>
+<p>This design guarantees that the template engine or server-side
+rendering (SSR) component tree has read access to the exact token
+included in that specific HTTP response header.</p>
+<h3 id="4-injecting-the-nonce-into-dynamic-script-elements">4. Injecting
+the Nonce into Dynamic Script Elements</h3>
+<p>During HTML generation, dynamic scripts—such as client-side hydration
+scripts, application bootstrapping data, or inline event listeners—must
+have the <code>nonce</code> attribute explicitly defined.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Server-rendered inline bootstrap data --&gt;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> nonce</span><span class="op">=</span><span class="st">&quot;</span><span class="er">&lt;</span><span class="st">%= res.locals.nonce %&gt;&quot;</span><span class="dt">&gt;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">window</span><span class="op">.</span><span class="at">__INITIAL_STATE__</span> <span class="op">=</span> { <span class="dt">user</span><span class="op">:</span> <span class="st">&quot;authenticated&quot;</span> }<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">&lt;!-- Server-injected external dynamic bundle --&gt;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">script</span><span class="ot"> nonce</span><span class="op">=</span><span class="st">&quot;</span><span class="er">&lt;</span><span class="st">%= res.locals.nonce %&gt;&quot;</span><span class="ot"> src</span><span class="op">=</span><span class="st">&quot;/static/bundle.js&quot;</span><span class="ot"> async</span><span class="dt">&gt;&lt;/</span><span class="kw">script</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>When rendering in JSX/React environments, the attribute must be
+provided as a prop:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode jsx"><code class="sourceCode javascriptreact"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="im">default</span> <span class="kw">function</span> <span class="fu">RootLayout</span>({ children<span class="op">,</span> nonce }) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> (</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&lt;html&gt;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">&lt;head&gt;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>        <span class="kw">&lt;script</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>          <span class="ot">nonce</span><span class="op">=</span><span class="va">{</span>nonce<span class="va">}</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>          <span class="ot">dangerouslySetInnerHTML</span><span class="op">=</span><span class="va">{</span>{ <span class="dt">__html</span><span class="op">:</span> <span class="vs">`window.ENV = &quot;production&quot;;`</span> }<span class="va">}</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>        <span class="kw">/&gt;</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="kw">&lt;/head&gt;</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>      <span class="kw">&lt;body&gt;</span><span class="va">{</span>children<span class="va">}</span><span class="kw">&lt;/body&gt;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">&lt;/html&gt;</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  )<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Modern browsers extract the <code>nonce</code> attribute during the
+parse phase, check it against the CSP header, and immediately remove the
+attribute from the DOM element to prevent malicious client scripts from
+reading the value.</p>
+<h3 id="5-managing-http-caching-and-edge-proxies">5. Managing HTTP
+Caching and Edge Proxies</h3>
+<p>Deploying nonces in front of reverse proxies and Content Delivery
+Networks (CDNs) requires strict caching configurations.</p>
+<ul>
+<li><strong>Never cache full HTML responses that contain
+nonces.</strong> If an edge cache stores an HTML document containing a
+nonce, every subsequent user will receive the same nonce, breaking the
+one-time-use security model.</li>
+<li>For pages cached at the edge, configure headers to bypass caching
+(<code>Cache-Control: no-store, private</code>) on HTML routes.</li>
+<li>Alternatively, employ edge-side compute workers (e.g., Cloudflare
+Workers, Fastly Compute, or Lambda@Edge) to dynamically generate the
+nonce, inject it into both the outgoing header and HTML stream, and
+serve static page content from the underlying cache.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

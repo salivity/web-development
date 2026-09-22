@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customize PWA Install Flow with beforeinstallprompt - web-development</title>
+    <meta name="description" content="The beforeinstallprompt event gives web development teams full control over how, when, and where a Progressive Web App (PWA) prompts users for installation. By intercepting this browser-level event, developers can suppress default, generic installation b">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/customize-pwa-install-flow-with-beforeinstallprompt">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Customize PWA Install Flow with beforeinstallprompt - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/customize-pwa-install-flow-with-beforeinstallprompt" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The beforeinstallprompt event gives web development teams full control over how, when, and where a Progressive Web App (PWA) prompts users for installation. By intercepting this browser-level event, developers can suppress default, generic installation b" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="customize-pwa-install-flow-with-beforeinstallprompt">Customize
+PWA Install Flow with beforeinstallprompt</h1>
+<p>The <code>beforeinstallprompt</code> event gives web development
+teams full control over how, when, and where a Progressive Web App (PWA)
+prompts users for installation. By intercepting this browser-level
+event, developers can suppress default, generic installation banners and
+replace them with custom, contextual user interfaces. This article
+explains how the event functions, how to capture and defer it, and how
+teams leverage it to build higher-converting, user-friendly installation
+journeys.</p>
+<h3 id="intercepting-the-default-browser-prompt">Intercepting the
+Default Browser Prompt</h3>
+<p>By default, Chromium-based browsers trigger an automatic mini-infobar
+or ambient badge when a PWA meets the core installability criteria (such
+as having a valid web app manifest, a registered service worker, and
+serving over HTTPS). While functional, this default prompt often appears
+prematurely—frequently on a user's first visit before they have
+experienced the app's core value.</p>
+<p>The <code>beforeinstallprompt</code> event fires right before the
+browser shows this default prompt. Developers can listen for this event
+and call <code>e.preventDefault()</code>, which prevents the browser
+from displaying its standard installation UI.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> deferredPrompt<span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;beforeinstallprompt&#39;</span><span class="op">,</span> (e) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Prevent the default mini-infobar from appearing</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  e<span class="op">.</span><span class="fu">preventDefault</span>()<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Stash the event so it can be triggered later</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  deferredPrompt <span class="op">=</span> e<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Update UI notify the user they can install the PWA</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">showInstallPromotion</span>()<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="storing-and-deferring-the-event">Storing and Deferring the
+Event</h3>
+<p>Calling <code>preventDefault()</code> does not cancel the
+installation capability; it simply puts the process on hold. By saving
+the event object to a global or scoped variable (often named
+<code>deferredPrompt</code>), development teams can retain the ability
+to launch the native installation dialog at an optimal moment later in
+the user's journey.</p>
+<h3 id="creating-contextual-and-branded-ui">Creating Contextual and
+Branded UI</h3>
+<p>Once the event is captured, teams can reveal custom UI components
+that match the application's design system. Common implementation
+patterns include:</p>
+<ul>
+<li><strong>Navigation Bar Buttons:</strong> A persistent "Install App"
+button in the header or sidebar that only becomes visible once the event
+fires.</li>
+<li><strong>Contextual Banners:</strong> An inline banner explaining the
+specific benefits of installing, such as offline access, faster load
+times, or push notifications.</li>
+<li><strong>Milestone Triggers:</strong> Prompting the user after they
+complete a meaningful action, such as bookmarking an item, finishing a
+checkout, or completing a level in a game.</li>
+</ul>
+<h3 id="triggering-the-native-install-dialog">Triggering the Native
+Install Dialog</h3>
+<p>When the user interacts with the custom installation UI, the stored
+event can be invoked using its <code>.prompt()</code> method. This
+re-engages the browser's native flow, presenting the official
+confirmation dialog to the user.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>installButton<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&#39;click&#39;</span><span class="op">,</span> <span class="kw">async</span> () <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="op">!</span>deferredPrompt) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Show the browser install prompt</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  deferredPrompt<span class="op">.</span><span class="fu">prompt</span>()<span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Wait for the user to respond to the prompt</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { outcome } <span class="op">=</span> <span class="cf">await</span> deferredPrompt<span class="op">.</span><span class="at">userChoice</span><span class="op">;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Log the outcome for analytics</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`User response to install prompt: </span><span class="sc">${</span>outcome<span class="sc">}</span><span class="vs">`</span>)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="co">// Clear the deferredPrompt variable since it can only be used once</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  deferredPrompt <span class="op">=</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">hideInstallPromotion</span>()<span class="op">;</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="analyzing-user-response-with-userchoice">Analyzing User Response
+with <code>userChoice</code></h3>
+<p>The <code>beforeinstallprompt</code> event provides a
+<code>userChoice</code> property, which returns a promise that resolves
+with an object containing the user's decision (<code>accepted</code> or
+<code>dismissed</code>).</p>
+<p>This mechanism allows development teams to:</p>
+<ul>
+<li>Track conversion metrics and identify which UI triggers generate the
+highest install rates.</li>
+<li>Gracefully update the UI if the user declines (for instance, hiding
+the custom button or waiting a set number of days before showing another
+promotion).</li>
+<li>Trigger onboarding flows or confirmation messages when
+<code>outcome === 'accepted'</code>.</li>
+</ul>
+<h3 id="handling-post-installation-clean-up">Handling Post-Installation
+Clean-Up</h3>
+<p>In addition to <code>userChoice</code>, teams typically pair
+<code>beforeinstallprompt</code> with the <code>appinstalled</code>
+event. Once an installation completes, the browser fires
+<code>appinstalled</code>, signaling that the application should remove
+any remaining install banners and adjust the interface to reflect that
+the app is now installed locally on the user's device.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Server-Timing for Web Performance Monitoring - web-development</title>
+    <meta name="description" content="The Server-Timing HTTP header bridges the gap between backend telemetry and frontend performance metrics, allowing servers to pass operational timing data directly to the client's browser. This article explores how modern web applications leverage this h">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-server-timing-for-web-performance-monitoring">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Server-Timing for Web Performance Monitoring - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-server-timing-for-web-performance-monitoring" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Server-Timing HTTP header bridges the gap between backend telemetry and frontend performance metrics, allowing servers to pass operational timing data directly to the client's browser. This article explores how modern web applications leverage this h" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-server-timing-for-web-performance-monitoring">Using
+Server-Timing for Web Performance Monitoring</h1>
+<p>The <code>Server-Timing</code> HTTP header bridges the gap between
+backend telemetry and frontend performance metrics, allowing servers to
+pass operational timing data directly to the client's browser. This
+article explores how modern web applications leverage this header to
+capture server-side latencies—such as database queries, API routing, and
+internal rendering—and correlate them with client-side Real User
+Monitoring (RUM) tools. By exposing granular backend metrics inside
+standard browser APIs, engineering teams can achieve unified, end-to-end
+continuous performance monitoring across production environments.</p>
+<h3 id="what-is-the-server-timing-header">What Is the Server-Timing
+Header?</h3>
+<p>The <code>Server-Timing</code> header is a standard HTTP response
+header that communicates one or more metrics from the web server to the
+client. Each metric can include a name, a duration in milliseconds, and
+an optional human-readable description.</p>
+<p>A typical implementation looks like this:</p>
+<pre class="http"><code>Server-Timing: db;dur=45.2;desc=&quot;Database Query&quot;, cache;dur=2.1;desc=&quot;Redis Cache&quot;, render;dur=12.0</code></pre>
+<p>Because it operates at the HTTP protocol level, it is
+platform-agnostic. Any backend runtime—such as Node.js, Go, Java, or
+Python—can measure internal processing stages and inject these values
+into the response headers before the payload reaches the user.</p>
+<h3 id="bridging-the-observability-gap">Bridging the Observability
+Gap</h3>
+<p>Traditionally, performance monitoring has operated in silos. Backend
+Application Performance Monitoring (APM) tools measure server
+bottlenecks, while frontend monitoring tools measure browser events like
+First Contentful Paint (FCP) and Largest Contentful Paint (LCP).</p>
+<p>Time to First Byte (TTFB) is often used as the sole indicator of
+backend speed in client telemetry. However, TTFB bundles network
+latency, SSL handshakes, and server execution time together, making it
+impossible to determine whether a slow response was caused by a
+congested cellular network or a stalled database query.</p>
+<p><code>Server-Timing</code> resolves this by exposing server execution
+metrics directly to the browser's Performance Timeline. Client-side
+scripts can access this data programmatically via the Navigation Timing
+and Resource Timing APIs:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> [navEntry] <span class="op">=</span> <span class="bu">performance</span><span class="op">.</span><span class="fu">getEntriesByType</span>(<span class="st">&#39;navigation&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (navEntry <span class="op">&amp;&amp;</span> navEntry<span class="op">.</span><span class="at">serverTiming</span>) {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  navEntry<span class="op">.</span><span class="at">serverTiming</span><span class="op">.</span><span class="fu">forEach</span>((entry) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="vs">`</span><span class="sc">${</span>entry<span class="op">.</span><span class="at">name</span><span class="sc">}</span><span class="vs"> (</span><span class="sc">${</span>entry<span class="op">.</span><span class="at">description</span><span class="sc">}</span><span class="vs">): </span><span class="sc">${</span>entry<span class="op">.</span><span class="at">duration</span><span class="sc">}</span><span class="vs">ms`</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="enabling-production-real-user-monitoring-rum">Enabling
+Production Real User Monitoring (RUM)</h3>
+<p>Continuous performance monitoring relies on collecting performance
+data from actual users navigating real-world network conditions.
+<code>Server-Timing</code> powers continuous RUM pipelines in several
+key ways:</p>
+<ol type="1">
+<li><strong>Automated Metric Ingestion:</strong> Modern frontend
+monitoring SDKs automatically parse
+<code>performance.getEntriesByType('navigation')</code> and
+<code>performance.getEntriesByType('resource')</code>. When
+<code>Server-Timing</code> is present, these agents automatically
+extract and ship backend timings alongside core Web Vitals.</li>
+<li><strong>Unified Data Stores:</strong> By sending frontend paint
+timings alongside backend execution timings within the same telemetry
+payload, teams eliminate the need to manually reconcile distributed
+trace IDs across separate database systems.</li>
+<li><strong>Tracking Third-Party and API Requests:</strong>
+<code>Server-Timing</code> is not limited to the root HTML document.
+Microservices and internal APIs called via <code>fetch</code> or
+<code>XMLHttpRequest</code> can also return <code>Server-Timing</code>
+headers, allowing frontend applications to monitor the health and
+latency of dependent services over time.</li>
+</ol>
+<h3 id="diagnosing-production-outliers">Diagnosing Production
+Outliers</h3>
+<p>Synthetic testing often fails to replicate the complexity of real
+production traffic, such as traffic spikes, cold starts, and complex
+database lock contentions. Continuous monitoring using
+<code>Server-Timing</code> enables teams to identify outlier
+sessions.</p>
+<p>When a user experiences an unusually slow LCP, the associated
+telemetry payload will display the precise distribution of backend
+execution. Engineers can immediately verify whether the slowdown was
+driven by an external payment gateway call, an unoptimized SQL query, or
+template rendering logic. This capability isolates edge cases that only
+occur under specific production conditions or for distinct subsets of
+users.</p>
+<h3 id="security-and-best-practices-in-production">Security and Best
+Practices in Production</h3>
+<p>While <code>Server-Timing</code> provides deep operational
+visibility, production deployments require careful data handling:</p>
+<ul>
+<li><strong>Obfuscate Sensitive Identifiers:</strong> Never expose
+sensitive operational details, internal IP addresses, raw database query
+strings, or detailed infrastructure topographies. Use generic
+identifiers like <code>db_read</code> or <code>auth_service</code>
+rather than explicit table names or internal endpoints.</li>
+<li><strong>Control Cross-Origin Visibility:</strong> By default,
+browsers restrict access to <code>Server-Timing</code> on cross-origin
+resources. To allow client applications to read headers from a different
+domain or CDN, the server must explicitly include the
+<code>Timing-Allow-Origin</code> header:
+<pre class="http"><code>Timing-Allow-Origin: https://example.com</code></pre></li>
+<li><strong>Payload Overhead:</strong> Adding extensive metric lists
+increases header size and bandwidth consumption. In production, limit
+entries to critical performance paths—such as cache lookups, database
+aggregate times, and total server execution—to keep HTTP response
+headers lightweight.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How JavaScript Garbage Collection Works - web-development</title>
+    <meta name="description" content="Garbage collection in modern JavaScript engines automatically manages memory allocation and release, freeing developers from manual memory tracking. Engines like Google's V8, Mozilla's SpiderMonkey, and Apple's JavaScriptCore monitor the lifecycle of obj">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-java-script-garbage-collection-works">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How JavaScript Garbage Collection Works - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-java-script-garbage-collection-works" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Garbage collection in modern JavaScript engines automatically manages memory allocation and release, freeing developers from manual memory tracking. Engines like Google's V8, Mozilla's SpiderMonkey, and Apple's JavaScriptCore monitor the lifecycle of obj" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-javascript-garbage-collection-works">How JavaScript Garbage
+Collection Works</h1>
+<p>Garbage collection in modern JavaScript engines automatically manages
+memory allocation and release, freeing developers from manual memory
+tracking. Engines like Google's V8, Mozilla's SpiderMonkey, and Apple's
+JavaScriptCore monitor the lifecycle of objects in memory using
+reachability analysis. By deploying sophisticated mechanisms such as the
+Mark-and-Sweep algorithm, generational collection, and concurrent
+background processing, these engines minimize application latency and
+prevent memory leaks in web applications.</p>
+<h2 id="the-concept-of-reachability">The Concept of Reachability</h2>
+<p>The foundation of JavaScript memory management is reachability. A
+value is considered reachable—and therefore kept in memory—if it can be
+accessed or used in some way, directly or through references.</p>
+<ul>
+<li><strong>Roots:</strong> The base set of reachable values. These
+include currently executing functions' local variables and parameters,
+variables in the current call chain, and global variables (e.g.,
+<code>window</code> in browsers).</li>
+<li><strong>Referenced Objects:</strong> Any object referenced by a
+root, or by another reachable object, remains in memory. If an object
+cannot be reached through any reference chain starting from a root, it
+is marked as unreachable and becomes eligible for reclamation.</li>
+</ul>
+<h2 id="core-mechanisms-and-algorithms">Core Mechanisms and
+Algorithms</h2>
+<h3 id="1-mark-and-sweep">1. Mark-and-Sweep</h3>
+<p>The standard algorithm used by modern engines is Mark-and-Sweep,
+executed in distinct stages:</p>
+<ul>
+<li><strong>Mark Phase:</strong> The engine starts at the roots and
+traverses all references, marking every visited object as "active" or
+"alive."</li>
+<li><strong>Sweep Phase:</strong> The engine traverses the memory heap,
+identifying objects that lack an active mark and reclaiming their
+allocated memory.</li>
+<li><strong>Compact Phase (Mark-Compact):</strong> To avoid memory
+fragmentation, engines often shift remaining live objects together in
+memory, creating large contiguous blocks for future allocations.</li>
+</ul>
+<h3 id="2-generational-collection">2. Generational Collection</h3>
+<p>Modern engines categorize objects by their lifespan based on the
+"Weak Generational Hypothesis"—the empirical observation that most
+objects die shortly after creation.</p>
+<ul>
+<li><strong>Young Generation (Nursery):</strong> Where new allocations
+occur. This area is small and collected frequently using fast algorithms
+like the Scavenger (a copying garbage collector). Objects that survive
+multiple young-generation collection cycles are promoted to the old
+generation.</li>
+<li><strong>Old Generation:</strong> Contains long-lived objects, such
+as singletons, long-standing closures, and configuration caches.
+Collections here (Major GC) occur less frequently because scanning this
+larger space requires more computing resources.</li>
+</ul>
+<h3 id="3-latency-reductions-incremental-and-concurrent-gc">3. Latency
+Reductions: Incremental and Concurrent GC</h3>
+<p>Historically, garbage collection required a "Stop-the-World" pause,
+freezing JavaScript execution and causing dropped frames in web
+animations. Modern engines eliminate noticeable pauses through several
+optimizations:</p>
+<ul>
+<li><strong>Incremental Marking:</strong> The garbage collector divides
+the marking phase into small sub-tasks, interleaving them between
+regular JavaScript execution tasks.</li>
+<li><strong>Parallel Collection:</strong> The engine uses helper threads
+during a pause to execute collection phases concurrently, reducing the
+total pause duration.</li>
+<li><strong>Concurrent GC:</strong> Dedicated background threads mark
+and sweep memory while the main thread continues executing JavaScript
+uninterrupted.</li>
+<li><strong>Idle-Time Scheduling:</strong> Engines coordinate with the
+browser’s render loop to perform non-critical GC work exclusively during
+idle periods between animation frames.</li>
+</ul>
+<h2 id="web-development-implications">Web Development Implications</h2>
+<p>Even with automatic memory management, memory leaks occur when
+references to unused objects persist unintentionally. Common causes
+include:</p>
+<ul>
+<li><strong>Detached DOM Nodes:</strong> Retaining a JavaScript
+reference to a DOM element that has been removed from the document tree
+prevents the element and all of its child nodes from being garbage
+collected.</li>
+<li><strong>Uncleared Intervals and Timeouts:</strong>
+<code>setInterval</code> callbacks can retain references to outer scope
+variables indefinitely if not explicitly cleared with
+<code>clearInterval</code>.</li>
+<li><strong>Dangling Event Listeners:</strong> Failing to remove
+listeners attached to long-lived objects (such as <code>window</code> or
+<code>document</code>) keeps all captured closure variables alive in
+memory.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

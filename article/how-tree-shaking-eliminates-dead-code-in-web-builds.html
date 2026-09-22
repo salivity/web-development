@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Tree Shaking Eliminates Dead Code in Web Builds - web-development</title>
+    <meta name="description" content="Tree-shaking is a critical build-optimization technique that removes unused JavaScript code from your final production bundles. This article explains how tree-shaking works under the hood, why it relies on modern ES module syntax, how bundlers trace depe">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-tree-shaking-eliminates-dead-code-in-web-builds">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Tree Shaking Eliminates Dead Code in Web Builds - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-tree-shaking-eliminates-dead-code-in-web-builds" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Tree-shaking is a critical build-optimization technique that removes unused JavaScript code from your final production bundles. This article explains how tree-shaking works under the hood, why it relies on modern ES module syntax, how bundlers trace depe" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-tree-shaking-eliminates-dead-code-in-web-builds">How Tree
+Shaking Eliminates Dead Code in Web Builds</h1>
+<p>Tree-shaking is a critical build-optimization technique that removes
+unused JavaScript code from your final production bundles. This article
+explains how tree-shaking works under the hood, why it relies on modern
+ES module syntax, how bundlers trace dependencies to detect dead code,
+and the crucial role of side-effect analysis in safely shrinking bundle
+sizes for faster web performance.</p>
+<hr />
+<h3 id="what-tree-shaking-actually-is">What Tree-Shaking Actually
+Is</h3>
+<p>Tree-shaking is a form of dead-code elimination (DCE). The metaphor
+comes from imagining your application's dependency structure as a living
+tree: the green leaves represent the functions, objects, and variables
+your application actively uses, while the dead, brown leaves represent
+unused exports. When a bundler shakes the tree, the dead leaves fall
+off, leaving only the essential code to be compiled into your production
+output.</p>
+<h3 id="the-foundation-es-modules-esm">The Foundation: ES Modules
+(ESM)</h3>
+<p>Traditional CommonJS module systems rely on dynamic imports, using
+<code>require()</code> calls that can happen conditionally or at
+runtime:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// CommonJS: Dynamic and difficult to analyze statically</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (condition) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { calculateTotal } <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;./math&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Because CommonJS imports can depend on runtime state, bundlers cannot
+reliably predict which exports will be used without running the
+code.</p>
+<p>Tree-shaking relies on modern ECMAScript Modules (<code>import</code>
+and <code>export</code> statements). ESM is static by design: imports
+and exports must be declared at the top level of a file. Because the
+dependency structure is fixed, modern build tools (such as Webpack,
+Rollup, Vite, and esbuild) can parse and analyze the module graph at
+compile time without executing a single line of code.</p>
+<h3 id="step-by-step-how-bundlers-eliminate-dead-code">Step-by-Step: How
+Bundlers Eliminate Dead Code</h3>
+<h4 id="1-abstract-syntax-tree-ast-generation">1. Abstract Syntax Tree
+(AST) Generation</h4>
+<p>When the build process starts, the bundler parses every source file
+into an Abstract Syntax Tree (AST). The AST maps out the syntactic
+structure of your program, identifying every declared export and import
+statement.</p>
+<h4 id="2-dependency-graph-construction">2. Dependency Graph
+Construction</h4>
+<p>Starting from designated entry points (such as
+<code>index.js</code>), the bundler traces all imported modules and
+constructs a unified dependency graph. It marks which exports are
+imported directly or indirectly by other active parts of the
+codebase.</p>
+<h4 id="3-marking-unused-exports">3. Marking Unused Exports</h4>
+<p>Any function, class, or variable that is exported by a module but
+never imported by any reachable module in the graph is flagged as
+unused. For example:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// utilities.js</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">formatDate</span>() { <span class="co">/* used */</span> }</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">calculateTax</span>() { <span class="co">/* unused */</span> }</span></code></pre></div>
+<p>If your application only imports <code>formatDate</code>, the bundler
+marks <code>calculateTax</code> as dead code.</p>
+<h4 id="4-minification-and-dropping">4. Minification and Dropping</h4>
+<p>Bundlers typically work alongside minifiers such as Terser or
+esbuild. Once the bundler marks an export as unused, it modifies the AST
+or rewrites the module code so that the unused export becomes an
+unreferenced local variable or is stripped entirely. The minifier then
+recognizes the dangling code and removes it from the final compiled
+bundle.</p>
+<h3 id="the-role-of-side-effects">The Role of Side Effects</h3>
+<p>A common blocker for tree-shaking is "side effects." A side effect
+occurs when a piece of code performs an action that modifies state
+outside its own scope when executed—such as modifying a global variable,
+setting a timer, or mutating a prototype:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Module with a side effect</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">window</span><span class="op">.</span><span class="at">analyticsLoaded</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="im">export</span> <span class="kw">function</span> <span class="fu">trackEvent</span>() { <span class="co">/* ... */</span> }</span></code></pre></div>
+<p>Even if <code>trackEvent</code> is never imported, the bundler may
+keep the entire module to avoid breaking the execution of
+<code>window.analyticsLoaded = true</code>.</p>
+<p>To bypass this limitation, developers and package authors can declare
+<code>"sideEffects": false</code> in their project's
+<code>package.json</code>, or provide an array of specific files that
+contain side effects. This explicitly tells the bundler that it is safe
+to prune any unused export from the module without worrying about
+unintended runtime consequences.</p>
+<h3 id="why-it-matters-for-production">Why It Matters for
+Production</h3>
+<p>Eliminating dead code directly improves performance metrics across
+modern web applications:</p>
+<ul>
+<li><strong>Smaller Download Sizes:</strong> Less JavaScript over the
+wire reduces Time to First Byte (TTFB) impact and speeds up asset
+delivery, especially on mobile networks.</li>
+<li><strong>Faster Parse and Compile Times:</strong> Browsers must parse
+and compile all JavaScript before executing it. Removing dead code
+lightens the CPU workload, leading to faster First Contentful Paint
+(FCP) and lower Interaction to Next Paint (INP) scores.</li>
+<li><strong>Safer Dependency Management:</strong> Developers can import
+single utilities from large libraries (such as <code>lodash-es</code>)
+without incurring the payload cost of the entire library.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

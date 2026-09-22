@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Safely Load JSON Modules in JavaScript - web-development</title>
+    <meta name="description" content="Import assertions and their updated standard, import attributes, provide a secure mechanism for JavaScript applications to load external data formats like JSON directly through native ES module syntax. This article explores the critical security risks as">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-safely-load-json-modules-in-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Safely Load JSON Modules in JavaScript - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-safely-load-json-modules-in-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Import assertions and their updated standard, import attributes, provide a secure mechanism for JavaScript applications to load external data formats like JSON directly through native ES module syntax. This article explores the critical security risks as" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-safely-load-json-modules-in-javascript">How to Safely
+Load JSON Modules in JavaScript</h1>
+<p>Import assertions and their updated standard, import attributes,
+provide a secure mechanism for JavaScript applications to load external
+data formats like JSON directly through native ES module syntax. This
+article explores the critical security risks associated with importing
+data modules, the architectural evolution from assertions to attributes,
+and how explicitly declaring module types prevents cross-site script
+execution and MIME-type confusion attacks in modern web
+environments.</p>
+<h3 id="the-security-vulnerability-of-direct-module-imports">The
+Security Vulnerability of Direct Module Imports</h3>
+<p>Before the introduction of import assertions, importing
+non-JavaScript resources natively using the ES module
+<code>import</code> statement posed a severe security concern known as
+module type confusion. In standard web architecture, a browser relies on
+the server's <code>Content-Type</code> header (such as
+<code>application/json</code> or <code>text/javascript</code>) to
+determine how a resource should be executed.</p>
+<p>If a client requested a JSON resource using standard syntax:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> config <span class="im">from</span> <span class="st">&#39;./data.json&#39;</span><span class="op">;</span></span></code></pre></div>
+<p>A compromised or malicious server could respond with a MIME type of
+<code>text/javascript</code> containing executable code instead of raw
+data. The browser would parse and execute this payload with full
+privileges in the user's execution context, leading to Cross-Site
+Scripting (XSS) or privilege escalation.</p>
+<h3 id="how-import-attributes-solve-the-problem">How Import Attributes
+Solve the Problem</h3>
+<p>Import attributes introduce an explicit, client-side declaration of
+the expected module type. By appending metadata to the import
+declaration, developers instruct the runtime to validate the resource
+type strictly before execution.</p>
+<p>If the incoming resource does not strictly adhere to the expected
+format and MIME type, the module graph instantiation fails immediately
+with a fatal error. The payload is never parsed as executable code,
+completely mitigating the risk of dynamic script injection through
+spoofed responses.</p>
+<h3 id="syntax-evolution-from-assertions-to-attributes">Syntax:
+Evolution from Assertions to Attributes</h3>
+<p>The feature was originally proposed as "Import Assertions" using the
+<code>assert</code> keyword. However, the TC39 committee refined the
+specification into "Import Attributes" using the <code>with</code>
+keyword to allow attributes to influence module loading behaviors beyond
+simple runtime verification.</p>
+<h4 id="static-import-syntax">Static Import Syntax</h4>
+<p>To import a JSON module statically, append the <code>with</code>
+clause defining the module type:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> userSettings <span class="im">from</span> <span class="st">&#39;./settings.json&#39;</span> <span class="cf">with</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;json&#39;</span> }<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(userSettings<span class="op">.</span><span class="at">theme</span>)<span class="op">;</span></span></code></pre></div>
+<h4 id="dynamic-import-syntax">Dynamic Import Syntax</h4>
+<p>Dynamic imports (<code>import()</code>) support import attributes
+through a second configuration argument:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">loadUserData</span>(userId) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> data <span class="op">=</span> <span class="cf">await</span> <span class="im">import</span>(<span class="vs">`./users/</span><span class="sc">${</span>userId<span class="sc">}</span><span class="vs">.json`</span><span class="op">,</span> {</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">with</span><span class="op">:</span> { <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;json&#39;</span> }</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> data<span class="op">.</span><span class="at">default</span><span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="key-safety-guarantees">Key Safety Guarantees</h3>
+<ol type="1">
+<li><strong>Strict Parsing Rules:</strong> When
+<code>{ type: 'json' }</code> is specified, the resource is parsed
+strictly according to ECMAScript's <code>JSON.parse</code> grammar. Any
+syntax outside the JSON standard results in a syntax error rather than
+executable fallback code.</li>
+<li><strong>Immutable Identity:</strong> The module exports a default
+export representing the parsed JSON object. The object behaves as
+standard module data, ensuring consistency throughout the module
+cache.</li>
+<li><strong>MIME Type Enforcement:</strong> Browsers enforce a strict
+match against standard JSON MIME types (such as
+<code>application/json</code>). If a server delivers the resource with
+an incompatible MIME type, the import fails before evaluation
+occurs.</li>
+</ol>
+<h3 id="runtime-and-browser-support">Runtime and Browser Support</h3>
+<p>Modern JavaScript runtimes, including Chromium-based browsers,
+Safari, Node.js, and Deno, natively support the <code>with</code> syntax
+for JSON modules. Legacy implementations supporting <code>assert</code>
+are being phased out in favor of the standardized <code>with</code>
+attribute syntax, providing a reliable and safe pathway to manage static
+configuration files, localization dictionaries, and data schemas across
+client and server environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

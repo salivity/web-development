@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS overscroll-behavior: Stop Scroll Chaining - web-development</title>
+    <meta name="description" content="Scroll chaining occurs when a user scrolls to the boundary of a nested element and the browser automatically passes the scrolling action to the parent page, often causing disorienting layout shifts. The CSS overscroll-behavior property solves this issue">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-overscroll-behavior-stop-scroll-chaining">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS overscroll-behavior: Stop Scroll Chaining - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-overscroll-behavior-stop-scroll-chaining" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Scroll chaining occurs when a user scrolls to the boundary of a nested element and the browser automatically passes the scrolling action to the parent page, often causing disorienting layout shifts. The CSS overscroll-behavior property solves this issue" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-overscroll-behavior-stop-scroll-chaining">CSS
+overscroll-behavior: Stop Scroll Chaining</h1>
+<p>Scroll chaining occurs when a user scrolls to the boundary of a
+nested element and the browser automatically passes the scrolling action
+to the parent page, often causing disorienting layout shifts. The CSS
+<code>overscroll-behavior</code> property solves this issue by giving
+developers control over how a scroll container interacts with its parent
+boundary. By setting this property, you can contain scroll interactions
+within specific components—such as modal windows, chat sidebars, and
+dropdown menus—eliminating the need for complex, performance-heavy
+JavaScript workarounds.</p>
+<h3 id="understanding-scroll-chaining">Understanding Scroll
+Chaining</h3>
+<p>By default, web browsers link scrollable containers together in a
+chain. When a user reaches the top or bottom of a scrollable nested
+container (like an inner list or modal dialog) and continues scrolling,
+the browser transfers that momentum to the outer page body. On mobile
+devices, this behavior often triggers unwanted browser features, such as
+pull-to-refresh, navigation swipes, or elastic bounce effects on the
+entire page, degrading the overall user experience.</p>
+<h3 id="the-role-of-overscroll-behavior">The Role of
+<code>overscroll-behavior</code></h3>
+<p>The <code>overscroll-behavior</code> property determines what a
+browser does when reaching the boundary of a scrolling area. It allows
+developers to sever the connection between nested containers and the
+viewport scroll.</p>
+<p>The property accepts three primary values:</p>
+<ul>
+<li><strong><code>auto</code></strong>: The default setting. Scroll
+momentum propagates to the parent container once the inner boundary is
+reached, allowing standard scroll chaining and pull-to-refresh
+triggers.</li>
+<li><strong><code>contain</code></strong>: Prevents scroll chaining.
+When the boundary of the element is reached, scrolling stops and does
+not propagate to the parent container. However, native overscroll
+effects local to the element (such as an elastic bounce on iOS) are
+preserved within the container itself.</li>
+<li><strong><code>none</code></strong>: Completely disables both scroll
+chaining and local boundary affordances. Scrolling does not transfer to
+the parent, and default browser behaviors like rubber-banding or
+pull-to-refresh are entirely suppressed for that element.</li>
+</ul>
+<h3 id="practical-applications">Practical Applications</h3>
+<h4 id="1-modal-dialogs-and-overlays">1. Modal Dialogs and Overlays</h4>
+<p>A common issue in web applications is the background page scrolling
+while a user reads through a modal overlay. Applying
+<code>overscroll-behavior: contain;</code> directly to the modal content
+container prevents the background document from scrolling when the modal
+reaches its top or bottom limit.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.modal-content</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">overflow-y</span><span class="ch">:</span> <span class="bu">auto</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">overscroll-behavior</span><span class="ch">:</span> <span class="dv">contain</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="2-fixed-sidebars-and-drawers">2. Fixed Sidebars and Drawers</h4>
+<p>For navigation panels, sidebars, or fixed chat widgets that sit
+alongside main content, applying
+<code>overscroll-behavior: contain;</code> ensures that scrolling
+through long menus will never accidentally scroll the main page
+underneath.</p>
+<h4 id="3-preventing-mobile-pull-to-refresh">3. Preventing Mobile
+Pull-to-Refresh</h4>
+<p>When building custom pull-to-refresh interactions or Progressive Web
+Apps (PWAs), native mobile pull-to-refresh can interfere with the
+interface. Setting <code>overscroll-behavior-y: none;</code> on the root
+<code>&lt;html&gt;</code> or <code>&lt;body&gt;</code> element disables
+the browser's default refresh action without breaking standard page
+scrolling.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>body {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">overscroll-behavior-y</span><span class="ch">:</span> <span class="dv">none</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="directional-control">Directional Control</h3>
+<p>The property can also be split along specific axes for granular
+control:</p>
+<ul>
+<li><strong><code>overscroll-behavior-x</code></strong>: Controls
+horizontal boundary chaining, useful for horizontal carousels and
+swipeable cards without interfering with vertical navigation.</li>
+<li><strong><code>overscroll-behavior-y</code></strong>: Controls
+vertical boundary chaining, ideal for vertical lists, modals, and
+disabling pull-to-refresh.</li>
+</ul>
+<h3 id="advantages-over-javascript-solutions">Advantages Over JavaScript
+Solutions</h3>
+<p>Historically, developers prevented scroll chaining by attaching
+<code>touchmove</code> or <code>wheel</code> event listeners with
+<code>e.preventDefault()</code>, or by toggling
+<code>overflow: hidden</code> on the <code>&lt;body&gt;</code> element.
+These techniques introduce significant drawbacks:</p>
+<ul>
+<li><strong>Performance Overhead</strong>: Passive event listeners must
+be bypassed, forcing the browser to wait for JavaScript execution before
+rendering frame updates, which causes scroll stutter.</li>
+<li><strong>Layout Shifts</strong>: Dynamically toggling
+<code>overflow: hidden</code> on the body often causes layout jumps due
+to scrollbars appearing and disappearing.</li>
+<li><strong>Accessibility Issues</strong>: Script-based scroll locks can
+trap keyboard users or disrupt assistive technology navigation.</li>
+</ul>
+<p>By delegating boundary management directly to the browser's
+compositor layer through CSS, <code>overscroll-behavior</code> ensures
+smooth, native 60fps scrolling performance, eliminates JavaScript
+dependencies, and provides a predictable user interface.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent Layout Shifts from Custom Icon Fonts - web-development</title>
+    <meta name="description" content="Custom icon fonts frequently degrade Core Web Vitals by causing Cumulative Layout Shift (CLS) when they load after the initial page render. This article explains the technical strategies web engineers use to eliminate layout shifts caused by late-loading">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-layout-shifts-from-custom-icon-fonts">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent Layout Shifts from Custom Icon Fonts - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-layout-shifts-from-custom-icon-fonts" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Custom icon fonts frequently degrade Core Web Vitals by causing Cumulative Layout Shift (CLS) when they load after the initial page render. This article explains the technical strategies web engineers use to eliminate layout shifts caused by late-loading" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="prevent-layout-shifts-from-custom-icon-fonts">Prevent Layout
+Shifts from Custom Icon Fonts</h1>
+<p>Custom icon fonts frequently degrade Core Web Vitals by causing
+Cumulative Layout Shift (CLS) when they load after the initial page
+render. This article explains the technical strategies web engineers use
+to eliminate layout shifts caused by late-loading icon fonts, including
+critical preloading, CSS space reservation, the proper use of the
+<code>font-display</code> property, and migrating to modern vector
+alternatives.</p>
+<h3 id="preload-critical-icon-fonts">Preload Critical Icon Fonts</h3>
+<p>By default, browsers discover web fonts late in the rendering
+lifecycle because they wait until the HTML is parsed and the CSS Object
+Model (CSSOM) is constructed. To force the browser to prioritize the
+icon font file, engineers declare a preload tag in the
+<code>&lt;head&gt;</code> of the HTML document.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode html"><code class="sourceCode html"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">&lt;</span><span class="kw">link</span><span class="ot"> rel</span><span class="op">=</span><span class="st">&quot;preload&quot;</span><span class="ot"> href</span><span class="op">=</span><span class="st">&quot;/fonts/icons.woff2&quot;</span><span class="ot"> as</span><span class="op">=</span><span class="st">&quot;font&quot;</span><span class="ot"> type</span><span class="op">=</span><span class="st">&quot;font/woff2&quot;</span><span class="ot"> crossorigin</span><span class="dt">&gt;</span></span></code></pre></div>
+<p>The <code>crossorigin</code> attribute is mandatory even when
+self-hosting fonts. Preloading moves the font request to the top of the
+network waterfall, drastically reducing the window between content
+rendering and icon rendering.</p>
+<h3 id="enforce-fixed-dimensions-with-css">Enforce Fixed Dimensions with
+CSS</h3>
+<p>Layout shifts typically occur when an icon's parent element collapses
+to zero width or changes dimensions once the font glyph is rendered.
+Engineers prevent this by locking the icon container to strict
+dimensions via CSS before the font loads.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.icon</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">inline-block</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">width</span><span class="ch">:</span> <span class="dv">1.5</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">height</span><span class="ch">:</span> <span class="dv">1.5</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">line-height</span><span class="ch">:</span> <span class="dv">1.5</span><span class="dt">rem</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">text-align</span><span class="ch">:</span> <span class="dv">center</span><span class="op">;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">contain</span><span class="ch">:</span> <span class="dv">layout</span> <span class="dv">size</span><span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Key CSS properties that stabilize the layout include:</p>
+<ul>
+<li><strong><code>display: inline-block</code> or
+<code>display: block</code>:</strong> Prevents the element from
+collapsing horizontally.</li>
+<li><strong>Explicit <code>width</code> and
+<code>height</code>:</strong> Reserves the exact pixel or rem footprint
+of the final icon.</li>
+<li><strong><code>contain: size layout</code>:</strong> Tells the
+browser engine that the element's internal changes will not alter the
+geometry of the surrounding page.</li>
+</ul>
+<h3 id="configure-the-font-display-strategy">Configure the
+<code>font-display</code> Strategy</h3>
+<p>The <code>@font-face</code> descriptor <code>font-display</code>
+controls how a font renders relative to its download state.</p>
+<ul>
+<li><strong><code>font-display: optional</code>:</strong> This is the
+most effective setting for eliminating layout shifts entirely. The
+browser gives the font a tiny rendering window (around 100ms). If the
+font is not cached or downloaded within that window, the browser falls
+back permanently for that session, avoiding layout reflow.</li>
+<li><strong><code>font-display: block</code>:</strong> The browser hides
+text/glyphs using an invisible fallback until the font loads (up to 3
+seconds), preventing the swap shift that occurs when switching from an
+unstyled glyph to an icon glyph. However, it requires explicit
+dimensions on the container to prevent shifting if the element was
+initially empty.</li>
+</ul>
+<h3 id="hide-empty-glyphs-during-the-loading-state">Hide Empty Glyphs
+During the Loading State</h3>
+<p>When using pseudo-elements like <code>::before</code> to insert icons
+via Unicode private-use areas, an unstyled placeholder glyph (like an
+empty rectangle or missing character symbol) might appear temporarily.
+Engineers hide pseudo-elements until the font is verified or keep text
+transparent:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.icon</span><span class="in">::before</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">content</span><span class="ch">:</span> <span class="st">&quot;</span><span class="sc">\e001</span><span class="st">&quot;</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">visibility</span><span class="ch">:</span> <span class="dv">hidden</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">.fonts-loaded</span> <span class="fu">.icon</span><span class="in">::before</span> {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">visibility</span><span class="ch">:</span> <span class="dv">visible</span><span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Using the CSS Font Loading API, developers set a class on the
+<code>&lt;html&gt;</code> or <code>&lt;body&gt;</code> element once the
+specific icon font resolves, ensuring content appears simultaneously
+without visible shifting.</p>
+<h3 id="replace-icon-fonts-with-inline-svgs">Replace Icon Fonts with
+Inline SVGs</h3>
+<p>The most permanent solution used in modern web performance
+engineering is abandoning icon fonts altogether in favor of inline SVGs
+or SVG symbol sprites.</p>
+<p>Because SVGs are defined directly within the DOM or rendered via
+standard XML definitions, they do not rely on an external font file
+download to compute glyph geometry. SVGs render immediately alongside
+the rest of the HTML, completely bypassing font-network delays,
+font-swapping logic, and layout shifts.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

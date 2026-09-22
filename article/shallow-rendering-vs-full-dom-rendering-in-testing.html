@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shallow Rendering vs Full DOM Rendering in Testing - web-development</title>
+    <meta name="description" content="In web development testing, choosing the right rendering strategy is essential for writing efficient, reliable component tests. Shallow rendering isolates a single component by rendering it without any of its child components, making it fast and focused">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/shallow-rendering-vs-full-dom-rendering-in-testing">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Shallow Rendering vs Full DOM Rendering in Testing - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/shallow-rendering-vs-full-dom-rendering-in-testing" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In web development testing, choosing the right rendering strategy is essential for writing efficient, reliable component tests. Shallow rendering isolates a single component by rendering it without any of its child components, making it fast and focused" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="shallow-rendering-vs-full-dom-rendering-in-testing">Shallow
+Rendering vs Full DOM Rendering in Testing</h1>
+<p>In web development testing, choosing the right rendering strategy is
+essential for writing efficient, reliable component tests. Shallow
+rendering isolates a single component by rendering it without any of its
+child components, making it fast and focused on unit-level logic. In
+contrast, full DOM rendering mounts the entire component tree into an
+actual or simulated browser environment, enabling realistic interaction
+and end-to-end integration testing. This article breaks down the primary
+differences between these two methodologies, covering their execution
+depth, performance, lifecycle behavior, and ideal use cases.</p>
+<h2 id="understanding-shallow-rendering">Understanding Shallow
+Rendering</h2>
+<p>Shallow rendering is a testing technique where a component is
+rendered exactly one level deep. The component under test is
+instantiated, and its direct output is evaluated, but any nested child
+components are left as placeholders and are not evaluated or
+mounted.</p>
+<ul>
+<li><strong>Component Isolation:</strong> It strictly tests the
+component in isolation. If a child component contains a bug, it will not
+cause the parent component’s shallow test to fail.</li>
+<li><strong>No DOM Requirement:</strong> It does not require a browser
+or a simulated Document Object Model (DOM) environment like jsdom, as it
+primarily works directly with the component's internal
+representations.</li>
+<li><strong>Limited Lifecycle Execution:</strong> Often, full component
+lifecycles (like <code>componentDidMount</code> or
+<code>useEffect</code> hooks, depending on the test runner and
+configuration) are bypassed or executed in a limited scope.</li>
+</ul>
+<h2 id="understanding-full-dom-rendering">Understanding Full DOM
+Rendering</h2>
+<p>Full DOM rendering (often called mounting) executes the full
+component hierarchy. It renders the component and recursively mounts all
+of its children into a real or virtual DOM implementation.</p>
+<ul>
+<li><strong>Complete Tree Execution:</strong> Child components are fully
+rendered, their logic is executed, and their lifecycles run
+completely.</li>
+<li><strong>Realistic User Interactions:</strong> Because an actual DOM
+representation is present, tests can simulate real browser behaviors,
+such as click events, form submissions, focus handling, and layout
+measurements.</li>
+<li><strong>DOM Integration:</strong> It requires a browser engine or a
+browser-like environment (such as jsdom in Node.js) to provide standard
+web APIs like <code>document</code> and <code>window</code>.</li>
+</ul>
+<h2 id="core-differences">Core Differences</h2>
+<h3 id="1-rendering-depth">1. Rendering Depth</h3>
+<ul>
+<li><strong>Shallow Rendering:</strong> Only the target component is
+rendered. Child components are mocked or left as non-rendered tags
+(e.g., <code>&lt;ChildComponent /&gt;</code>).</li>
+<li><strong>Full DOM:</strong> The target component and all nested
+children down the tree are rendered completely into the DOM.</li>
+</ul>
+<h3 id="2-speed-and-performance">2. Speed and Performance</h3>
+<ul>
+<li><strong>Shallow Rendering:</strong> Significantly faster execution
+times because it skips the computational overhead of rendering complex
+child trees and managing virtual DOM nodes.</li>
+<li><strong>Full DOM:</strong> Slower performance due to the overhead of
+mounting multiple components, executing nested hooks or lifecycles, and
+managing DOM state.</li>
+</ul>
+<h3 id="3-testing-scope-unit-vs-integration">3. Testing Scope (Unit vs.
+Integration)</h3>
+<ul>
+<li><strong>Shallow Rendering:</strong> Best suited for pure unit tests.
+It answers the question: "Does this component render its direct children
+and handle its own state correctly?"</li>
+<li><strong>Full DOM:</strong> Best suited for integration tests. It
+answers the question: "Do these components work together correctly when
+interacting with the DOM?"</li>
+</ul>
+<h3 id="4-lifecycle-methods-and-hooks">4. Lifecycle Methods and
+Hooks</h3>
+<ul>
+<li><strong>Shallow Rendering:</strong> Typically executes minimal
+lifecycle hooks. State changes that rely on child interactions or DOM
+refs cannot be reliably tested.</li>
+<li><strong>Full DOM:</strong> Executes all lifecycle hooks and effects
+across the entire rendered tree, closely mimicking production
+behavior.</li>
+</ul>
+<h2 id="when-to-use-each-approach">When to Use Each Approach</h2>
+<p><strong>Choose Shallow Rendering when:</strong></p>
+<ul>
+<li>You are writing strict unit tests focused solely on the internal
+logic, state, and props of a single component.</li>
+<li>You have a massive test suite where execution speed is a critical
+factor.</li>
+<li>You want to prevent changes or bugs in child components from
+breaking the parent component's tests.</li>
+</ul>
+<p><strong>Choose Full DOM Rendering when:</strong></p>
+<ul>
+<li>You need to test user interactions that span across multiple
+components.</li>
+<li>You are testing components that directly interact with browser APIs
+or depend on DOM measurements (e.g., bounding rects, window resize
+listeners).</li>
+<li>You want high confidence that the application will function
+correctly from an end-user's perspective, prioritizing realistic
+behavior over raw test execution speed.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

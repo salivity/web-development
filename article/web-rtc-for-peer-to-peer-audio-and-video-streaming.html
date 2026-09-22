@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC for Peer-to-Peer Audio and Video Streaming - web-development</title>
+    <meta name="description" content="Web Real-Time Communication (WebRTC) is an open-source framework that enables browsers and mobile applications to exchange real-time media and data directly between devices without requiring third-party plugins or dedicated streaming servers. This articl">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/web-rtc-for-peer-to-peer-audio-and-video-streaming">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WebRTC for Peer-to-Peer Audio and Video Streaming - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/web-rtc-for-peer-to-peer-audio-and-video-streaming" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Web Real-Time Communication (WebRTC) is an open-source framework that enables browsers and mobile applications to exchange real-time media and data directly between devices without requiring third-party plugins or dedicated streaming servers. This articl" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="webrtc-for-peer-to-peer-audio-and-video-streaming">WebRTC for
+Peer-to-Peer Audio and Video Streaming</h1>
+<p>Web Real-Time Communication (WebRTC) is an open-source framework that
+enables browsers and mobile applications to exchange real-time media and
+data directly between devices without requiring third-party plugins or
+dedicated streaming servers. This article explores how WebRTC functions
+within modern web development, breaking down its foundational APIs, the
+mechanisms behind network discovery and NAT traversal, and its impact on
+lowering latency and server overhead in real-time communication
+systems.</p>
+<h3
+id="eliminating-the-intermediary-direct-peer-to-peer-architecture">Eliminating
+the Intermediary: Direct Peer-to-Peer Architecture</h3>
+<p>Traditional media streaming on the web relies on client-server
+architectures, such as HTTP Live Streaming (HLS) or Dynamic Adaptive
+Streaming over HTTP (DASH). In these models, a client captures media,
+uploads it to a central media server, and the server processes and
+distributes it to other clients. This introduces measurable latency,
+typically ranging from a few seconds to tens of seconds, alongside high
+server bandwidth costs.</p>
+<p>WebRTC alters this dynamic by establishing direct peer-to-peer (P2P)
+connections. Once two browsers complete a handshake, audio and video
+streams flow directly between them. By bypassing intermediate servers
+for media transmission, WebRTC drastically reduces end-to-end latency to
+sub-second levels—typically under 500 milliseconds—making genuine
+real-time conversation possible.</p>
+<h3 id="the-core-webrtc-apis">The Core WebRTC APIs</h3>
+<p>WebRTC provides web developers with a standardized set of JavaScript
+APIs to manage capture, transmission, and connection state:</p>
+<ul>
+<li><strong>MediaDevices (<code>getUserMedia</code>):</strong> Grants
+the web application secure access to a user's camera and microphone,
+producing a <code>MediaStream</code> object containing audio and video
+tracks.</li>
+<li><strong>RTCPeerConnection:</strong> Acts as the backbone of WebRTC.
+It manages the entire lifecycle of a peer connection, including media
+encoding/decoding, bandwidth management, packet loss concealment, echo
+cancellation, and network state changes.</li>
+<li><strong>RTCDataChannel:</strong> Allows bidirectional, peer-to-peer
+transfer of arbitrary data with low latency, supporting both reliable
+(TCP-like) and unreliable (UDP-like) delivery semantics.</li>
+</ul>
+<h3 id="signaling-and-network-traversal-stun-turn-and-ice">Signaling and
+Network Traversal (STUN, TURN, and ICE)</h3>
+<p>Although WebRTC handles peer-to-peer media delivery, it does not
+define a signaling protocol to establish the initial connection.
+Developers implement their own signaling layer—often using WebSockets,
+Server-Sent Events, or MQTT—to exchange metadata such as Session
+Description Protocol (SDP) offers and answers, which specify supported
+codecs, encryption keys, and media parameters.</p>
+<p>Because most client devices sit behind Network Address Translation
+(NAT) routers and firewalls, they lack public IP addresses accessible to
+external peers. WebRTC resolves this using the Interactive Connectivity
+Establishment (ICE) framework alongside two server types:</p>
+<ul>
+<li><strong>STUN (Session Traversal Utilities for NAT):</strong> A
+lightweight server that allows a client to discover its own public IP
+address and port binding.</li>
+<li><strong>TURN (Traversal Using Relays around NAT):</strong> A
+fallback relay server used when symmetric NATs or strict enterprise
+firewalls completely block direct P2P connections. When P2P fails, media
+relays securely through the TURN server.</li>
+</ul>
+<h3 id="built-in-security-and-transport-protocols">Built-in Security and
+Transport Protocols</h3>
+<p>WebRTC enforces security at the transport layer by design. It does
+not permit unencrypted connections:</p>
+<ul>
+<li><strong>DTLS (Datagram Transport Layer Security):</strong> Secures
+the exchange of cryptographic keys during the connection setup.</li>
+<li><strong>SRTP (Secure Real-time Transport Protocol):</strong>
+Encrypts the raw audio and video payloads transmitted over UDP, ensuring
+data confidentiality and tamper prevention against eavesdropping.</li>
+</ul>
+<h3 id="impact-on-web-development">Impact on Web Development</h3>
+<p>WebRTC standardized real-time audio and video across all major
+browsers, removing the legacy requirement for proprietary browser
+extensions like Adobe Flash. For web developers, it provides an
+out-of-the-box, secure, and low-latency protocol stack that powers
+applications such as video conferencing, remote customer support, cloud
+gaming, collaborative editing suites, and telehealth platforms. By
+offloading media distribution to direct peer channels, developers can
+build highly scalable, interactive web experiences with significantly
+lower server infrastructure demands.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

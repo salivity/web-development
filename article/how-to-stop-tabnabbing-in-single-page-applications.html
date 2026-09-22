@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Stop Tabnabbing in Single-Page Applications - web-development</title>
+    <meta name="description" content="Tabnabbing is a phishing attack where a newly opened browser tab maliciously redirects the original parent tab to a fraudulent webpage using the window.opener API. In single-page applications (SPAs), where user sessions are often persistent and dynamic c">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-stop-tabnabbing-in-single-page-applications">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Stop Tabnabbing in Single-Page Applications - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-stop-tabnabbing-in-single-page-applications" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Tabnabbing is a phishing attack where a newly opened browser tab maliciously redirects the original parent tab to a fraudulent webpage using the window.opener API. In single-page applications (SPAs), where user sessions are often persistent and dynamic c" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-stop-tabnabbing-in-single-page-applications">How to Stop
+Tabnabbing in Single-Page Applications</h1>
+<p>Tabnabbing is a phishing attack where a newly opened browser tab
+maliciously redirects the original parent tab to a fraudulent webpage
+using the <code>window.opener</code> API. In single-page applications
+(SPAs), where user sessions are often persistent and dynamic content
+rendering is common, tabnabbing poses a serious security risk. Web
+development teams secure SPAs against these attacks through modern HTML
+attributes, framework-level component abstraction, rigorous sanitization
+of user-generated content, automated linting, and modern HTTP isolation
+headers.</p>
+<h3 id="the-mechanism-of-tabnabbing">The Mechanism of Tabnabbing</h3>
+<p>When an application opens an external link using
+<code>&lt;a href="..." target="_blank"&gt;</code>, the target page gains
+a reference to the source page via <code>window.opener</code>. An
+attacker controlling the destination site can execute JavaScript such as
+<code>window.opener.location = 'https://fake-login-page.com'</code>.
+Because the user is distracted by the new tab, they often do not notice
+that their original SPA tab has been navigated to an identical phishing
+interface designed to harvest credentials or tokens.</p>
+<h3 id="1-enforcing-relnoopener-noreferrer">1. Enforcing
+<code>rel="noopener noreferrer"</code></h3>
+<p>The primary defense against tabnabbing is the <code>rel</code>
+attribute. Development teams append
+<code>rel="noopener noreferrer"</code> to any link that includes
+<code>target="_blank"</code>:</p>
+<ul>
+<li><strong><code>noopener</code></strong>: Completely severs the link
+between the pages by setting <code>window.opener</code> to
+<code>null</code> in the opened window.</li>
+<li><strong><code>noreferrer</code></strong>: Implements
+<code>noopener</code> behavior while also preventing the browser from
+sending the <code>Referer</code> header to the destination URL, offering
+defense-in-depth for older browsers.</li>
+</ul>
+<p>While modern Chromium, Firefox, and WebKit browsers now treat
+<code>target="_blank"</code> as implicitly including
+<code>rel="noopener"</code> by default, relying solely on browser
+defaults leaves legacy browsers and specific webviews vulnerable.
+Explicit declaration remains a development best practice.</p>
+<h3 id="2-creating-centralized-link-components">2. Creating Centralized
+Link Components</h3>
+<p>In SPAs built with React, Vue, or Angular, teams avoid writing raw
+<code>&lt;a&gt;</code> tags with <code>target="_blank"</code>. Instead,
+they enforce the use of centralized, custom link components that
+automatically enforce secure attributes.</p>
+<p>For example, a shared link component inspects outgoing
+destinations:</p>
+<ul>
+<li>If the URL points to an external domain and contains
+<code>target="_blank"</code>, the component automatically appends
+<code>rel="noopener noreferrer"</code>.</li>
+<li>This pattern eliminates developer oversight and standardizes
+outbound link behavior across the entire component tree.</li>
+</ul>
+<h3 id="3-sanitizing-user-generated-content-and-dynamic-links">3.
+Sanitizing User-Generated Content and Dynamic Links</h3>
+<p>SPAs frequently render markdown, comments, or external URLs provided
+by users via APIs. If users can inject raw HTML or Markdown links, they
+can introduce vulnerable <code>target="_blank"</code> tags.</p>
+<p>Teams counter this by:</p>
+<ul>
+<li>Using HTML sanitizers like DOMPurify before injecting content via
+properties such as <code>dangerouslySetInnerHTML</code> or
+<code>v-html</code>.</li>
+<li>Configuring the sanitizer to automatically add
+<code>rel="noopener noreferrer"</code> to all links or strip out
+dangerous attributes entirely.</li>
+</ul>
+<h3 id="4-deploying-cross-origin-opener-policy-coop">4. Deploying
+Cross-Origin-Opener-Policy (COOP)</h3>
+<p>To apply defense-in-depth at the network layer, teams configure web
+servers and CDN edges to deliver the
+<code>Cross-Origin-Opener-Policy</code> (COOP) HTTP response header:</p>
+<pre class="http"><code>Cross-Origin-Opener-Policy: same-origin</code></pre>
+<p>This header isolates the SPA's top-level document from other browsing
+contexts. Even if an external link is opened without
+<code>rel="noopener"</code>, the browser places the new tab in a
+separate browsing context group, preventing the new document from
+interacting with the SPA via <code>window.opener</code>.</p>
+<h3 id="5-automated-cicd-and-linting-checks">5. Automated CI/CD and
+Linting Checks</h3>
+<p>Human error is the most common cause of tabnabbing vulnerabilities.
+Development teams integrate static analysis rules into their build
+pipelines to detect insecure links before code reaches production.</p>
+<ul>
+<li>In React projects, the <code>react/jsx-no-target-blank</code> ESLint
+rule flags any JSX element containing <code>target="_blank"</code>
+without explicit <code>rel="noreferrer noopener"</code>.</li>
+<li>Similar linters exist for Vue
+(<code>vue/no-template-target-blank</code>) and Angular templates,
+failing builds automatically whenever an insecure anchor tag is
+detected.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using Navigator sendBeacon for Web Analytics - web-development</title>
+    <meta name="description" content="The Navigator.sendBeacon method provides a reliable, asynchronous way to transmit small amounts of analytical data from a client browser to a web server without delaying page navigation. Traditionally, sending logging data when a user leaves a page was f">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-navigator-send-beacon-for-web-analytics">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using Navigator sendBeacon for Web Analytics - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-navigator-send-beacon-for-web-analytics" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Navigator.sendBeacon method provides a reliable, asynchronous way to transmit small amounts of analytical data from a client browser to a web server without delaying page navigation. Traditionally, sending logging data when a user leaves a page was f" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-navigator-sendbeacon-for-web-analytics">Using Navigator
+sendBeacon for Web Analytics</h1>
+<p>The <code>Navigator.sendBeacon</code> method provides a reliable,
+asynchronous way to transmit small amounts of analytical data from a
+client browser to a web server without delaying page navigation.
+Traditionally, sending logging data when a user leaves a page was
+fraught with dropped requests and degraded performance.
+<code>sendBeacon</code> solves this by offloading the HTTP request to
+the browser's background process, ensuring critical analytics arrive
+safely at the server without impacting the user experience.</p>
+<h3 id="the-problem-with-traditional-data-logging">The Problem with
+Traditional Data Logging</h3>
+<p>When tracking user behavior, developers frequently need to log
+metrics at the end of a session, such as total time spent on a page,
+final scroll depth, or exit events. Historically, developers relied on
+<code>XMLHttpRequest</code> (XHR) or the <code>fetch()</code> API inside
+event listeners like <code>beforeunload</code> or
+<code>unload</code>.</p>
+<p>This approach presented two significant issues:</p>
+<ol type="1">
+<li><strong>Synchronous Requests Hurt UX:</strong> Using synchronous XHR
+forced the browser to wait for the network request to finish before
+rendering the next page, causing noticeable latency for the user.</li>
+<li><strong>Asynchronous Requests Fail:</strong> Using standard
+asynchronous XHR or <code>fetch()</code> often resulted in the browser
+terminating the request prematurely as the document was unloaded from
+memory, leading to lost analytics.</li>
+</ol>
+<h3 id="how-navigatorsendbeacon-works">How
+<code>Navigator.sendBeacon</code> Works</h3>
+<p>The <code>navigator.sendBeacon()</code> method addresses these
+shortcomings by queuing an asynchronous <code>POST</code> request that
+the browser manages independently of the document's lifecycle. Once the
+method is invoked, the data is handed off to the browser itself,
+allowing the request to complete even if the originating page is
+completely closed or navigated away from.</p>
+<p>The syntax is straightforward:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">navigator</span><span class="op">.</span><span class="fu">sendBeacon</span>(url<span class="op">,</span> data)<span class="op">;</span></span></code></pre></div>
+<ul>
+<li><strong><code>url</code></strong>: The endpoint destination where
+the analytical data should be sent.</li>
+<li><strong><code>data</code></strong>: An optional payload containing
+the data, which can be an <code>ArrayBuffer</code>, <code>Blob</code>,
+<code>DOMString</code>, <code>FormData</code>, or
+<code>URLSearchParams</code>.</li>
+</ul>
+<p>The method returns a boolean: <code>true</code> if the browser
+successfully queues the request for delivery, and <code>false</code> if
+the browser cannot accept the request (typically due to quota
+limits).</p>
+<h3 id="key-advantages-for-analytics">Key Advantages for Analytics</h3>
+<ul>
+<li><strong>Guaranteed Delivery on Exit:</strong> By utilizing the
+<code>visibilitychange</code> or <code>pagehide</code> events alongside
+<code>sendBeacon</code>, developers can capture exit intent data with
+near-100% transmission reliability.</li>
+<li><strong>Zero Impact on Unload Performance:</strong> Because the
+transmission is scheduled in the background, it never delays the
+transition to the next URL, preserving browser responsiveness.</li>
+<li><strong>Fire-and-Forget Architecture:</strong> Analytics pipelines
+do not typically require a server response on the client side.
+<code>sendBeacon</code> embraces this by eliminating the need to process
+response headers or status codes, keeping client-side code lean.</li>
+</ul>
+<h3 id="limitations-to-consider">Limitations to Consider</h3>
+<p>While <code>sendBeacon</code> is the standard tool for unloading
+telemetry, it has specific constraints:</p>
+<ul>
+<li><strong>Payload Size Limits:</strong> Most browsers impose a
+cumulative limit (commonly 64 KB per page) on data queued by
+<code>sendBeacon</code> to prevent resource abuse.</li>
+<li><strong>No Custom Request Methods:</strong> All requests are sent
+exclusively via the HTTP <code>POST</code> method.</li>
+<li><strong>No Response Handling:</strong> The client application cannot
+read the response from the server, making it unsuitable for transactions
+that require client-side confirmation or dynamic state updates.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

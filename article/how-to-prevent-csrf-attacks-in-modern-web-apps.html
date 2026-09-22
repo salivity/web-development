@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Prevent CSRF Attacks in Modern Web Apps - web-development</title>
+    <meta name="description" content="Cross-Site Request Forgery (CSRF) occurs when a malicious website tricks an authenticated user’s browser into executing unwanted actions on a trusted application. Preventing CSRF in modern web development requires a defense-in-depth approach combining">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-prevent-csrf-attacks-in-modern-web-apps">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Prevent CSRF Attacks in Modern Web Apps - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-prevent-csrf-attacks-in-modern-web-apps" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Cross-Site Request Forgery (CSRF) occurs when a malicious website tricks an authenticated user’s browser into executing unwanted actions on a trusted application. Preventing CSRF in modern web development requires a defense-in-depth approach combining" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-prevent-csrf-attacks-in-modern-web-apps">How to Prevent
+CSRF Attacks in Modern Web Apps</h1>
+<p>Cross-Site Request Forgery (CSRF) occurs when a malicious website
+tricks an authenticated user’s browser into executing unwanted actions
+on a trusted application. Preventing CSRF in modern web development
+requires a defense-in-depth approach combining browser-level features,
+cryptographic validation, and framework safeguards. This article
+outlines the primary measures developers use to prevent CSRF attacks,
+including modern cookie attributes, anti-CSRF tokens, header validation,
+and interaction-based challenges.</p>
+<h2 id="1-implement-the-samesite-cookie-attribute">1. Implement the
+SameSite Cookie Attribute</h2>
+<p>The <code>SameSite</code> attribute tells the browser whether to send
+cookies along with cross-site requests. This is the first and often most
+effective line of defense for session cookies.</p>
+<ul>
+<li><strong><code>SameSite=Strict</code>:</strong> The browser never
+sends the cookie in cross-site contexts, not even when a user clicks an
+external link to the site. This offers the highest security.</li>
+<li><strong><code>SameSite=Lax</code>:</strong> The browser permits
+cookies on safe, top-level navigations (such as clicking a normal link
+via a <code>GET</code> request), but blocks cookies for cross-origin
+state-changing methods like <code>POST</code>, <code>PUT</code>, or
+<code>DELETE</code>. Most modern browsers default to <code>Lax</code> if
+no attribute is specified.</li>
+<li><strong><code>SameSite=None; Secure</code>:</strong> Allows
+third-party usage, but requires the <code>Secure</code> flag so cookies
+are only transmitted over HTTPS. Avoid this setting for authentication
+cookies whenever possible.</li>
+</ul>
+<h2 id="2-use-anti-csrf-tokens-synchronizer-token-pattern">2. Use
+Anti-CSRF Tokens (Synchronizer Token Pattern)</h2>
+<p>Anti-CSRF tokens remain a standard mitigation for server-rendered
+applications and forms.</p>
+<ul>
+<li>The server generates a cryptographically strong, unpredictable, and
+unique token tied to the user's current session.</li>
+<li>When rendering a form, this token is embedded as a hidden input
+field.</li>
+<li>Upon submission, the server compares the incoming token against the
+stored session value. If the values do not match or the token is
+missing, the request is rejected.</li>
+<li>Because malicious sites cannot read response data across origins due
+to the Same-Origin Policy (SOP), an attacker cannot obtain this token to
+forge a valid payload.</li>
+</ul>
+<h2 id="3-double-submit-cookie-pattern">3. Double Submit Cookie
+Pattern</h2>
+<p>For stateless architectures, APIs, or Single Page Applications (SPAs)
+where server-side session tracking is undesirable, the Double Submit
+Cookie pattern provides an alternative:</p>
+<ul>
+<li>The server sets a cryptographically random value in a cookie
+accessible by JavaScript.</li>
+<li>When sending a state-changing request, the client-side code reads
+this value and inserts it into a custom HTTP request header (e.g.,
+<code>X-XSRF-TOKEN</code>).</li>
+<li>The server validates that the cookie value matches the header value.
+Since cross-origin scripts cannot read the cookie from another domain,
+an attacker cannot forge the matching header.</li>
+</ul>
+<h2 id="4-verify-origin-and-referer-headers">4. Verify
+<code>Origin</code> and <code>Referer</code> Headers</h2>
+<p>Modern browsers automatically include the <code>Origin</code> and
+<code>Referer</code> HTTP headers in cross-origin requests. Servers can
+inspect these headers to detect unauthorized sources:</p>
+<ol type="1">
+<li>Check the <code>Origin</code> header first; modern browsers send it
+with <code>POST</code>, <code>PUT</code>, <code>PATCH</code>, and
+<code>DELETE</code> requests.</li>
+<li>Fall back to the <code>Referer</code> header if <code>Origin</code>
+is absent.</li>
+<li>Ensure the header domain matches the application's target origin. If
+neither header is present or if the domain does not match, reject the
+request.</li>
+</ol>
+<h2 id="5-use-custom-request-headers-for-apis">5. Use Custom Request
+Headers for APIs</h2>
+<p>APIs that rely on standard JavaScript clients (<code>fetch</code> or
+<code>Axios</code>) can mandate custom headers, such as
+<code>X-Requested-With: XMLHttpRequest</code> or custom authorization
+tokens (e.g., <code>Authorization: Bearer &lt;token&gt;</code>).</p>
+<p>Standard HTML elements (such as <code>&lt;form&gt;</code>,
+<code>&lt;img&gt;</code>, or <code>&lt;iframe&gt;</code>) cannot send
+custom HTTP headers cross-origin without triggering a Cross-Origin
+Resource Sharing (CORS) preflight check (<code>OPTIONS</code> request).
+By requiring custom headers and configuring strict CORS policies, the
+API ensures only explicitly allowed origins can send the request.</p>
+<h2 id="6-enforce-re-authentication-for-sensitive-actions">6. Enforce
+Re-Authentication for Sensitive Actions</h2>
+<p>For critical operations—such as updating passwords, changing recovery
+emails, or transferring funds—require the user to re-enter their current
+password, supply a Multi-Factor Authentication (MFA) code, or solve a
+CAPTCHA. This prevents automated, blind CSRF attacks from completing
+unauthorized high-impact tasks even if other layers fail.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

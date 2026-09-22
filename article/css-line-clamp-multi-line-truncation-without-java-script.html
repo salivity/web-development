@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Line Clamp: Multi-Line Truncation Without JavaScript - web-development</title>
+    <meta name="description" content="CSS multi-line truncation allows developers to cleanly truncate text across several lines with an automatic trailing ellipsis directly in the browser's rendering engine. Historically, handling multi-line truncation required brittle JavaScript libraries t">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-line-clamp-multi-line-truncation-without-java-script">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS Line Clamp: Multi-Line Truncation Without JavaScript - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-line-clamp-multi-line-truncation-without-java-script" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="CSS multi-line truncation allows developers to cleanly truncate text across several lines with an automatic trailing ellipsis directly in the browser's rendering engine. Historically, handling multi-line truncation required brittle JavaScript libraries t" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-line-clamp-multi-line-truncation-without-javascript">CSS
+Line Clamp: Multi-Line Truncation Without JavaScript</h1>
+<p>CSS multi-line truncation allows developers to cleanly truncate text
+across several lines with an automatic trailing ellipsis directly in the
+browser's rendering engine. Historically, handling multi-line truncation
+required brittle JavaScript libraries that calculated font metrics,
+parsed strings, and listened for window resize events—often causing
+noticeable layout thrashing and performance degradation. By utilizing
+the modern <code>line-clamp</code> property alongside its
+vendor-prefixed implementations, developers can achieve native, highly
+responsive, and performant multi-line truncation purely through CSS.</p>
+<h3 id="the-problem-with-javascript-truncation">The Problem with
+JavaScript Truncation</h3>
+<p>Prior to native CSS support, clamping text to a specific number of
+lines required calculating the height of the container, measuring text
+line-by-line, and iteratively slicing the string until it fit. This
+method introduced significant drawbacks:</p>
+<ul>
+<li><strong>Layout Thrashing:</strong> Repeatedly querying DOM element
+dimensions (<code>offsetHeight</code>, <code>scrollHeight</code>) forces
+the browser to recalculate layouts synchronously.</li>
+<li><strong>Resize Overhead:</strong> Window resizing or responsive
+container adjustments require JavaScript to recompute text strings,
+leading to frame drops.</li>
+<li><strong>Destructive DOM Alterations:</strong> JavaScript physically
+truncates the inner text, potentially corrupting HTML structures,
+stripping links, or requiring additional state management to restore the
+full text.</li>
+</ul>
+<h3 id="how-css-line-clamp-works">How CSS <code>line-clamp</code>
+Works</h3>
+<p>The CSS solution relies on the original WebKit box model to treat the
+element as a vertical flex-style container, applying an overflow mask
+once the line limit is reached.</p>
+<p>To implement it, a combination of properties is used:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.truncate-multiline</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">display</span><span class="ch">:</span> <span class="dv">-webkit-box</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">-webkit-line-clamp</span><span class="ch">:</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">-webkit-box-orient</span><span class="ch">:</span> <span class="dv">vertical</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">overflow</span><span class="ch">:</span> <span class="dv">hidden</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The underlying mechanism works through four specific
+declarations:</p>
+<ol type="1">
+<li><strong><code>display: -webkit-box;</code></strong>: Activates an
+older, vendor-prefixed layout model similar to Flexbox that is
+specifically designed to handle vertical box distribution and line
+breaking.</li>
+<li><strong><code>-webkit-box-orient: vertical;</code></strong>:
+Instructs the layout engine to stack child content vertically.</li>
+<li><strong><code>-webkit-line-clamp: [number];</code></strong>: Sets
+the threshold for the maximum number of rendered line boxes.</li>
+<li><strong><code>overflow: hidden;</code></strong>: Conceals all
+rendered text that exceeds the height established by the clamped
+lines.</li>
+</ol>
+<h3 id="the-browser-rendering-mechanism">The Browser Rendering
+Mechanism</h3>
+<p>Unlike JavaScript, CSS truncation operates during the browser's
+layout and paint phases. The rendering engine measures the inline text
+flow and renders lines normally. When it reaches the specified line
+count in <code>-webkit-line-clamp</code>, it halts line layout,
+truncates the overflow text, and automatically generates an ellipsis
+(<code>...</code>) at the end of that final line.</p>
+<p>Because this computation takes place within the native layout
+engine:</p>
+<ul>
+<li><strong>The DOM remains intact:</strong> The full text string
+remains present in the DOM tree, ensuring that screen readers can access
+the entire text and search engine bots can index the complete
+content.</li>
+<li><strong>Responsiveness is automatic:</strong> When the viewport
+width changes, the browser naturally recalculates where the lines wrap
+and moves the ellipsis to the new end position without any event
+listeners.</li>
+<li><strong>Rendering is instantaneous:</strong> Text truncation happens
+within the initial paint cycle, eliminating the layout shift (CLS) and
+visual "pop-in" common with post-render JavaScript scripts.</li>
+</ul>
+<h3 id="browser-compatibility-and-the-modern-standard">Browser
+Compatibility and the Modern Standard</h3>
+<p>Although the properties retain the <code>-webkit-</code> prefix due
+to backwards compatibility and initial standardization compromises, this
+implementation is supported across all modern browsers, including
+Chrome, Safari, Firefox, and Edge. The CSS Working Group has formalized
+this behavior into the CSS Overflow Module Level 3, ensuring that modern
+web applications can reliably discard heavy JavaScript truncation
+workarounds in favor of native CSS.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

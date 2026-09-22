@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using the Badging API for Web App Icon Notifications - web-development</title>
+    <meta name="description" content="The Badging API allows modern web applications, particularly Progressive Web Apps (PWAs), to display subtle, native-style notification badges directly on their operating system app icons. By enabling developers to set numeric values or simple dot indicat">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/using-the-badging-api-for-web-app-icon-notifications">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using the Badging API for Web App Icon Notifications - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/using-the-badging-api-for-web-app-icon-notifications" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Badging API allows modern web applications, particularly Progressive Web Apps (PWAs), to display subtle, native-style notification badges directly on their operating system app icons. By enabling developers to set numeric values or simple dot indicat" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-the-badging-api-for-web-app-icon-notifications">Using the
+Badging API for Web App Icon Notifications</h1>
+<p>The Badging API allows modern web applications, particularly
+Progressive Web Apps (PWAs), to display subtle, native-style
+notification badges directly on their operating system app icons. By
+enabling developers to set numeric values or simple dot indicators on an
+icon in the taskbar, dock, or home screen, this API bridges the gap
+between web platforms and native software. This article explores how the
+Badging API works, its implementation methods, its integration with
+background services, and its benefits over traditional, disruptive
+notification systems.</p>
+<h3 id="what-the-badging-api-does">What the Badging API Does</h3>
+<p>Traditionally, web applications relied on full banner notifications
+or dynamic favicon updates to alert users to new activity. The Badging
+API modernizes this workflow by communicating directly with the host
+operating system's UI. When an installed web application receives new
+data—such as an unread message, an upcoming calendar event, or a
+completed upload—the API updates the app’s icon badge without
+interrupting the user with intrusive pop-up banners.</p>
+<h3 id="core-methods-and-implementation">Core Methods and
+Implementation</h3>
+<p>The API is exposed via the <code>navigator</code> object and
+functions asynchronously, returning Promises. It consists of two primary
+methods:</p>
+<ol type="1">
+<li><p><strong>Setting a Badge
+(<code>navigator.setAppBadge()</code>):</strong> This method sets the
+badge on the app icon. It can accept an optional integer argument
+representing a specific count:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Set a badge with a specific number (e.g., 5 unread items)</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">navigator</span><span class="op">.</span><span class="fu">setAppBadge</span>(<span class="dv">5</span>)<span class="op">.</span><span class="fu">catch</span>((error) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Failed to set app badge:&#39;</span><span class="op">,</span> error)<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Set an indeterminate badge (a generic dot or flag)</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">navigator</span><span class="op">.</span><span class="fu">setAppBadge</span>()<span class="op">.</span><span class="fu">catch</span>((error) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Failed to set app badge:&#39;</span><span class="op">,</span> error)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>If a number is passed, the OS displays that count up to its supported
+limits. If no value is passed, the operating system renders an
+indeterminate badge, typically a colored dot.</p></li>
+<li><p><strong>Clearing a Badge
+(<code>navigator.clearAppBadge()</code>):</strong> When the user has
+addressed the notifications or viewed the pending content, the badge can
+be removed:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">navigator</span><span class="op">.</span><span class="fu">clearAppBadge</span>()<span class="op">.</span><span class="fu">catch</span>((error) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">console</span><span class="op">.</span><span class="fu">error</span>(<span class="st">&#39;Failed to clear app badge:&#39;</span><span class="op">,</span> error)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Alternatively, passing <code>0</code> to
+<code>navigator.setAppBadge(0)</code> also clears the badge.</p></li>
+</ol>
+<h3 id="background-updates-via-service-workers">Background Updates via
+Service Workers</h3>
+<p>The true power of the Badging API lies in its compatibility with Web
+Workers and Service Workers. Web applications do not need to be open in
+an active browser tab to update their status.</p>
+<p>When integrated with the Push API, a background push event can
+trigger the service worker to fetch new data and immediately execute
+<code>navigator.setAppBadge()</code> or
+<code>self.registration.setAppBadge()</code>. This enables real-time,
+background updates identical to native mobile and desktop
+applications.</p>
+<h3 id="progressive-enhancement-and-browser-support">Progressive
+Enhancement and Browser Support</h3>
+<p>The Badging API is designed with progressive enhancement in mind. It
+is primarily supported in Chromium-based browsers (such as Chrome, Edge,
+and Opera) on Windows, macOS, and Android when the web app is installed
+to the device.</p>
+<p>Because it is an enhancement rather than a critical dependency,
+developers can safely feature-detect its availability before invoking
+it:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">&#39;setAppBadge&#39;</span> <span class="kw">in</span> <span class="bu">navigator</span>) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">navigator</span><span class="op">.</span><span class="fu">setAppBadge</span>(unreadCount)<span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>If the API is unavailable, the application continues to function
+normally without breaking user workflows.</p>
+<h3 id="key-advantages-for-modern-web-development">Key Advantages for
+Modern Web Development</h3>
+<ul>
+<li><strong>Non-Intrusive Awareness:</strong> Badges inform users of
+pending tasks without forcing immediate context switching, unlike push
+banners.</li>
+<li><strong>Native User Experience:</strong> Installed PWAs blend
+seamlessly into the host platform's application ecosystem.</li>
+<li><strong>Battery and Resource Efficiency:</strong> By delegating the
+display of notification states to the host operating system, web
+applications reduce the need for constant polling and active tab
+rendering.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

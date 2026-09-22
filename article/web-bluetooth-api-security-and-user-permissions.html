@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Bluetooth API Security and User Permissions - web-development</title>
+    <meta name="description" content="The Web Bluetooth API enables web applications to discover, connect to, and interact with nearby Bluetooth Low Energy (BLE) peripherals directly from the browser. Because granting web applications direct access to hardware poses significant privacy and s">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/web-bluetooth-api-security-and-user-permissions">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Web Bluetooth API Security and User Permissions - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/web-bluetooth-api-security-and-user-permissions" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Web Bluetooth API enables web applications to discover, connect to, and interact with nearby Bluetooth Low Energy (BLE) peripherals directly from the browser. Because granting web applications direct access to hardware poses significant privacy and s" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="web-bluetooth-api-security-and-user-permissions">Web Bluetooth
+API Security and User Permissions</h1>
+<p>The Web Bluetooth API enables web applications to discover, connect
+to, and interact with nearby Bluetooth Low Energy (BLE) peripherals
+directly from the browser. Because granting web applications direct
+access to hardware poses significant privacy and safety risks, modern
+browsers enforce a stringent multi-layered security model. This article
+details the core security requirements and user permissions governing
+Web Bluetooth implementations, including secure contexts, explicit user
+gestures, native device pickers, GATT service filtering, and service
+blocklists.</p>
+<h3 id="secure-contexts-https">Secure Contexts (HTTPS)</h3>
+<p>Web Bluetooth is strictly restricted to secure contexts. Browsers
+will only expose the <code>navigator.bluetooth</code> interface on pages
+served via HTTPS or from secure development origins such as
+<code>localhost</code>. This prevents man-in-the-middle (MITM) attacks
+where an adversary could inject malicious scripts to intercept or
+manipulate device communications, harvest sensor data, or tamper with
+connected hardware.</p>
+<h3 id="user-activation-and-interaction">User Activation and
+Interaction</h3>
+<p>A web application cannot scan for or connect to Bluetooth devices
+automatically in the background. The request to connect to a device must
+be triggered by a direct, transient user interaction (a user gesture),
+such as a button click or tap event. Calling
+<code>navigator.bluetooth.requestDevice()</code> outside an explicit
+event handler results in a rejected promise and a security
+exception.</p>
+<h3 id="the-browser-device-chooser">The Browser Device Chooser</h3>
+<p>When a site invokes <code>navigator.bluetooth.requestDevice()</code>,
+the browser displays a native, trusted system dialog that the webpage
+cannot style, bypass, or manipulate. This dialog displays the devices
+that match the filters defined by the application. The user must
+manually select a device and click "Pair" or "Connect" to grant access.
+A web application cannot automatically select a device or force a
+connection without this explicit affirmative user action.</p>
+<h3 id="scoping-access-via-gatt-services">Scoping Access via GATT
+Services</h3>
+<p>Security operates under the principle of least privilege. When
+requesting a device, developers must explicitly declare the Generic
+Attribute Profile (GATT) services the application intends to access
+using <code>filters</code> or the <code>optionalServices</code>
+parameter.</p>
+<p>If an application connects to a device, the browser restricts API
+access only to the declared services and their associated
+characteristics. Any attempt to read, write, or subscribe to an
+undeclared service is blocked by the browser, preventing unauthorized
+access to sensitive sensors or administrative functions on the
+peripheral.</p>
+<h3 id="the-gatt-blocklist">The GATT Blocklist</h3>
+<p>To prevent attacks such as keystroke injection or credential theft,
+web browsers maintain a hardcoded blocklist of universally known and
+sensitive GATT services, characteristics, and descriptors. Even if a
+user grants access to a device and the developer specifies the service
+in their application code, the browser will refuse access to:</p>
+<ul>
+<li>Human Interface Device (HID) services (to prevent keylogging or
+spoofing keyboard and mouse inputs)</li>
+<li>FIDO and Fast IDentity Online authenticators</li>
+<li>System-level device management and firmware update endpoints where
+misuse could brick the hardware</li>
+</ul>
+<h3 id="permissions-policy-in-iframes">Permissions Policy in
+Iframes</h3>
+<p>By default, embedded <code>&lt;iframe&gt;</code> elements cannot
+access the Web Bluetooth API. If a parent document needs to delegate
+Bluetooth permissions to a third-party or embedded frame, it must
+explicitly grant permission using the <code>Permissions-Policy</code>
+HTTP header or the <code>allow</code> attribute on the iframe tag (e.g.,
+<code>allow="bluetooth"</code>). This prevents embedded third-party
+widgets or advertisements from silently prompting the user for hardware
+access.</p>
+<h3 id="permission-revocation-and-persistence">Permission Revocation and
+Persistence</h3>
+<p>Once granted, Bluetooth access is scoped to the specific device
+selected and the origin of the webpage. Users retain the ability to
+inspect and revoke device permissions at any time via the browser's site
+settings or origin information panel (often located near the address
+bar). Furthermore, closing the tab or navigating away terminates the
+active connection, ensuring that background tabs do not maintain
+continuous, untracked communication with nearby hardware without the
+user's ongoing awareness.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

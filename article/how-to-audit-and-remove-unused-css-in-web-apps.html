@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Audit and Remove Unused CSS in Web Apps - web-development</title>
+    <meta name="description" content="Auditing and eliminating unused CSS is essential for optimizing web performance, reducing render-blocking resources, and improving Core Web Vitals such as Largest Contentful Paint (LCP). Over time, web applications accumulate dead styles from deprecated">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-audit-and-remove-unused-css-in-web-apps">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Audit and Remove Unused CSS in Web Apps - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-audit-and-remove-unused-css-in-web-apps" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Auditing and eliminating unused CSS is essential for optimizing web performance, reducing render-blocking resources, and improving Core Web Vitals such as Largest Contentful Paint (LCP). Over time, web applications accumulate dead styles from deprecated" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-audit-and-remove-unused-css-in-web-apps">How to Audit and
+Remove Unused CSS in Web Apps</h1>
+<p>Auditing and eliminating unused CSS is essential for optimizing web
+performance, reducing render-blocking resources, and improving Core Web
+Vitals such as Largest Contentful Paint (LCP). Over time, web
+applications accumulate dead styles from deprecated features, framework
+overhead, and legacy refactoring. This guide outlines the systematic
+techniques web engineers use to detect unused styles using browser
+tooling, apply automated static analysis, and safely prune stylesheets
+within continuous integration and build pipelines.</p>
+<h2 id="1-identify-unused-styles-with-browser-devtools">1. Identify
+Unused Styles with Browser DevTools</h2>
+<p>The fastest way to evaluate runtime style usage is through
+browser-based profiling tools.</p>
+<ul>
+<li><strong>Chrome DevTools Coverage Tool:</strong> Open DevTools, press
+<code>Cmd + Shift + P</code> (or <code>Ctrl + Shift + P</code>), and
+select <strong>Show Coverage</strong>. Reload the page and interact with
+dynamic elements (modals, dropdowns, tabs). The panel displays loaded
+CSS files with percentage bars indicating used (green) versus unused
+(red) code.</li>
+<li><strong>Limitations:</strong> DevTools only records code executed
+during that specific session. If an engineer tests only the desktop
+view, styles designated for mobile viewports, edge-case states, or
+alternative user roles will be falsely reported as unused. Multiple user
+journeys must be executed to gather an accurate sample.</li>
+</ul>
+<h2 id="2-automate-discovery-with-headless-auditing">2. Automate
+Discovery with Headless Auditing</h2>
+<p>Manual browser inspections do not scale across large applications.
+Engineers deploy automated scripts to crawl critical user journeys and
+aggregate coverage data.</p>
+<ul>
+<li><strong>Puppeteer and Playwright:</strong> Engineers write headless
+browser scripts that simulate complete user flows—logging in, triggering
+interactive states, and switching viewports—while collecting CSS
+coverage via Chrome DevTools Protocol (<code>CDP</code>).</li>
+<li><strong>Lighthouse CI:</strong> Integrating Google Lighthouse into
+continuous integration pipelines flags excessive unused CSS
+automatically, setting performance budgets that prevent PRs from
+introducing redundant style payload.</li>
+</ul>
+<h2 id="3-implement-static-build-time-purging">3. Implement Static
+Build-Time Purging</h2>
+<p>The most reliable way to eliminate unused styles is during the asset
+compilation stage.</p>
+<ul>
+<li><strong>PurgeCSS:</strong> PurgeCSS analyzes source code files
+(HTML, JSX, TSX, Vue, Svelte) to extract class names and compares them
+against your compiled stylesheets. Any selector not found in the source
+files is stripped out. It can be integrated directly into Webpack, Vite,
+Rollup, or PostCSS.</li>
+<li><strong>Safelist Configuration:</strong> Dynamic class names
+generated at runtime (such as
+<code>status-${isActive ? 'active' : 'inactive'}</code>) are often
+pruned by static analyzers. Engineers must configure safelists using
+regex patterns (e.g., <code>/^status-/</code>) to preserve these dynamic
+rules.</li>
+<li><strong>UnCSS:</strong> UnCSS loads pages using a headless browser,
+executes JavaScript, and strips selectors that are not present in the
+rendered DOM. This approach is effective for traditional multi-page
+applications.</li>
+</ul>
+<h2 id="4-modern-architectural-approaches-to-prevent-css-bloat">4.
+Modern Architectural Approaches to Prevent CSS Bloat</h2>
+<p>Preventing unused styles architecturally reduces the need for
+aggressive post-processing.</p>
+<ul>
+<li><strong>Utility-First Frameworks:</strong> Frameworks like Tailwind
+CSS use Just-In-Time (JIT) engines that generate CSS strictly on demand.
+Only the classes actively written in template files are injected into
+the final stylesheet, keeping production CSS bundles exceptionally
+small.</li>
+<li><strong>CSS Modules:</strong> By scoping class names locally to
+individual components, CSS Modules make dependencies explicit. When a
+component file is deleted, its accompanying CSS file is also removed,
+preventing orphaned rules.</li>
+<li><strong>CSS-in-JS and Zero-Runtime Libraries:</strong> Solutions
+like Vanilla Extract, Linaria, or Styled Components compile only the
+styles imported by active JavaScript entry points, guaranteeing
+tree-shaking support at build time.</li>
+</ul>
+<h2 id="5-validate-removals-with-visual-regression-testing">5. Validate
+Removals with Visual Regression Testing</h2>
+<p>Pruning CSS carries the risk of breaking UI edge cases. Engineers
+protect production interfaces by running visual regression tests before
+and after CSS removal.</p>
+<ul>
+<li><strong>Automated Visual Diffs:</strong> Tools like Playwright
+Visual Comparisons, Percy, or Chromatic capture screenshots across
+multiple viewports and flag pixel-level discrepancies caused by purged
+selectors.</li>
+<li><strong>Staged Deployment:</strong> Deploy cleaned assets to a
+staging environment and monitor for unintended style regressions prior
+to a production rollout.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

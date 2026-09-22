@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS text-wrap: balance for Better Headline Readability - web-development</title>
+    <meta name="description" content="Modern web design requires headlines that look balanced across thousands of screen sizes, yet traditional CSS often creates awkward line breaks and isolated "orphan" words. The text-wrap: balance property solves this issue natively by instructing the bro">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/css-text-wrap-balance-for-better-headline-readability">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CSS text-wrap: balance for Better Headline Readability - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/css-text-wrap-balance-for-better-headline-readability" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern web design requires headlines that look balanced across thousands of screen sizes, yet traditional CSS often creates awkward line breaks and isolated "orphan" words. The text-wrap: balance property solves this issue natively by instructing the bro" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="css-text-wrap-balance-for-better-headline-readability">CSS
+text-wrap: balance for Better Headline Readability</h1>
+<p>Modern web design requires headlines that look balanced across
+thousands of screen sizes, yet traditional CSS often creates awkward
+line breaks and isolated "orphan" words. The
+<code>text-wrap: balance</code> property solves this issue natively by
+instructing the browser to distribute text evenly across lines, creating
+a symmetrical, aesthetically pleasing block of text. This article
+explores how <code>text-wrap: balance</code> works under the hood, why
+it eliminates brittle manual fixes like <code>&lt;br&gt;</code> tags and
+JavaScript libraries, and how it directly enhances responsive
+readability.</p>
+<h3 id="the-problem-with-traditional-text-wrapping">The Problem with
+Traditional Text Wrapping</h3>
+<p>By default, web browsers use a "greedy" line-breaking algorithm. The
+browser places as many words as possible on the first line before
+wrapping to the next. While this approach works well for long paragraphs
+of body copy, it frequently produces unsightly results in large display
+headings.</p>
+<p>A common consequence is the typographic "orphan"—a single word
+stranded alone on the final line of a heading. To fix this, developers
+historically resorted to several fragile workarounds:</p>
+<ul>
+<li>Hard-coded <code>&lt;br&gt;</code> tags that look fine on desktop
+screens but break layouts awkwardly on mobile devices.</li>
+<li>Non-breaking spaces (<code>&amp;nbsp;</code>) that couple markup
+directly to specific viewport widths.</li>
+<li>Heavy JavaScript packages (such as Balance-Text) that measure DOM
+elements and recalculate breaks on window resize, introducing layout
+shifts and degrading performance.</li>
+</ul>
+<h3 id="how-text-wrap-balance-works">How <code>text-wrap: balance</code>
+Works</h3>
+<p>The <code>text-wrap: balance</code> property delegates the
+calculation of line breaks entirely to the browser's layout engine. When
+applied, the browser runs an internal balancing loop to calculate the
+optimal line breaks:</p>
+<ol type="1">
+<li>The browser determines how many lines the text block will span using
+standard layout rules.</li>
+<li>It iteratively reduces the width of the container until the line
+count increases.</li>
+<li>It finds the minimal width variation between all resulting lines,
+distributing words so that each line has roughly the same visual
+length.</li>
+</ol>
+<p>Because calculating balanced lines is computationally expensive,
+browsers limit this feature to short blocks of text—typically up to six
+lines. If applied to longer paragraphs, browsers automatically fall back
+to standard greedy wrapping to avoid rendering lag.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>h1<span class="op">,</span> h2<span class="op">,</span> h3 {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  text-wrap<span class="ch">:</span> <span class="dv">balance</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="key-readability-and-workflow-advantages">Key Readability and
+Workflow Advantages</h3>
+<p><strong>Fluid Typography Across Viewports</strong><br />
+Rather than writing media queries to adjust breakpoints for every
+possible screen width, <code>text-wrap: balance</code> adapts
+organically. As the viewport shrinks or expands, the browser continually
+rebalances the heading dynamically, preserving balanced proportions
+without human intervention.</p>
+<p><strong>Cleaner, Component-Driven Code</strong><br />
+Modern websites pull content from content management systems (CMS) and
+headless APIs where designers cannot predict exact character counts.
+Using <code>text-wrap: balance</code> removes the need for editors or
+developers to guess where to insert line breaks. The markup remains
+clean and semantic.</p>
+<p><strong>Localization and Translation Support</strong><br />
+Headlines translated into different languages often double or halve in
+length compared to the original copy. Manual line breaks break down
+completely in multilingual interfaces. Balanced wrapping automatically
+recalculates appropriate line lengths regardless of language-specific
+word lengths.</p>
+<p><strong>Zero Performance Penalty on Older Browsers</strong><br />
+Because <code>text-wrap</code> is a progressive enhancement, older
+browsers that do not support the property simply ignore it and render
+standard wrapping. The layout remains fully functional without polyfills
+or script fallbacks.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

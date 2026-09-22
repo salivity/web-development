@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enforcing Strict Null Checking in Legacy Codebases - web-development</title>
+    <meta name="description" content="Enforcing strict null checking in large legacy codebases prevents runtime errors like the infamous "cannot read properties of undefined," yet turning on strict compiler flags overnight is often impossible due to thousands of resulting errors. This articl">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/enforcing-strict-null-checking-in-legacy-codebases">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Enforcing Strict Null Checking in Legacy Codebases - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/enforcing-strict-null-checking-in-legacy-codebases" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Enforcing strict null checking in large legacy codebases prevents runtime errors like the infamous "cannot read properties of undefined," yet turning on strict compiler flags overnight is often impossible due to thousands of resulting errors. This articl" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="enforcing-strict-null-checking-in-legacy-codebases">Enforcing
+Strict Null Checking in Legacy Codebases</h1>
+<p>Enforcing strict null checking in large legacy codebases prevents
+runtime errors like the infamous "cannot read properties of undefined,"
+yet turning on strict compiler flags overnight is often impossible due
+to thousands of resulting errors. This article outlines practical
+strategies for incrementally adopting strict null checks without halting
+ongoing product development. By leveraging dual-configuration setups,
+automated baselining, branch-level CI gating, and smart refactoring
+tools, engineering teams can systematically eliminate null reference
+hazards across large, existing JavaScript and TypeScript
+applications.</p>
+<h2 id="1-automated-error-baselining">1. Automated Error Baselining</h2>
+<p>Attempting to fix every null reference error upfront stalls feature
+delivery. Instead, automate the suppression of existing errors to
+establish a clean baseline.</p>
+<p>Tools like <code>ts-migrate</code> or custom scripts can append
+<code>@ts-expect-error</code> comments with specific error codes
+directly above every line failing a strict null check. This allows the
+compiler's <code>strictNullChecks</code> flag to be enabled globally in
+<code>tsconfig.json</code> immediately. Because the existing errors are
+silenced, CI pipelines remain green, while any newly introduced code
+without appropriate null checks triggers a compiler failure.</p>
+<h2 id="2-dual-configuration-strategy">2. Dual Configuration
+Strategy</h2>
+<p>For monolithic projects where modifying thousands of files with
+comments is undesirable, use two distinct configuration files:</p>
+<ul>
+<li><strong><code>tsconfig.json</code> (Legacy Base):</strong> Leaves
+strict null checks disabled or scoped to core libraries to keep daily
+development unaffected.</li>
+<li><strong><code>tsconfig.strict.json</code> (Strict Base):</strong>
+Extends the base configuration but sets
+<code>"strictNullChecks": true</code> and defines an explicit
+<code>include</code> list.</li>
+</ul>
+<p>Teams maintain an explicit array of directories or files in
+<code>tsconfig.strict.json</code>. When a module is audited and updated,
+it is added to the strict file list. A CI step runs
+<code>tsc --project tsconfig.strict.json --noEmit</code> to prevent
+regressions in all migrated files.</p>
+<h2 id="3-pre-commit-and-pr-gating-for-modified-files">3. Pre-Commit and
+PR Gating for Modified Files</h2>
+<p>Prevent legacy files from being edited without improving their type
+safety by enforcing strictness at the git boundary.</p>
+<p>Using tools like <code>lint-staged</code> and Husky, run a script
+against staged files during pre-commit or via pull request checks. The
+script compiles only the changed files against strict null requirements.
+If an engineer touches a legacy file to add a feature or fix a bug, they
+are required to resolve the null checking errors in that specific file
+before merging. Over time, high-churn areas of the application become
+fully type-safe organically.</p>
+<h2 id="4-gradual-eslint-rule-application">4. Gradual ESLint Rule
+Application</h2>
+<p>TypeScript compilation errors are binary, but linter rules can be
+applied incrementally using path overrides.</p>
+<p>Configure the <code>@typescript-eslint</code> plugin with rules that
+promote null safety, such as:</p>
+<ul>
+<li><code>@typescript-eslint/no-non-null-assertion</code></li>
+<li><code>@typescript-eslint/strict-boolean-expressions</code></li>
+<li><code>@typescript-eslint/prefer-nullish-coalescing</code></li>
+<li><code>@typescript-eslint/prefer-optional-chain</code></li>
+</ul>
+<p>Apply these rules as warnings globally, then upgrade them to errors
+directory-by-directory using the <code>overrides</code> section of
+<code>.eslintrc</code>. This isolates strict requirements to modern
+submodules while maintaining visibility into legacy debt.</p>
+<h2 id="5-codemods-for-automated-remediation">5. Codemods for Automated
+Remediation</h2>
+<p>Many strict null violations follow repetitive patterns, such as
+accessing nested properties or providing default values for nullable
+objects. Manually refactoring these is error-prone and
+time-consuming.</p>
+<p>Run AST-based codemods (using tools like <code>jscodeshift</code>) to
+automatically refactor common hazards:</p>
+<ul>
+<li>Convert verbose logical guards
+(<code>a &amp;&amp; a.b &amp;&amp; a.b.c</code>) into optional chaining
+(<code>a?.b?.c</code>).</li>
+<li>Replace fallback assignments (<code>a || 'default'</code>) with
+nullish coalescing (<code>a ?? 'default'</code>) where falsy bugs might
+occur.</li>
+<li>Add explicit type assertions or early-exit guard clauses to
+repetitive function signatures.</li>
+</ul>
+<h2 id="6-tracking-metrics-and-preventing-regressions">6. Tracking
+Metrics and Preventing Regressions</h2>
+<p>Sustaining a long-term migration requires tracking progress and
+establishing hard stops against regression.</p>
+<p>Implement a CI script that counts the total number of suppressed
+errors (such as <code>@ts-expect-error</code> comments targeting
+nullability) on every merge to the main branch. Log this count to an
+internal dashboard. Configure CI to fail if a pull request increases the
+total count of suppressed lines. This "ratchet" mechanism guarantees
+that type coverage only moves in one direction: toward complete
+strictness.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

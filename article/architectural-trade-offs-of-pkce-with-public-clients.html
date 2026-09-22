@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architectural Trade-Offs of PKCE with Public Clients - web-development</title>
+    <meta name="description" content="Implementing Proof Key for Code Exchange (PKCE) with public clients—such as Single-Page Applications (SPAs)—enhances authentication security by preventing authorization code interception attacks without requiring a client secret. However, relying on">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/architectural-trade-offs-of-pkce-with-public-clients">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Architectural Trade-Offs of PKCE with Public Clients - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/architectural-trade-offs-of-pkce-with-public-clients" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Implementing Proof Key for Code Exchange (PKCE) with public clients—such as Single-Page Applications (SPAs)—enhances authentication security by preventing authorization code interception attacks without requiring a client secret. However, relying on" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="architectural-trade-offs-of-pkce-with-public-clients">Architectural
+Trade-Offs of PKCE with Public Clients</h1>
+<p>Implementing Proof Key for Code Exchange (PKCE) with public
+clients—such as Single-Page Applications (SPAs)—enhances authentication
+security by preventing authorization code interception attacks without
+requiring a client secret. However, relying on browser-based public
+clients introduces critical architectural trade-offs regarding token
+persistence, cryptographic state management, attack surface exposure,
+and overall infrastructure complexity compared to confidential client
+patterns.</p>
+<h3 id="security-gains-vs-client-side-vulnerability">Security Gains vs.
+Client-Side Vulnerability</h3>
+<p>The primary advantage of PKCE (RFC 7636) for public clients is the
+elimination of static client secrets, which cannot be securely stored in
+distributed client-side code. By dynamically generating a high-entropy
+cryptographic random string (<code>code_verifier</code>) and its
+transformed counterpart (<code>code_challenge</code>), the client
+ensures that an intercepted authorization code cannot be exchanged for
+tokens without the original verifier.</p>
+<p>The trade-off lies in the boundary of security: PKCE secures the
+<strong>token acquisition</strong> step, but it does not protect
+<strong>token storage</strong>. Once tokens are returned to a public web
+client, they exist within the browser runtime. This creates exposure
+to:</p>
+<ul>
+<li><strong>Cross-Site Scripting (XSS):</strong> If tokens are stored in
+<code>localStorage</code> or <code>sessionStorage</code>, any injected
+script can read them. Storing tokens strictly in JavaScript memory
+limits persistence across page reloads and multiple tabs, often
+requiring complex silent renewal mechanisms (such as hidden iframes or
+refresh token rotation).</li>
+<li><strong>Refresh Token Exposure:</strong> Providing refresh tokens to
+public clients carries significant risk. To mitigate this, identity
+providers (IdPs) must implement strict Refresh Token Rotation (RTR),
+invalidating the entire token family if a previously used token is
+re-submitted. This introduces state synchronization overhead across
+distributed authorization nodes.</li>
+</ul>
+<h3 id="performance-and-cryptographic-overhead">Performance and
+Cryptographic Overhead</h3>
+<p>PKCE relies on standard cryptographic primitives, typically SHA-256
+for the <code>code_challenge</code> calculation. In modern web
+environments, this depends on the browser's native Web Crypto API.</p>
+<ul>
+<li><strong>Asynchronous Cryptography:</strong> The Web Crypto API
+(<code>crypto.subtle</code>) is asynchronous. Authentication
+initialization pipelines cannot run synchronously during initial script
+bootstrap, slightly increasing time-to-interactive during authentication
+flows.</li>
+<li><strong>Fallback Complexity:</strong> If the target environment
+lacks secure cryptographic random number generation or Web Crypto
+support (such as certain embedded web views or legacy runtimes), the
+architecture must account for secure polyfills or fail safely.</li>
+</ul>
+<h3 id="state-persistence-across-navigation">State Persistence Across
+Navigation</h3>
+<p>The PKCE flow requires the <code>code_verifier</code> to persist
+between the initial authorization redirect to the Identity Provider and
+the subsequent callback redirect back to the application.</p>
+<ul>
+<li><strong>Persistence Mechanisms:</strong> Architectures must store
+the unhashed <code>code_verifier</code> alongside a CSRF
+<code>state</code> parameter in temporary client-side storage (typically
+<code>sessionStorage</code> or an ephemeral cookie).</li>
+<li><strong>Multi-Tab and Interrupted Flows:</strong> If a user
+initiates logins across multiple tabs or navigates away before
+completing the handshake, orphaned verifiers can cause state mismatches
+or race conditions, necessitating robust cleanup routines and defensive
+error handling.</li>
+</ul>
+<h3 id="pkce-direct-to-idp-vs-the-backend-for-frontend-bff-pattern">PKCE
+(Direct to IdP) vs. The Backend-for-Frontend (BFF) Pattern</h3>
+<p>The most significant architectural decision involving PKCE in web
+development is choosing between a pure public client approach and
+delegating authentication to a Backend-for-Frontend (BFF).</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Attribute</th>
+<th style="text-align: left;">Pure PKCE Public Client (SPA)</th>
+<th style="text-align: left;">BFF Pattern (Confidential Client)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Client Type</strong></td>
+<td style="text-align: left;">Public (in-browser)</td>
+<td style="text-align: left;">Confidential (server-side proxy)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Token Exposure</strong></td>
+<td style="text-align: left;">Tokens reside in browser memory or
+storage</td>
+<td style="text-align: left;">Tokens remain on the backend server</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Browser Session</strong></td>
+<td style="text-align: left;">Access/Refresh tokens sent via
+Authorization header</td>
+<td style="text-align: left;">HTTP-only, Secure, SameSite cookies</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Infrastructure</strong></td>
+<td style="text-align: left;">Minimal; purely static hosting + Identity
+Provider</td>
+<td style="text-align: left;">Requires dedicated server runtime or edge
+compute</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Attack Resilience</strong></td>
+<td style="text-align: left;">Vulnerable to token exfiltration via
+XSS</td>
+<td style="text-align: left;">Resistant to token exfiltration;
+vulnerable to CSRF</td>
+</tr>
+</tbody>
+</table>
+<p>Choosing a pure PKCE implementation reduces operational complexity by
+avoiding an intermediary backend tier, making it cost-effective and
+suitable for statically hosted frontends. However, this shifts the
+burden of token lifecycle management entirely onto the frontend.</p>
+<p>Conversely, adopting a BFF pattern transforms the SPA into an
+interface backed by a confidential client. While the BFF still uses PKCE
+when communicating with the upstream authorization server, tokens never
+enter the browser execution context. This dramatically lowers the impact
+of XSS at the expense of maintaining, scaling, and monitoring an
+intermediary proxy layer.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prevent Directory Traversal Attacks in Static Assets - web-development</title>
+    <meta name="description" content="Directory traversal attacks—also known as path traversal attacks—occur when an attacker manipulates input paths to access restricted files stored outside the intended public web root. Serving static assets such as images, stylesheets, and scripts saf">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/prevent-directory-traversal-attacks-in-static-assets">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Prevent Directory Traversal Attacks in Static Assets - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/prevent-directory-traversal-attacks-in-static-assets" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Directory traversal attacks—also known as path traversal attacks—occur when an attacker manipulates input paths to access restricted files stored outside the intended public web root. Serving static assets such as images, stylesheets, and scripts saf" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="prevent-directory-traversal-attacks-in-static-assets">Prevent
+Directory Traversal Attacks in Static Assets</h1>
+<p>Directory traversal attacks—also known as path traversal
+attacks—occur when an attacker manipulates input paths to access
+restricted files stored outside the intended public web root. Serving
+static assets such as images, stylesheets, and scripts safely requires
+robust server-side boundaries to ensure users cannot navigate up the
+directory tree using dot-dot-slash (<code>../</code>) sequences or
+system-specific absolute paths. Securing static asset delivery involves
+a combination of path canonicalization, strict input validation, web
+server hardening, filesystem access limits, and offloading storage.</p>
+<h3 id="path-canonicalization-and-absolute-path-verification">Path
+Canonicalization and Absolute Path Verification</h3>
+<p>The primary defense against path traversal is resolving relative
+paths into their absolute canonical form before checking if they reside
+within an allowed directory. Web applications and servers use
+canonicalization functions (such as <code>realpath()</code> in C/PHP or
+<code>path.resolve()</code> combined with <code>fs.realpathSync()</code>
+in Node.js) to parse dot-dot-slash tokens, redundant separators, and
+symbolic links. Once the canonical path is computed, the server must
+verify that the resulting string starts with the absolute path of the
+designated public directory. If the target path falls outside the root
+boundary, the request must be terminated immediately with a 403
+Forbidden or 404 Not Found response.</p>
+<h3 id="strict-input-sanitization-and-encoding-handling">Strict Input
+Sanitization and Encoding Handling</h3>
+<p>Attackers often employ URI-encoding tricks (such as
+<code>%2e%2e%2f</code> for <code>../</code> or double-encoding like
+<code>%252e%252e%252f</code>) or null bytes (<code>%00</code>) to bypass
+basic string filters. Effective defenses strip or reject non-whitelisted
+characters before processing requests:</p>
+<ul>
+<li><strong>Allowlist Validation:</strong> Only accept specific
+alphanumeric characters, hyphens, underscores, and safe extensions
+(e.g., <code>.css</code>, <code>.js</code>, <code>.png</code>).</li>
+<li><strong>Reject Direct Path Separators:</strong> Reject incoming file
+parameters containing raw slashes (<code>/</code>, <code>\</code>) or
+traversal sequences outright, rather than attempting to recursively
+strip them, which can fail if an attacker nests sequences (e.g.,
+<code>....//</code>).</li>
+<li><strong>Decode Once:</strong> Ensure that URI decoding is performed
+strictly once prior to validation, preventing double-encoding
+bypasses.</li>
+</ul>
+<h3 id="web-server-configuration-and-hardening">Web Server Configuration
+and Hardening</h3>
+<p>Dedicated web servers like Nginx and Apache are designed to serve
+static files securely by default, but configuration mistakes can
+introduce vulnerabilities:</p>
+<ul>
+<li><strong>Nginx Alias Traversal:</strong> Avoid the classic
+"off-by-slash" vulnerability. In Nginx, a location block defined as
+<code>location /static { alias /var/www/static/; }</code> allows an
+attacker to request <code>/static../private</code> to read adjacent
+directories. Always append trailing slashes consistently:
+<code>location /static/ { alias /var/www/static/; }</code>.</li>
+<li><strong>Apache Directory Directives:</strong> Restrict file serving
+by denying access to the filesystem by default using
+<code>&lt;Directory /&gt; Require all denied &lt;/Directory&gt;</code>,
+explicitly enabling access only for designated asset directories.
+Disable directory indexing (<code>Options -Indexes</code>) to prevent
+attackers from mapping the directory structure.</li>
+</ul>
+<h3 id="filesystem-permissions-and-sandboxing">Filesystem Permissions
+and Sandboxing</h3>
+<p>Applying the principle of least privilege ensures that even if a
+logic flaw allows path traversal, the blast radius remains
+contained:</p>
+<ul>
+<li><strong>Dedicated User Execution:</strong> Run the web server or
+application process under a restricted, non-root user (such as
+<code>www-data</code> or <code>nobody</code>).</li>
+<li><strong>File Permissions:</strong> Mark static asset directories as
+read-only for the web process, and ensure sensitive files (such as
+<code>.env</code>, <code>/etc/passwd</code>, or application source code)
+are inaccessible to the web user's group.</li>
+<li><strong>Chroot Jails and Containers:</strong> Isolate the static
+file server inside a chroot jail or an unprivileged container. In this
+setup, the virtual filesystem treats the asset directory (or container
+root) as the top of the tree, rendering navigation to the host's actual
+root directory impossible.</li>
+</ul>
+<h3 id="offloading-to-object-storage-and-cdns">Offloading to Object
+Storage and CDNs</h3>
+<p>The most reliable way to prevent directory traversal during static
+asset delivery is to decouple file serving from the application server
+entirely. By hosting static assets in cloud object stores (like Amazon
+S3, Google Cloud Storage, or Azure Blob Storage) fronted by a Content
+Delivery Network (CDN), requests never interact with a conventional
+operating system filesystem. Object stores treat keys as flat, isolated
+data blobs, eliminating the concept of directory traversal and
+neutralizing the vulnerability at the architectural level.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

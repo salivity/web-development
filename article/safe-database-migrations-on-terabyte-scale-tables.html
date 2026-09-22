@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Database Migrations on Terabyte-Scale Tables - web-development</title>
+    <meta name="description" content="Running schema migrations on terabyte-scale databases introduces severe risks of table locks, replication lag, and application downtime. To safely modify large datasets without impacting production traffic, web development teams rely on specialized archi">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/safe-database-migrations-on-terabyte-scale-tables">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Safe Database Migrations on Terabyte-Scale Tables - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/safe-database-migrations-on-terabyte-scale-tables" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Running schema migrations on terabyte-scale databases introduces severe risks of table locks, replication lag, and application downtime. To safely modify large datasets without impacting production traffic, web development teams rely on specialized archi" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="safe-database-migrations-on-terabyte-scale-tables">Safe Database
+Migrations on Terabyte-Scale Tables</h1>
+<p>Running schema migrations on terabyte-scale databases introduces
+severe risks of table locks, replication lag, and application downtime.
+To safely modify large datasets without impacting production traffic,
+web development teams rely on specialized architectural strategies,
+including the expand-contract pattern, ghost-table tooling, chunked data
+backfills, and non-blocking native engine capabilities. This article
+breaks down these core techniques to provide a practical guide for
+executing zero-downtime database updates at scale.</p>
+<h2 id="the-expand-and-contract-pattern">The Expand and Contract
+Pattern</h2>
+<p>The expand and contract pattern (also known as parallel run)
+decouples database changes from application releases into phased,
+non-breaking steps:</p>
+<ol type="1">
+<li><strong>Expand:</strong> Add new columns or tables alongside the old
+schema without modifying or dropping existing structures. New columns
+must be nullable or possess default values so existing queries do not
+fail.</li>
+<li><strong>Dual-Write:</strong> Update the application to write to both
+the old and new locations simultaneously, while still reading
+exclusively from the old schema.</li>
+<li><strong>Backfill:</strong> Populate the new columns or tables with
+historical data using background workers.</li>
+<li><strong>Switch Reads:</strong> Update the application to read from
+the new schema.</li>
+<li><strong>Contract:</strong> Stop writing to the old schema and drop
+the deprecated columns or tables in a subsequent release.</li>
+</ol>
+<p>This approach eliminates the need for all-or-nothing cutovers and
+provides a seamless fallback mechanism at any stage.</p>
+<h2 id="online-schema-change-osc-tools">Online Schema Change (OSC)
+Tools</h2>
+<p>Standard DDL (Data Definition Language) queries often lock tables,
+making direct <code>ALTER TABLE</code> commands hazardous on large
+datasets. Online Schema Change tools circumvent locks by operating on
+auxiliary tables:</p>
+<ul>
+<li><strong>Shadow Table Creation:</strong> The tool creates an empty
+"ghost" or "shadow" table with the desired target schema.</li>
+<li><strong>Continuous Synchronization:</strong> The tool streams live
+data modifications from the active table to the ghost table. Tools like
+Percona’s <code>pt-online-schema-change</code> use database triggers,
+whereas GitHub’s <code>gh-ost</code> reads the binary log directly to
+reduce database overhead.</li>
+<li><strong>Bulk Copy:</strong> Historical data is copied in small,
+configurable batches from the original table to the ghost table.</li>
+<li><strong>Atomic Swap:</strong> Once the ghost table is fully caught
+up, an atomic metadata lock swaps the names of the two tables in
+milliseconds, instantly applying the new schema.</li>
+</ul>
+<h2 id="throttled-batch-processing-for-historical-data">Throttled Batch
+Processing for Historical Data</h2>
+<p>Backfilling historical data on massive tables in a single transaction
+will exhaust connection pools, overwhelm undo logs, and inflate
+replication lag.</p>
+<p>Safe migrations divide data modifications into discrete, indexed
+ranges:</p>
+<ul>
+<li><strong>Indexed Iteration:</strong> Batch updates iterate strictly
+over primary keys or unique clustered indexes (e.g.,
+<code>WHERE id &gt;= ? AND id &lt; ?</code>) rather than utilizing
+expensive offset scans.</li>
+<li><strong>Adaptive Batch Sizing:</strong> Batch sizes adapt
+dynamically based on execution time and server load, typically
+processing between 1,000 and 10,000 rows at a time.</li>
+<li><strong>Throttling and Sleep Intervals:</strong> Inserting short
+sleep intervals (e.g., 50–200 milliseconds) between batches gives read
+replicas time to process changes and reduces I/O pressure.</li>
+<li><strong>Lag Monitoring:</strong> Automation scripts monitor
+replication lag and CPU utilization, automatically pausing the backfill
+if lag crosses predetermined thresholds.</li>
+</ul>
+<h2 id="native-non-blocking-operations">Native Non-Blocking
+Operations</h2>
+<p>Modern database engines offer native capabilities designed to
+minimize downtime for common operations:</p>
+<ul>
+<li><strong>PostgreSQL:</strong> Creating indexes using
+<code>CREATE INDEX CONCURRENTLY</code> avoids locking the table against
+writes. PostgreSQL builds the index across two scans without acquiring
+an <code>ACCESS EXCLUSIVE</code> lock. Adding nullable columns or
+columns with constant defaults in recent PostgreSQL versions modifies
+metadata only, executing near-instantly.</li>
+<li><strong>MySQL:</strong> InnoDB’s Online DDL engine supports
+<code>ALGORITHM=INPLACE</code> and <code>ALGORITHM=INSTANT</code> for
+operations like column additions, renaming, and index operations,
+allowing concurrent DML (<code>SELECT</code>, <code>INSERT</code>,
+<code>UPDATE</code>, <code>DELETE</code>) during the migration
+process.</li>
+</ul>
+<p>Teams should explicitly define these native algorithms in migration
+scripts to fail fast if an operation requires an unexpected exclusive
+lock.</p>
+<h2 id="deployment-gating-and-rollback-readiness">Deployment Gating and
+Rollback Readiness</h2>
+<p>Safely managing terabyte-scale migrations requires structural
+discipline across the entire delivery pipeline:</p>
+<ul>
+<li><strong>Decoupled Deployments:</strong> Database migrations are
+never bundled directly with application deployments; they execute as
+independent pipeline steps.</li>
+<li><strong>Feature Flags:</strong> Application logic transitions—such
+as dual-writing and swapping read paths—are wrapped in dynamic feature
+flags, allowing teams to reverse traffic instantly without rolling back
+deployments.</li>
+<li><strong>Safe Rollbacks:</strong> Because dropping a large table or
+column can lock an I/O subsystem, deletions should use hard links or
+deferred drops rather than immediate, blocking deletion commands.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

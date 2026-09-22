@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automatic Dependency Tracking in Reactive Frameworks - web-development</title>
+    <meta name="description" content="Modern web frameworks like SolidJS, Vue 3, and Angular have moved away from manual dependency arrays toward fine-grained, automatic dependency tracking. This article explains the underlying architecture that makes this possible, focusing on how runtime e">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/automatic-dependency-tracking-in-reactive-frameworks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Automatic Dependency Tracking in Reactive Frameworks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/automatic-dependency-tracking-in-reactive-frameworks" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern web frameworks like SolidJS, Vue 3, and Angular have moved away from manual dependency arrays toward fine-grained, automatic dependency tracking. This article explains the underlying architecture that makes this possible, focusing on how runtime e" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="automatic-dependency-tracking-in-reactive-frameworks">Automatic
+Dependency Tracking in Reactive Frameworks</h1>
+<p>Modern web frameworks like SolidJS, Vue 3, and Angular have moved
+away from manual dependency arrays toward fine-grained, automatic
+dependency tracking. This article explains the underlying architecture
+that makes this possible, focusing on how runtime execution stacks,
+property interceptors, and signal graphs collaborate to observe state
+access and manage subscriptions automatically.</p>
+<h2 id="the-limitation-of-explicit-arrays">The Limitation of Explicit
+Arrays</h2>
+<p>In systems relying on manual dependency declaration—most notably
+React’s <code>useEffect</code> and <code>useMemo</code> hooks—developers
+must explicitly provide an array of values that trigger a re-run. This
+approach shifts the burden of graph maintenance onto the developer,
+frequently introducing bugs such as stale closures, memory leaks, and
+redundant renders when dependencies are omitted or incorrectly
+ordered.</p>
+<p>Modern reactive systems solve this by detecting dependencies at
+runtime during actual code execution.</p>
+<h2 id="the-global-execution-context">The Global Execution Context</h2>
+<p>The foundation of automatic dependency tracking is a global tracking
+context, often called the "active effect" or "running observer."</p>
+<p>Because JavaScript runs in a single-threaded environment, frameworks
+maintain a shared stack or a single reference variable (e.g.,
+<code>activeListener</code>) in memory. When a reactive computation—such
+as an effect or a computed value—begins execution:</p>
+<ol type="1">
+<li>The framework sets the global reference to point to that specific
+computation.</li>
+<li>The computation’s inner callback function executes
+synchronously.</li>
+<li>The framework clears the global reference (or pops it off the stack)
+once the function returns.</li>
+</ol>
+<p>This context provides a window during which any state read operation
+knows exactly which computation requested it.</p>
+<h2 id="intercepting-state-access-with-getters-and-proxies">Intercepting
+State Access with Getters and Proxies</h2>
+<p>To capture reads and writes, reactive frameworks wrap raw values in
+accessors. They generally use one of two primitives:</p>
+<ul>
+<li><strong>JavaScript <code>Proxy</code> Objects:</strong> Frameworks
+like Vue wrap objects in a Proxy. The Proxy's <code>get</code> trap
+intercepts property accesses, while the <code>set</code> trap intercepts
+mutations.</li>
+<li><strong>Signal Getters/Accessors:</strong> Frameworks like SolidJS
+and Angular Signals wrap primitives in getter functions (e.g.,
+<code>count()</code>) or objects with explicit <code>.value</code>
+getters.</li>
+</ul>
+<p>When a computation runs, any reactive state accessed inside its body
+invokes a <code>get</code> trap or accessor function. Inside this
+getter, the framework checks if the global "active effect" pointer is
+currently set.</p>
+<p>If an active effect exists, the state registers that effect inside
+its internal collection of subscribers (often a <code>Set</code>).
+Simultaneously, the effect records the state in its own collection of
+dependencies. This creates a bidirectional link between the producer of
+the state and its consumer.</p>
+<h2 id="intercepting-mutations-and-triggering-updates">Intercepting
+Mutations and Triggering Updates</h2>
+<p>When state changes via a setter function or a Proxy <code>set</code>
+trap:</p>
+<ol type="1">
+<li>The reactive variable intercepts the new value.</li>
+<li>It compares the new value to the old value (typically using
+<code>Object.is</code>) to avoid unnecessary work.</li>
+<li>If the value has changed, the variable iterates over its internal
+subscriber collection.</li>
+<li>Each subscribed computation is either executed immediately or placed
+into a microtask queue to batch updates and prevent layout
+thrashing.</li>
+</ol>
+<p>Because subscriptions are tied directly to functions rather than
+entire components, only the precise functions or DOM nodes dependent on
+that mutated value run again.</p>
+<h2 id="handling-dynamic-dependencies-and-conditional-logic">Handling
+Dynamic Dependencies and Conditional Logic</h2>
+<p>A common challenge in dependency tracking is dynamic branching, such
+as conditional statements:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">createEffect</span>(() <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">showDetails</span>()) {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(user<span class="op">.</span><span class="fu">name</span>())<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(<span class="st">&quot;Details hidden&quot;</span>)<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>If <code>showDetails()</code> evaluates to <code>false</code>,
+<code>user.name()</code> is never accessed. Therefore, the computation
+does not register a subscription to <code>user.name()</code>.</p>
+<p>To prevent outdated subscriptions when branch conditions change,
+frameworks clean up subscriptions on every execution. Before an effect
+re-runs, it severs its connections to all previously tracked variables.
+As the effect executes again, it re-registers only the dependencies
+encountered during that specific run. This guarantees that the
+dependency graph remains fully accurate and prevents memory leaks from
+unused state.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>Automatic dependency tracking eliminates manual maintenance by
+turning state reads into subscription events and state writes into
+notifications. By combining synchronous execution contexts with getters
+or Proxies, modern frameworks maintain a live, accurate dependency graph
+that minimizes redundant computation and optimizes rendering
+performance.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

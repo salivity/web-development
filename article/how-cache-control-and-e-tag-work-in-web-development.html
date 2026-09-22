@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Cache-Control and ETag Work in Web Development - web-development</title>
+    <meta name="description" content="Modern web performance relies heavily on browser caching to reduce server load, save network bandwidth, and deliver fast load times to users. This article explains how two fundamental HTTP headers—Cache-Control and ETag—operate together to manage ass">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-cache-control-and-e-tag-work-in-web-development">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Cache-Control and ETag Work in Web Development - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-cache-control-and-e-tag-work-in-web-development" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern web performance relies heavily on browser caching to reduce server load, save network bandwidth, and deliver fast load times to users. This article explains how two fundamental HTTP headers—Cache-Control and ETag—operate together to manage ass" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-cache-control-and-etag-work-in-web-development">How
+Cache-Control and ETag Work in Web Development</h1>
+<p>Modern web performance relies heavily on browser caching to reduce
+server load, save network bandwidth, and deliver fast load times to
+users. This article explains how two fundamental HTTP
+headers—<code>Cache-Control</code> and <code>ETag</code>—operate
+together to manage asset freshness and validation. By mastering these
+headers, developers can dictate precisely when browsers should store
+resources locally, when they must re-verify them with the origin server,
+and how to eliminate redundant data transfers entirely.</p>
+<h3 id="the-role-of-cache-control">The Role of Cache-Control</h3>
+<p>The <code>Cache-Control</code> HTTP header is the primary mechanism
+used to define caching policies for both browsers (private caches) and
+intermediate systems like CDNs or proxies (public caches). It uses
+directives to control who can cache an asset, for how long, and under
+what conditions.</p>
+<p>Key directives include:</p>
+<ul>
+<li><strong><code>max-age=&lt;seconds&gt;</code></strong>: Specifies the
+maximum amount of time in seconds an asset is considered "fresh." During
+this window, the browser serves the file directly from its local disk or
+memory cache without contacting the server.</li>
+<li><strong><code>no-cache</code></strong>: Forces the browser to send a
+validation request to the origin server before using the cached copy.
+The browser still stores the asset, but it cannot use it without server
+approval.</li>
+<li><strong><code>no-store</code></strong>: Instructs the browser and
+intermediate caches never to store any version of the request or
+response. This is typically used for sensitive data such as
+authentication tokens or banking information.</li>
+<li><strong><code>public</code> vs. <code>private</code></strong>: A
+<code>public</code> directive allows intermediate caches (such as CDNs)
+to store the response, making it available to multiple users. A
+<code>private</code> directive restricts caching solely to the
+end-user's browser.</li>
+<li><strong><code>immutable</code></strong>: Signals to the browser that
+the response body will never change over its lifetime, preventing
+validation requests even when the user refreshes the page.</li>
+</ul>
+<h3 id="the-role-of-etag">The Role of ETag</h3>
+<p>While <code>Cache-Control</code> dictates expiration time, the
+<code>ETag</code> (Entity Tag) header handles validation. An
+<code>ETag</code> is an opaque identifier, usually a hash of the file
+contents or a version string, assigned by the web server to a specific
+version of a resource.</p>
+<p>When a cached asset's <code>max-age</code> expires or when configured
+with <code>no-cache</code>, the browser needs to check if the file has
+changed. Instead of re-downloading the entire asset, the browser sends a
+conditional request containing the <code>If-None-Match</code> header
+along with the saved <code>ETag</code> value.</p>
+<p>The server then compares the incoming token against the current
+version of the resource:</p>
+<ul>
+<li><strong>If identical:</strong> The server returns an
+<code>HTTP 304 Not Modified</code> response with an empty body,
+instructing the browser to reuse its local copy.</li>
+<li><strong>If changed:</strong> The server returns an
+<code>HTTP 200 OK</code> response along with the updated asset and a new
+<code>ETag</code>.</li>
+</ul>
+<h3 id="how-cache-control-and-etag-interact">How Cache-Control and ETag
+Interact</h3>
+<p><code>Cache-Control</code> and <code>ETag</code> solve two distinct
+phases of the caching lifecycle: determination of freshness and
+conditional revalidation.</p>
+<ol type="1">
+<li><strong>Initial Request:</strong> The client requests
+<code>main.js</code>. The server returns the file with
+<code>Cache-Control: max-age=3600, no-cache</code> and
+<code>ETag: "abc123xyz"</code>.</li>
+<li><strong>Subsequent Request:</strong> Because <code>no-cache</code>
+is present, the browser cannot use the file blindly. It checks its
+cache, finds the <code>ETag</code>, and sends a request with
+<code>If-None-Match: "abc123xyz"</code>.</li>
+<li><strong>Server Evaluation:</strong> If <code>main.js</code> hasn't
+changed, the server sends back a tiny <code>304 Not Modified</code>
+header payload. The browser renders the page using the local file,
+avoiding a multi-kilobyte or multi-megabyte download.</li>
+</ol>
+<h3 id="recommended-caching-strategy">Recommended Caching Strategy</h3>
+<p>Modern web development pairs these headers with content-hashed assets
+(e.g., <code>bundle.8a7b6c.js</code>).</p>
+<p>For versioned static assets (JavaScript, CSS, images), set aggressive
+caching:</p>
+<pre class="http"><code>Cache-Control: public, max-age=31536000, immutable</code></pre>
+<p>Because the filename changes whenever the code changes, these files
+never need revalidation.</p>
+<p>For unversioned files that change frequently (such as
+<code>index.html</code>), rely on validation:</p>
+<pre class="http"><code>Cache-Control: no-cache
+ETag: &quot;dynamic-hash-value&quot;</code></pre>
+<p>This guarantees that clients always check for updates to the entry
+file before serving it, while still benefiting from 304 responses when
+no deployment has occurred.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Make package-lock.json Deterministic in CI - web-development</title>
+    <meta name="description" content="Unexpected CI build failures often stem from non-deterministic dependency installations where local environments diverge from build runners. To ensure complete build reproducibility across all environments, web development engineers must configure strict">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-make-package-lock-json-deterministic-in-ci">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Make package-lock.json Deterministic in CI - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-make-package-lock-json-deterministic-in-ci" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Unexpected CI build failures often stem from non-deterministic dependency installations where local environments diverge from build runners. To ensure complete build reproducibility across all environments, web development engineers must configure strict" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-make-package-lockjson-deterministic-in-ci">How to Make
+package-lock.json Deterministic in CI</h1>
+<p>Unexpected CI build failures often stem from non-deterministic
+dependency installations where local environments diverge from build
+runners. To ensure complete build reproducibility across all
+environments, web development engineers must configure strict package
+manager settings, standardize Node.js runtime environments, and replace
+generic install commands with continuous-integration-specific workflows.
+This guide details the essential strategies engineers use to enforce
+deterministic <code>package-lock.json</code> files and eliminate build
+variations.</p>
+<h3 id="use-npm-ci-instead-of-npm-install">Use <code>npm ci</code>
+Instead of <code>npm install</code></h3>
+<p>The standard <code>npm install</code> command is designed for active
+development; it evaluates <code>package.json</code> ranges (such as
+<code>^</code> and <code>~</code>) and can silently rewrite
+<code>package-lock.json</code> if a newer matching version is available
+or if dependencies conflict.</p>
+<p>In automated CI pipelines, engineers strictly use
+<code>npm ci</code>. This command:</p>
+<ul>
+<li>Deletes the existing <code>node_modules</code> directory before
+installing.</li>
+<li>Reads directly from <code>package-lock.json</code> without modifying
+it.</li>
+<li>Throws an immediate build error if <code>package.json</code> and
+<code>package-lock.json</code> are out of sync.</li>
+</ul>
+<h3 id="enforce-consistent-nodejs-and-npm-versions">Enforce Consistent
+Node.js and npm Versions</h3>
+<p>Discrepancies between local developer machines and CI runner versions
+often alter the structure or formatting of
+<code>package-lock.json</code>, particularly across different npm
+lockfile versions (v1, v2, and v3).</p>
+<p>To lock runtime and package manager versions:</p>
+<ol type="1">
+<li><strong>Define the <code>engines</code> field</strong>: Specify
+explicit versions in <code>package.json</code>:
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;engines&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;node&quot;</span><span class="fu">:</span> <span class="st">&quot;20.11.0&quot;</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;npm&quot;</span><span class="fu">:</span> <span class="st">&quot;10.2.4&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div></li>
+<li><strong>Enable strict engine checks</strong>: Add an
+<code>.npmrc</code> file to the project root containing
+<code>engine-strict=true</code>. This forces npm to abort the
+installation if the active Node or npm version does not match the
+configuration.</li>
+<li><strong>Pin CI runner actions</strong>: In CI workflows (such as
+GitHub Actions), use explicit setup steps:
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">uses</span><span class="kw">:</span><span class="at"> actions/setup-node@v4</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">with</span><span class="kw">:</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">node-version</span><span class="kw">:</span><span class="at"> </span><span class="st">&#39;20.11.0&#39;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">cache</span><span class="kw">:</span><span class="at"> </span><span class="st">&#39;npm&#39;</span></span></code></pre></div></li>
+</ol>
+<h3 id="pin-exact-dependency-versions">Pin Exact Dependency
+Versions</h3>
+<p>Engineers frequently eliminate ambiguity by disabling automatic
+semver range prefixes (<code>^</code> or <code>~</code>). When running
+<code>npm install &lt;package&gt; --save-exact</code>, npm records the
+exact version number in <code>package.json</code>.</p>
+<p>To enforce this project-wide, define it inside the project's
+<code>.npmrc</code>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="dt">save-exact</span><span class="ot">=</span><span class="kw">true</span></span></code></pre></div>
+<p>This ensures that any team member adding a dependency automatically
+commits an exact version, preventing loose range evaluations during
+subsequent updates.</p>
+<h3 id="validate-lockfile-integrity-in-pull-requests">Validate Lockfile
+Integrity in Pull Requests</h3>
+<p>To prevent non-deterministic or corrupted lockfiles from reaching the
+main branch, teams implement automated checks in their pull request
+pipelines.</p>
+<p>A standard verification script executes:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify the lockfile matches package.json without modifying anything</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> ci <span class="at">--ignore-scripts</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Verify that no tracked files were modified unexpectedly</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> diff <span class="at">--exit-code</span> package-lock.json</span></code></pre></div>
+<p>If a developer manually modified <code>package.json</code> without
+regenerating <code>package-lock.json</code>, the CI run will immediately
+fail, preventing inconsistent states from merging.</p>
+<h3 id="standardize-registry-and-network-configurations">Standardize
+Registry and Network Configurations</h3>
+<p>Differences in package resolution can occur if local developers use
+custom mirrors or alternate registries while the CI environment uses the
+public npm registry. Standardizing the registry in <code>.npmrc</code>
+ensures identical resolved integrity hashes (<code>shasum</code> /
+<code>integrity</code>) inside <code>package-lock.json</code>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode ini"><code class="sourceCode ini"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="dt">registry</span><span class="ot">=</span><span class="st">https://registry.npmjs.org/</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="dt">package-lock</span><span class="ot">=</span><span class="kw">true</span></span></code></pre></div>
+<p>Checking <code>.npmrc</code> into version control guarantees that all
+environments resolve identical metadata, dependencies, and transitive
+packages.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

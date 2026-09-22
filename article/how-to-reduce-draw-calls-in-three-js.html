@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Reduce Draw Calls in Three.js - web-development</title>
+    <meta name="description" content="In WebGL-based applications, high CPU-to-GPU overhead caused by excessive draw calls is often the primary reason for stuttering render loops and degraded framerates. This article details practical, industry-standard strategies development teams can deplo">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-reduce-draw-calls-in-three-js">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Reduce Draw Calls in Three.js - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-reduce-draw-calls-in-three-js" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In WebGL-based applications, high CPU-to-GPU overhead caused by excessive draw calls is often the primary reason for stuttering render loops and degraded framerates. This article details practical, industry-standard strategies development teams can deplo" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-reduce-draw-calls-in-threejs">How to Reduce Draw Calls in
+Three.js</h1>
+<p>In WebGL-based applications, high CPU-to-GPU overhead caused by
+excessive draw calls is often the primary reason for stuttering render
+loops and degraded framerates. This article details practical,
+industry-standard strategies development teams can deploy to
+dramatically lower draw call counts in Three.js, including geometric
+instancing, geometry merging, texture atlasing, BatchedMesh usage, and
+effective spatial culling.</p>
+<h2 id="leverage-instancedmesh-for-duplicate-geometries">Leverage
+InstancedMesh for Duplicate Geometries</h2>
+<p>When rendering dozens, hundreds, or thousands of identical objects
+(such as foliage, debris, or particles) that share the same geometry and
+material, regular <code>THREE.Mesh</code> instances submit an individual
+draw call for each item.</p>
+<p>Replacing individual meshes with <code>THREE.InstancedMesh</code>
+collapses all instances of that geometry into a single draw call. You
+allocate a single buffer and pass transformation matrices
+(<code>Matrix4</code>) and optional instance colors
+(<code>InstancedBufferAttribute</code>) to the GPU:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> count <span class="op">=</span> <span class="dv">1000</span><span class="op">;</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> geometry <span class="op">=</span> <span class="kw">new</span> THREE<span class="op">.</span><span class="fu">BoxGeometry</span>(<span class="dv">1</span><span class="op">,</span> <span class="dv">1</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> material <span class="op">=</span> <span class="kw">new</span> THREE<span class="op">.</span><span class="fu">MeshStandardMaterial</span>()<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> instancedMesh <span class="op">=</span> <span class="kw">new</span> THREE<span class="op">.</span><span class="fu">InstancedMesh</span>(geometry<span class="op">,</span> material<span class="op">,</span> count)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> dummy <span class="op">=</span> <span class="kw">new</span> THREE<span class="op">.</span><span class="fu">Object3D</span>()<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> count<span class="op">;</span> i<span class="op">++</span>) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  dummy<span class="op">.</span><span class="at">position</span><span class="op">.</span><span class="fu">set</span>(<span class="bu">Math</span><span class="op">.</span><span class="fu">random</span>() <span class="op">*</span> <span class="dv">100</span><span class="op">,</span> <span class="dv">0</span><span class="op">,</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">random</span>() <span class="op">*</span> <span class="dv">100</span>)<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  dummy<span class="op">.</span><span class="fu">updateMatrix</span>()<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  instancedMesh<span class="op">.</span><span class="fu">setMatrixAt</span>(i<span class="op">,</span> dummy<span class="op">.</span><span class="at">matrix</span>)<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>instancedMesh<span class="op">.</span><span class="at">instanceMatrix</span><span class="op">.</span><span class="at">needsUpdate</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>scene<span class="op">.</span><span class="fu">add</span>(instancedMesh)<span class="op">;</span></span></code></pre></div>
+<h2 id="merge-static-geometries-with-buffergeometryutils">Merge Static
+Geometries with BufferGeometryUtils</h2>
+<p>For non-identical geometries that remain static relative to one
+another (such as architectural elements, furniture, or stationary
+terrain), merging individual geometries into a single
+<code>BufferGeometry</code> removes redundant draw overhead.</p>
+<p>Three.js provides <code>mergeGeometries</code> via the
+<code>BufferGeometryUtils</code> add-on. Merged meshes should share the
+same material so that they can be drawn simultaneously:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> <span class="op">*</span> <span class="im">as</span> BufferGeometryUtils <span class="im">from</span> <span class="st">&#39;three/addons/utils/BufferGeometryUtils.js&#39;</span><span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> geometries <span class="op">=</span> [geo1<span class="op">,</span> geo2<span class="op">,</span> geo3]<span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> mergedGeometry <span class="op">=</span> BufferGeometryUtils<span class="op">.</span><span class="fu">mergeGeometries</span>(geometries<span class="op">,</span> <span class="kw">false</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> singleMesh <span class="op">=</span> <span class="kw">new</span> THREE<span class="op">.</span><span class="fu">Mesh</span>(mergedGeometry<span class="op">,</span> sharedMaterial)<span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>scene<span class="op">.</span><span class="fu">add</span>(singleMesh)<span class="op">;</span></span></code></pre></div>
+<p>Ensure attributes (normals, UVs, tangents) match across all source
+geometries before merging to avoid dropped attributes or corrupted
+buffers.</p>
+<h2 id="deploy-batchedmesh-for-diverse-dynamic-objects">Deploy
+BatchedMesh for Diverse Dynamic Objects</h2>
+<p>Introduced in modern Three.js releases,
+<code>THREE.BatchedMesh</code> solves the limitation where
+<code>InstancedMesh</code> requires identical geometries and
+<code>mergeGeometries</code> requires static transformations.</p>
+<p><code>BatchedMesh</code> accepts different geometries and allows
+independent translation, rotation, and scaling of each sub-mesh while
+keeping them inside a shared set of draw calls:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> maxGeometryCount <span class="op">=</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> maxVertexCount <span class="op">=</span> <span class="dv">100000</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> maxIndexCount <span class="op">=</span> <span class="dv">200000</span><span class="op">;</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> batchedMesh <span class="op">=</span> <span class="kw">new</span> THREE<span class="op">.</span><span class="fu">BatchedMesh</span>(</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  maxGeometryCount<span class="op">,</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  maxVertexCount<span class="op">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  maxIndexCount<span class="op">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  sharedMaterial</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> geomId <span class="op">=</span> batchedMesh<span class="op">.</span><span class="fu">addGeometry</span>(boxGeometry)<span class="op">;</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> instanceId <span class="op">=</span> batchedMesh<span class="op">.</span><span class="fu">addInstance</span>(geomId)<span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>batchedMesh<span class="op">.</span><span class="fu">setMatrixAt</span>(instanceId<span class="op">,</span> matrix)<span class="op">;</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>scene<span class="op">.</span><span class="fu">add</span>(batchedMesh)<span class="op">;</span></span></code></pre></div>
+<h2 id="consolidate-materials-with-texture-atlases">Consolidate
+Materials with Texture Atlases</h2>
+<p>A unique material inherently triggers a separate draw call, even if
+the geometry is simple. Having dozens of distinct materials prevents
+batching and instancing.</p>
+<p>To circumvent this:</p>
+<ul>
+<li>Combine separate texture maps (albedo, roughness, normal) into a
+single large texture image known as a <strong>texture
+atlas</strong>.</li>
+<li>Remap geometry UV coordinates to point to the correct coordinate
+region within the atlas.</li>
+<li>Avoid assigning arrays of materials to individual faces of a mesh
+(<code>mesh.material = [mat1, mat2]</code>), as Three.js splits
+multi-material meshes into separate draw calls internally.</li>
+</ul>
+<h2 id="optimize-culling-and-object-visibility">Optimize Culling and
+Object Visibility</h2>
+<p>A draw call is avoided entirely if an object is not sent to the
+pipeline.</p>
+<ul>
+<li><strong>Frustum Culling:</strong> Ensure
+<code>mesh.frustumCulled = true</code> (default) is enabled so objects
+outside the camera frustum are not rendered. Accurate bounding spheres
+(<code>geometry.computeBoundingSphere()</code>) are required for frustum
+culling to work correctly.</li>
+<li><strong>Distance Culling via LOD:</strong> Implement
+<code>THREE.LOD</code> (Level of Detail) to replace complex meshes with
+lower-polygon variants at greater distances, or unmount geometries
+completely past a visibility horizon.</li>
+<li><strong>Explicit Visibility Toggles:</strong> Set
+<code>object.visible = false</code> on hidden meshes. Reducing opacity
+to <code>0</code> via material transparency still executes draw calls
+and worsens alpha-blending overhead; toggling <code>visible</code>
+removes the object from the render queue completely.</li>
+</ul>
+<h2 id="profile-draw-calls-with-the-webglrenderer-info-api">Profile Draw
+Calls with the WebGLRenderer Info API</h2>
+<p>Regularly monitor draw calls during runtime using the built-in
+renderer statistics:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(renderer<span class="op">.</span><span class="at">info</span><span class="op">.</span><span class="at">render</span><span class="op">.</span><span class="at">calls</span>)<span class="op">;</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">console</span><span class="op">.</span><span class="fu">log</span>(renderer<span class="op">.</span><span class="at">info</span><span class="op">.</span><span class="at">render</span><span class="op">.</span><span class="at">triangles</span>)<span class="op">;</span></span></code></pre></div>
+<p>Keeping <code>renderer.info.render.calls</code> within a target
+threshold (typically under 100 to 200 calls for mobile devices, and
+under 500 to 1000 for modern desktop targets) ensures CPU draw-call
+submission does not choke the render loop, keeping frame delivery at a
+steady 60 or 120 FPS.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

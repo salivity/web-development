@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CSS Box-Sizing Affects Layout Calculations - web-development</title>
+    <meta name="description" content="The CSS box-sizing property defines how the browser calculates the total width and height of an HTML element. By default, elements add padding and borders to their declared dimensions, which frequently leads to broken layouts and sizing miscalculations.">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-css-box-sizing-affects-layout-calculations">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CSS Box-Sizing Affects Layout Calculations - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-css-box-sizing-affects-layout-calculations" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The CSS box-sizing property defines how the browser calculates the total width and height of an HTML element. By default, elements add padding and borders to their declared dimensions, which frequently leads to broken layouts and sizing miscalculations." />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-css-box-sizing-affects-layout-calculations">How CSS
+Box-Sizing Affects Layout Calculations</h1>
+<p>The CSS <code>box-sizing</code> property defines how the browser
+calculates the total width and height of an HTML element. By default,
+elements add padding and borders to their declared dimensions, which
+frequently leads to broken layouts and sizing miscalculations. This
+article breaks down how the default <code>content-box</code> differs
+from <code>border-box</code>, demonstrates the mathematical formulas
+behind each, and explains why changing this property is a foundational
+best practice in modern responsive design.</p>
+<h2 id="the-standard-box-model-content-box">The Standard Box Model:
+<code>content-box</code></h2>
+<p>By default, all HTML elements use
+<code>box-sizing: content-box</code>. Under this model, any
+<code>width</code> or <code>height</code> assigned to an element applies
+strictly to the content area itself. Padding and borders are added
+outward from that content area.</p>
+<p>The formula for calculating the rendered width of an element under
+<code>content-box</code> is:</p>
+<p><span class="math display">\[\text{Rendered Width} = \text{width} +
+\text{padding-left} + \text{padding-right} + \text{border-left} +
+\text{border-right}\]</span></p>
+<p>For example, consider the following CSS rules:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">box-sizing</span><span class="ch">:</span> <span class="dv">content-box</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">width</span><span class="ch">:</span> <span class="dv">300</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">padding</span><span class="ch">:</span> <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">border</span><span class="ch">:</span> <span class="dv">5</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The browser calculates the final visible width as:</p>
+<ul>
+<li>Width: 300px</li>
+<li>Horizontal Padding: 20px + 20px = 40px</li>
+<li>Horizontal Border: 5px + 5px = 10px</li>
+<li><strong>Total Visible Width:</strong> 350px</li>
+</ul>
+<p>This behavior often breaks grid systems. For instance, setting an
+element to <code>width: 100%</code> alongside any horizontal padding or
+borders causes the element to overflow its parent container.</p>
+<h2 id="the-alternative-box-model-border-box">The Alternative Box Model:
+<code>border-box</code></h2>
+<p>Setting <code>box-sizing: border-box</code> changes the calculation
+so that the specified <code>width</code> and <code>height</code> include
+the content, padding, and border.</p>
+<p>The formula for calculating the content area under
+<code>border-box</code> is:</p>
+<p><span class="math display">\[\text{Content Width} = \text{width} -
+(\text{padding-left} + \text{padding-right} + \text{border-left} +
+\text{border-right})\]</span></p>
+<p>Using the same values as before:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">.card</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">box-sizing</span><span class="ch">:</span> <span class="dv">border-box</span><span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">width</span><span class="ch">:</span> <span class="dv">300</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">padding</span><span class="ch">:</span> <span class="dv">20</span><span class="dt">px</span><span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">border</span><span class="ch">:</span> <span class="dv">5</span><span class="dt">px</span> <span class="dv">solid</span> <span class="cn">black</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>The browser adjusts the inner content area so the overall size stays
+fixed:</p>
+<ul>
+<li><strong>Total Visible Width:</strong> 300px</li>
+<li>Horizontal Padding: 40px</li>
+<li>Horizontal Border: 10px</li>
+<li>Content Area Width: 300px - 40px - 10px = 250px</li>
+</ul>
+<p>If you increase the padding or border, the content area contracts,
+but the outer dimensions of the box do not expand.</p>
+<h2 id="why-border-box-simplifies-layouts">Why <code>border-box</code>
+Simplifies Layouts</h2>
+<ol type="1">
+<li><strong>Fluid and Responsive Design:</strong> Fluid layouts rely
+heavily on percentages. An element set to <code>width: 50%</code> with
+<code>border-box</code> will always occupy exactly half of its parent
+container, regardless of how much padding or border is applied.</li>
+<li><strong>Predictable Grids:</strong> Building multi-column layouts
+requires precise widths (e.g., three columns at <code>33.333%</code>).
+With <code>border-box</code>, internal gutters can be added via padding
+directly on the columns without needing nested wrapper
+<code>div</code>s.</li>
+<li><strong>Form Elements Consistency:</strong> Form inputs
+(<code>&lt;input&gt;</code>, <code>&lt;textarea&gt;</code>,
+<code>&lt;select&gt;</code>) often have differing default browser
+padding and borders. <code>border-box</code> normalizes these elements
+so they align flush with surrounding text blocks and buttons.</li>
+</ol>
+<h2 id="implementing-the-universal-box-sizing-reset">Implementing the
+Universal Box-Sizing Reset</h2>
+<p>Because <code>border-box</code> offers far more intuitive sizing
+behavior, modern web development routinely applies it across all
+elements using a universal CSS reset:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>html {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">box-sizing</span><span class="ch">:</span> <span class="dv">border-box</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="op">*,</span> <span class="op">*</span><span class="in">::before</span><span class="op">,</span> <span class="op">*</span><span class="in">::after</span> {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">box-sizing</span><span class="ch">:</span> <span class="bu">inherit</span><span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This implementation ensures that all elements and pseudo-elements
+inherit <code>border-box</code>, while still making it easy for
+third-party components or specific legacy elements to revert to
+<code>content-box</code> if necessary.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

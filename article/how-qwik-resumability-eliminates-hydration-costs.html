@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Qwik Resumability Eliminates Hydration Costs - web-development</title>
+    <meta name="description" content="Traditional server-side rendered web applications suffer from the "hydration tax"—a performance penalty where the browser must download, parse, and execute substantial JavaScript just to attach event listeners to already-visible HTML. Qwik fundamentall">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-qwik-resumability-eliminates-hydration-costs">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Qwik Resumability Eliminates Hydration Costs - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-qwik-resumability-eliminates-hydration-costs" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Traditional server-side rendered web applications suffer from the "hydration tax"—a performance penalty where the browser must download, parse, and execute substantial JavaScript just to attach event listeners to already-visible HTML. Qwik fundamentall" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-qwik-resumability-eliminates-hydration-costs">How Qwik
+Resumability Eliminates Hydration Costs</h1>
+<p>Traditional server-side rendered web applications suffer from the
+"hydration tax"—a performance penalty where the browser must download,
+parse, and execute substantial JavaScript just to attach event listeners
+to already-visible HTML. Qwik fundamentally solves this issue through an
+architecture called resumability. Instead of rebuilding application
+state and reconciling the DOM on client load, Qwik serializes the entire
+runtime state directly into the HTML on the server. This allows the
+client browser to immediately resume application execution from where
+the server paused, effectively eliminating client-side hydration costs
+and delivering instant interactivity regardless of page complexity.</p>
+<h3 id="the-problem-with-traditional-hydration">The Problem with
+Traditional Hydration</h3>
+<p>In standard frameworks like React, Vue, or Angular, server-side
+rendering (SSR) generates static HTML for fast visual rendering.
+However, that HTML is completely inert until hydration finishes. During
+hydration, the client browser must:</p>
+<ol type="1">
+<li>Download all JavaScript bundles associated with the rendered
+page.</li>
+<li>Parse and execute the framework runtime and component code.</li>
+<li>Re-render the entire component tree to reconstruct the virtual
+DOM.</li>
+<li>Attach event listeners to the matching real DOM nodes.</li>
+</ol>
+<p>This process consumes significant CPU time and bandwidth, delaying
+the Time to Interactive (TTI) and causing poor First Input Delay (FID)
+or Interaction to Next Paint (INP) scores, particularly on low-powered
+mobile devices.</p>
+<h3 id="how-resumability-works">How Resumability Works</h3>
+<p>Resumability treats execution not as a process that starts over on
+the client, but as one continuous execution thread paused on the server
+and resumed in the browser. It achieves this through three core
+mechanisms:</p>
+<h4 id="1-complete-state-serialization-in-html">1. Complete State
+Serialization in HTML</h4>
+<p>During server rendering, Qwik serializes both the application data
+and the component boundary state directly into the generated HTML. This
+includes variable values, reactive stores, and lexical scope closures.
+When the HTML arrives in the browser, the framework does not need to
+execute JavaScript to determine application state—the DOM <em>is</em>
+the state.</p>
+<h4 id="2-declarative-event-listeners">2. Declarative Event
+Listeners</h4>
+<p>Rather than running code to imperatively attach event listeners via
+<code>addEventListener</code>, Qwik writes declarative listener
+attributes directly into the HTML (e.g.,
+<code>on:click="chunk-name.js#symbolName"</code>). The HTML itself
+contains the exact information required to handle user actions, removing
+the need to execute components simply to discover what listeners
+exist.</p>
+<h4 id="3-the-qwikloader">3. The Qwikloader</h4>
+<p>Qwik utilizes an inlined, lightweight JavaScript script called the
+Qwikloader, which is approximately 1KB in size. The Qwikloader registers
+global event listeners at the <code>document</code> level. When a user
+interacts with an element (such as clicking a button):</p>
+<ol type="1">
+<li>The Qwikloader intercepts the bubbling event.</li>
+<li>It inspects the target element's serialized attributes to locate the
+appropriate JavaScript chunk.</li>
+<li>It downloads only that specific piece of code on demand.</li>
+<li>It resumes execution of the closure using the state preserved in the
+HTML.</li>
+</ol>
+<h3 id="zero-hydration-overhead">Zero Hydration Overhead</h3>
+<p>Because component code is never executed during initial page load,
+the cost of page startup drops to zero. JavaScript is downloaded and
+executed strictly on interaction, broken into fine-grained micro-chunks.
+As a result, page complexity no longer correlates with initial load
+performance: an application with thousands of interactive elements boots
+as fast as a completely static HTML file. By replacing hydration with
+resumability, Qwik ensures that the client executes only the code
+strictly necessary to respond to user input.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

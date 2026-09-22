@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Configure Route 53 DNS Failover - web-development</title>
+    <meta name="description" content="This guide explains how web development and operations teams configure automated DNS failover using Amazon Route 53 health checks. It covers the essential steps to achieve high availability through an active-passive architecture, including defining endpo">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-to-configure-route-53-dns-failover">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Configure Route 53 DNS Failover - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-to-configure-route-53-dns-failover" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide explains how web development and operations teams configure automated DNS failover using Amazon Route 53 health checks. It covers the essential steps to achieve high availability through an active-passive architecture, including defining endpo" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-configure-route-53-dns-failover">How to Configure Route
+53 DNS Failover</h1>
+<p>This guide explains how web development and operations teams
+configure automated DNS failover using Amazon Route 53 health checks. It
+covers the essential steps to achieve high availability through an
+active-passive architecture, including defining endpoint health checks,
+routing policies for primary and secondary resources, and verifying
+automated traffic redirection during unexpected outages.</p>
+<h2 id="understanding-dns-failover-in-route-53">Understanding DNS
+Failover in Route 53</h2>
+<p>Route 53 DNS failover automatically detects when an application
+endpoint becomes unhealthy and reroutes incoming traffic to an
+alternative healthy resource, such as a standby server, a secondary
+region, or a static maintenance page hosted on Amazon S3.</p>
+<p>The most common implementation is an <strong>active-passive</strong>
+setup, where all traffic is directed to the primary endpoint until a
+failure occurs, prompting Route 53 to redirect queries to the secondary
+endpoint.</p>
+<hr />
+<h2 id="step-1-create-a-route-53-health-check">Step 1: Create a Route 53
+Health Check</h2>
+<p>Route 53 relies on health checks to monitor the operational status of
+your primary infrastructure.</p>
+<ol type="1">
+<li>Open the <strong>Route 53 console</strong> and navigate to
+<strong>Health checks</strong>.</li>
+<li>Click <strong>Create health check</strong>.</li>
+<li>Configure the health check parameters:
+<ul>
+<li><strong>What to monitor:</strong> Select <em>Endpoint</em>.</li>
+<li><strong>Specify endpoint by:</strong> Choose <em>IP address</em> or
+<em>Domain name</em>.</li>
+<li><strong>Protocol:</strong> Select <em>HTTP</em>, <em>HTTPS</em>, or
+<em>TCP</em> (HTTPS is standard for modern web endpoints).</li>
+<li><strong>Port:</strong> Default is <code>443</code> for HTTPS.</li>
+<li><strong>Path:</strong> Specify a dedicated health endpoint (e.g.,
+<code>/health</code> or <code>/api/healthz</code>) that returns a
+standard <code>200 OK</code> status code when internal dependencies like
+databases and caches are operating normally.</li>
+</ul></li>
+<li>Set the monitoring intervals:
+<ul>
+<li><strong>Request interval:</strong> Choose <em>Standard (30
+seconds)</em> or <em>Fast (10 seconds)</em> for quicker failover
+detection.</li>
+<li><strong>Failure threshold:</strong> Specify how many consecutive
+failed checks are required before Route 53 flags the endpoint as
+unhealthy (default is <code>3</code>).</li>
+</ul></li>
+<li>Complete the setup and optionally link the health check to an
+<strong>Amazon SNS</strong> topic to notify the team when state changes
+occur.</li>
+</ol>
+<hr />
+<h2 id="step-2-configure-the-primary-dns-record">Step 2: Configure the
+Primary DNS Record</h2>
+<p>Next, link the health check to the DNS record handling live
+production traffic.</p>
+<ol type="1">
+<li>Navigate to <strong>Hosted zones</strong> in Route 53 and select
+your domain.</li>
+<li>Click <strong>Create record</strong>.</li>
+<li>Configure the primary record:
+<ul>
+<li><strong>Record name:</strong> Enter the subdomain (e.g.,
+<code>app</code> or leave blank for root).</li>
+<li><strong>Record type:</strong> Select <em>A</em> (or <em>AAAA</em>
+for IPv6).</li>
+<li><strong>Routing policy:</strong> Choose
+<strong>Failover</strong>.</li>
+<li><strong>Failover record type:</strong> Select
+<strong>Primary</strong>.</li>
+<li><strong>Value/Route traffic to:</strong> Enter the IP address or
+alias to the primary resource (e.g., an Application Load Balancer).</li>
+<li><strong>Health check ID:</strong> Select the health check created in
+Step 1.</li>
+<li><strong>TTL (Time to Live):</strong> Set a low TTL, such as 60
+seconds. Lower TTL values ensure recursive DNS resolvers flush cached
+records quickly when a failover event occurs.</li>
+</ul></li>
+<li>Save the record.</li>
+</ol>
+<hr />
+<h2 id="step-3-configure-the-secondary-backup-dns-record">Step 3:
+Configure the Secondary (Backup) DNS Record</h2>
+<p>The secondary record defines where users should be routed when the
+primary record fails.</p>
+<ol type="1">
+<li>Click <strong>Create record</strong> within the same hosted
+zone.</li>
+<li>Configure the secondary record:
+<ul>
+<li><strong>Record name:</strong> Must match the <strong>Record
+name</strong> used for the primary record.</li>
+<li><strong>Record type:</strong> Must match the primary record type
+(<em>A</em> or <em>AAAA</em>).</li>
+<li><strong>Routing policy:</strong> Choose
+<strong>Failover</strong>.</li>
+<li><strong>Failover record type:</strong> Select
+<strong>Secondary</strong>.</li>
+<li><strong>Value/Route traffic to:</strong> Enter the backup endpoint
+(e.g., a secondary region load balancer, a disaster recovery server, or
+an S3 website endpoint).</li>
+<li><strong>Health check ID:</strong> Optional. If the backup is a
+dynamic secondary server, attach a separate health check. If it is a
+static S3 bucket, a health check is generally unnecessary.</li>
+<li><strong>TTL:</strong> Match the TTL configured on the primary record
+(e.g., 60 seconds).</li>
+</ul></li>
+<li>Save the record.</li>
+</ol>
+<hr />
+<h2 id="step-4-validate-and-test-the-failover">Step 4: Validate and Test
+the Failover</h2>
+<p>Teams must simulate failure scenarios to verify that traffic
+redirects as expected:</p>
+<ol type="1">
+<li><strong>Simulate an Outage:</strong> Temporarily block inbound
+health check traffic at the security group level, or modify the primary
+application's <code>/health</code> endpoint to return a
+<code>500 Internal Server Error</code>.</li>
+<li><strong>Monitor Health Check Status:</strong> Open the Route 53
+Health Checks dashboard and confirm that the primary health check status
+transitions from <em>Healthy</em> to <em>Unhealthy</em>.</li>
+<li><strong>Query DNS:</strong> Use CLI utilities such as
+<code>dig</code> or <code>nslookup</code> to inspect DNS resolution:
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">dig</span> app.example.com +short</span></code></pre></div>
+Verify that the response returns the IP address or alias of the
+secondary endpoint once the failure threshold and TTL window pass.</li>
+<li><strong>Restore Service:</strong> Revert the changes to return the
+endpoint to a healthy state. Confirm that Route 53 switches queries back
+to the primary record automatically.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

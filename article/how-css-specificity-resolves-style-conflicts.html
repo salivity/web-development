@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CSS Specificity Resolves Style Conflicts - web-development</title>
+    <meta name="description" content="CSS specificity is a weight-based scoring system that browsers use to determine which style declarations apply to an element when multiple conflicting rules are present. By assigning different numerical weights to various types of selectors, the browser">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-css-specificity-resolves-style-conflicts">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CSS Specificity Resolves Style Conflicts - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-css-specificity-resolves-style-conflicts" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="CSS specificity is a weight-based scoring system that browsers use to determine which style declarations apply to an element when multiple conflicting rules are present. By assigning different numerical weights to various types of selectors, the browser" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-css-specificity-resolves-style-conflicts">How CSS
+Specificity Resolves Style Conflicts</h1>
+<p>CSS specificity is a weight-based scoring system that browsers use to
+determine which style declarations apply to an element when multiple
+conflicting rules are present. By assigning different numerical weights
+to various types of selectors, the browser calculates a specificity
+value for each rule; the declaration associated with the highest score
+takes precedence and gets rendered. This article explains how
+specificity values are calculated, how ties are broken by source order,
+and how special modifiers like <code>!important</code> alter the normal
+cascade.</p>
+<h3 id="the-specificity-hierarchy">The Specificity Hierarchy</h3>
+<p>When conflicting declarations target the same CSS property on an
+element, the browser evaluates selectors across four distinct tiers of
+priority:</p>
+<ol type="1">
+<li><strong>Inline Styles:</strong> Styles applied directly to an HTML
+element via the <code>style</code> attribute have the highest standard
+specificity.</li>
+<li><strong>ID Selectors:</strong> Selectors that target elements by ID
+(e.g., <code>#header</code>) carry high weight and easily override
+classes and elements.</li>
+<li><strong>Class, Attribute, and Pseudo-Class Selectors:</strong> This
+category includes class selectors (e.g., <code>.button</code>),
+attribute selectors (e.g., <code>[type="submit"]</code>), and
+pseudo-classes (e.g., <code>:hover</code>, <code>:focus</code>).</li>
+<li><strong>Element and Pseudo-Element Selectors:</strong> The lowest
+priority tier belongs to raw HTML tag selectors (e.g., <code>div</code>,
+<code>p</code>, <code>h1</code>) and pseudo-elements (e.g.,
+<code>::before</code>, <code>::after</code>).</li>
+</ol>
+<p>Universal selectors (<code>*</code>), combinators (<code>+</code>,
+<code>&gt;</code>, <code>~</code>, space), and the <code>:where()</code>
+pseudo-class contribute nothing (0-0-0) to specificity.</p>
+<h3 id="calculating-specificity-values">Calculating Specificity
+Values</h3>
+<p>Specificity is typically calculated as a four-part tuple:
+<code>(Inline, IDs, Classes, Elements)</code>.</p>
+<p>Instead of adding these values up as standard base-10 numbers,
+browsers compare them from left to right, matching values at the highest
+tier first:</p>
+<ul>
+<li><code>style="color: red;"</code> has a value of <strong>(1, 0, 0,
+0)</strong>.</li>
+<li><code>#nav</code> has a value of <strong>(0, 1, 0, 0)</strong>.</li>
+<li><code>.menu .item</code> has a value of <strong>(0, 0, 2,
+0)</strong>.</li>
+<li><code>nav ul li a</code> has a value of <strong>(0, 0, 0,
+4)</strong>.</li>
+</ul>
+<p>Because comparison proceeds from left to right, a single ID selector
+<code>(0, 1, 0, 0)</code> will always override any combination of
+classes and element tags, regardless of how many classes are chained
+together (e.g., <code>(0, 0, 15, 0)</code> still loses to
+<code>(0, 1, 0, 0)</code>).</p>
+<h3 id="resolving-ties-the-cascade-and-source-order">Resolving Ties: The
+Cascade and Source Order</h3>
+<p>If two conflicting CSS rules have the exact same specificity
+calculation, the browser resolves the conflict using the rule of source
+order: <strong>the declaration defined last in the stylesheet
+wins</strong>.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode css"><code class="sourceCode css"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">/* Specificity: (0, 0, 1, 0) */</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">.alert</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">color</span><span class="ch">:</span> <span class="cn">blue</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">/* Specificity: (0, 0, 1, 0) */</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">.alert</span> {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">color</span><span class="ch">:</span> <span class="cn">red</span><span class="op">;</span> <span class="co">/* This declaration wins because it appears later */</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>This principle also applies across multiple linked stylesheets; the
+stylesheet loaded later in the document's <code>&lt;head&gt;</code> will
+override identical-specificity rules from earlier stylesheets.</p>
+<h3 id="the-important-rule">The <code>!important</code> Rule</h3>
+<p>Appending <code>!important</code> to a CSS declaration removes it
+from standard specificity calculations entirely. An
+<code>!important</code> rule overrides all normal declarations,
+including inline styles. When two conflicting rules both feature
+<code>!important</code>, the browser falls back to standard specificity
+and source order to resolve the tie between those two specific rules.
+Due to its disruptive effect on the stylesheet cascade,
+<code>!important</code> is typically reserved for critical utility
+overrides.</p>
+<h3 id="modern-specificity-controls">Modern Specificity Controls</h3>
+<p>Modern CSS offers dedicated pseudo-classes to manage specificity
+proactively:</p>
+<ul>
+<li><strong><code>:is()</code> and <code>:not()</code></strong>: The
+specificity of these pseudo-classes adopts the specificity of the most
+specific selector in its argument list.</li>
+<li><strong><code>:where()</code></strong>: Always maintains a
+specificity of <code>(0, 0, 0)</code>, regardless of the selectors
+passed inside it, making it ideal for creating easily overridable
+default styles.</li>
+<li><strong><code>@layer</code></strong>: CSS Cascade Layers allow
+developers to establish explicit priority tiers regardless of selector
+specificity. Rules in a higher layer always override rules in a lower
+layer, with standard specificity only evaluated within each individual
+layer.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proxy Traps vs Dirty Checking for DOM Updates - web-development</title>
+    <meta name="description" content="Fine-grained DOM updates powered by JavaScript Proxy traps outperform dirty-checking algorithms by replacing global state scanning with direct, surgical updates. While dirty checking requires a framework to periodically scan and compare the entire applic">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/proxy-traps-vs-dirty-checking-for-dom-updates">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Proxy Traps vs Dirty Checking for DOM Updates - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/proxy-traps-vs-dirty-checking-for-dom-updates" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Fine-grained DOM updates powered by JavaScript Proxy traps outperform dirty-checking algorithms by replacing global state scanning with direct, surgical updates. While dirty checking requires a framework to periodically scan and compare the entire applic" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="proxy-traps-vs-dirty-checking-for-dom-updates">Proxy Traps vs
+Dirty Checking for DOM Updates</h1>
+<p>Fine-grained DOM updates powered by JavaScript Proxy traps outperform
+dirty-checking algorithms by replacing global state scanning with
+direct, surgical updates. While dirty checking requires a framework to
+periodically scan and compare the entire application state to detect
+changes, Proxy traps allow frameworks to intercept state reads and
+writes natively. This enables the runtime to execute only the exact DOM
+modifications associated with a modified piece of data, dramatically
+reducing CPU overhead and eliminating performance bottlenecks in dynamic
+web applications.</p>
+<h3 id="how-dirty-checking-works">How Dirty Checking Works</h3>
+<p>Dirty checking, popularized by early frameworks like AngularJS,
+detects state changes by polling. Whenever an asynchronous event
+occurs—such as a user click, an HTTP response, or a timer—the framework
+initiates a digest cycle. During this cycle, the runtime iterates
+through an array of all registered watchers, evaluating every bound
+expression and comparing the new result against the previously stored
+value.</p>
+<p>This approach suffers from significant architectural drawbacks:</p>
+<ul>
+<li><strong><span class="math inline">\(O(N)\)</span>
+Complexity:</strong> The computational cost scales linearly (<span
+class="math inline">\(O(N)\)</span>) with the total number of watchers
+in the application, regardless of whether a single boolean changed or
+hundreds of records were updated.</li>
+<li><strong>Redundant Computations:</strong> In complex applications
+with thousands of bindings, running comparison checks on unchanged
+values burns substantial CPU cycles on the main thread.</li>
+<li><strong>Loop Limits and Instability:</strong> Cascading dependencies
+often require multiple digest iterations until the data stabilizes,
+occasionally causing infinite loops (e.g., maximum digest iteration
+reached) and frame drops.</li>
+</ul>
+<h3 id="how-proxy-traps-enable-fine-grained-reactivity">How Proxy Traps
+Enable Fine-Grained Reactivity</h3>
+<p>Introduced in ECMAScript 2015 (ES6), the <code>Proxy</code> object
+wraps a target object and intercepts fundamental operations via "traps,"
+primarily <code>get</code> and <code>set</code>. Modern frameworks
+utilize these traps to create automatic dependency tracking without
+virtual DOM diffing or digest cycles.</p>
+<ol type="1">
+<li><strong>Dependency Registration (The <code>get</code>
+Trap):</strong> When a component or reactive effect reads a reactive
+property during rendering, the <code>get</code> trap intercepts the
+read. The framework registers the currently active computation (such as
+a text node update) as a subscriber to that specific property.</li>
+<li><strong>Targeted Mutation (The <code>set</code> Trap):</strong> When
+the application updates that property, the <code>set</code> trap
+intercepts the write operation. Instead of scanning the entire state
+tree, the trap looks up only the computations subscribed directly to
+that property and executes them immediately.</li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">createSignal</span>(value) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> subscribers <span class="op">=</span> <span class="kw">new</span> <span class="bu">Set</span>()<span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> <span class="kw">new</span> <span class="bu">Proxy</span>({ value }<span class="op">,</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">get</span>(target<span class="op">,</span> prop) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (prop <span class="op">===</span> <span class="st">&#39;value&#39;</span> <span class="op">&amp;&amp;</span> currentEffect) {</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        subscribers<span class="op">.</span><span class="fu">add</span>(currentEffect)<span class="op">;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> target[prop]<span class="op">;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    }<span class="op">,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">set</span>(target<span class="op">,</span> prop<span class="op">,</span> newValue) {</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      target[prop] <span class="op">=</span> newValue<span class="op">;</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>      <span class="cf">if</span> (prop <span class="op">===</span> <span class="st">&#39;value&#39;</span>) {</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        subscribers<span class="op">.</span><span class="fu">forEach</span>(fn <span class="kw">=&gt;</span> <span class="fu">fn</span>())<span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="why-proxy-traps-outperform-dirty-checking">Why Proxy Traps
+Outperform Dirty Checking</h3>
+<h4 id="1-o1-scalability">1. <span class="math inline">\(O(1)\)</span>
+Scalability</h4>
+<p>Proxy-based reactivity operates in <span
+class="math inline">\(O(1)\)</span> to <span
+class="math inline">\(O(K)\)</span> time, where <span
+class="math inline">\(K\)</span> is the number of elements directly
+dependent on the modified property, rather than <span
+class="math inline">\(N\)</span>, the total number of bindings in the
+application. Changing a single counter bound to one
+<code>&lt;span&gt;</code> takes identical execution time whether the
+application contains ten elements or ten thousand.</p>
+<h4 id="2-direct-dom-mutations">2. Direct DOM Mutations</h4>
+<p>Dirty checking typically operates at the component or global scope,
+often requiring reconciliation phases to figure out what DOM nodes need
+updating. Proxy-driven architectures bind the reactive listener directly
+to a DOM node (e.g., <code>node.data = newValue</code> or
+<code>element.setAttribute(...)</code>). When the state triggers the
+setter, the DOM updates in place without intermediate tree diffing or
+tree traversals.</p>
+<h4 id="3-elimination-of-event-triggered-scans">3. Elimination of
+Event-Triggered Scans</h4>
+<p>Dirty checking must evaluate watchers proactively whenever
+<em>any</em> event fires, because it cannot know which event changed
+which data. Proxies are strictly reactive: they sit idle until an actual
+write occurs. If a background task runs without mutating tracked state,
+zero CPU overhead is incurred for change detection.</p>
+<h4 id="4-memory-and-garbage-collection-efficiency">4. Memory and
+Garbage Collection Efficiency</h4>
+<p>Because Proxy traps avoid the constant creation and evaluation of
+temporary snapshot objects needed for equality comparisons, memory
+allocation remains low. This reduces garbage collection pauses, directly
+improving responsiveness and preventing UI stutter on low-powered mobile
+devices.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

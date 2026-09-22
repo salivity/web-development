@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing Database Deadlocks in High-Concurrency Apps - web-development</title>
+    <meta name="description" content="Database deadlocks occur when two or more transactions permanently block each other because each holds a lock the other needs to proceed. In high-concurrency web applications, frequent deadlocks cause dropped requests, database connection pool exhaustion">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/preventing-database-deadlocks-in-high-concurrency-apps">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing Database Deadlocks in High-Concurrency Apps - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/preventing-database-deadlocks-in-high-concurrency-apps" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Database deadlocks occur when two or more transactions permanently block each other because each holds a lock the other needs to proceed. In high-concurrency web applications, frequent deadlocks cause dropped requests, database connection pool exhaustion" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="preventing-database-deadlocks-in-high-concurrency-apps">Preventing
+Database Deadlocks in High-Concurrency Apps</h1>
+<p>Database deadlocks occur when two or more transactions permanently
+block each other because each holds a lock the other needs to proceed.
+In high-concurrency web applications, frequent deadlocks cause dropped
+requests, database connection pool exhaustion, and degraded user
+experiences. Preventing these scenarios requires a combination of
+disciplined transaction management, predictable resource access
+patterns, optimized query indexing, and application-level retry
+mechanisms.</p>
+<h2 id="enforce-consistent-lock-ordering">Enforce Consistent Lock
+Ordering</h2>
+<p>The most effective architectural prevention strategy is enforcing a
+global order in which resources are accessed and updated. Deadlocks
+typically happen when Transaction A updates Row 1 then Row 2, while
+Transaction B updates Row 2 then Row 1 simultaneously.</p>
+<p>By standardizing application logic to always lock rows in a
+deterministic order (such as ascending by primary key ID), cyclic wait
+conditions become structurally impossible.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Always sort IDs before performing batch operations</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> accounts <span class="kw">SET</span> balance <span class="op">=</span> balance <span class="op">-</span> <span class="dv">100</span> <span class="kw">WHERE</span> <span class="kw">id</span> <span class="kw">IN</span> (<span class="dv">12</span>, <span class="dv">45</span>) <span class="kw">ORDER</span> <span class="kw">BY</span> <span class="kw">id</span> <span class="kw">ASC</span>;</span></code></pre></div>
+<h2 id="keep-transactions-short-and-focused">Keep Transactions Short and
+Focused</h2>
+<p>Lock duration directly correlates with deadlock probability. To
+minimize the time a transaction holds exclusive locks:</p>
+<ul>
+<li><strong>Remove external I/O:</strong> Never execute HTTP requests,
+file uploads, email dispatches, or computationally heavy tasks inside an
+active database transaction.</li>
+<li><strong>Defer updates:</strong> Perform read-only operations and
+business validation logic before initiating the transaction.</li>
+<li><strong>Commit immediately:</strong> Open the transaction, execute
+the write operations in rapid succession, and commit immediately.</li>
+</ul>
+<h2 id="optimize-indexes-to-prevent-over-locking">Optimize Indexes to
+Prevent Over-Locking</h2>
+<p>Database engines like MySQL (InnoDB) and PostgreSQL place locks on
+index records. When a query lacks an optimal index, the database scans
+the entire table, locking non-target rows and index gaps (gap locks or
+next-key locks).</p>
+<p>Ensuring that all <code>UPDATE</code>, <code>DELETE</code>, and
+<code>SELECT ... FOR UPDATE</code> statements utilize targeted indexes
+ensures that the engine only locks the exact rows being modified,
+drastically reducing contention across concurrent workers.</p>
+<h2 id="choose-the-right-transaction-isolation-level">Choose the Right
+Transaction Isolation Level</h2>
+<p>Higher isolation levels, such as <code>SERIALIZABLE</code>, enforce
+rigid locking constraints that dramatically increase deadlock
+frequencies under high concurrency.</p>
+<ul>
+<li><strong>Use Read Committed:</strong> For many web workloads, the
+default <code>READ COMMITTED</code> isolation level prevents dirty reads
+while significantly reducing locking overhead.</li>
+<li><strong>Leverage Snapshot Isolation / MVCC:</strong> Multi-Version
+Concurrency Control allows readers not to block writers and writers not
+to block readers, isolating data visibility using historical versions
+rather than shared locks.</li>
+</ul>
+<h2 id="adopt-optimistic-concurrency-control-occ">Adopt Optimistic
+Concurrency Control (OCC)</h2>
+<p>Pessimistic locking via <code>SELECT ... FOR UPDATE</code> holds
+locks for the duration of a transaction. For workflows with
+low-to-moderate collision rates, Optimistic Concurrency Control
+eliminates row-level database locks entirely.</p>
+<p>Implement OCC by tracking a <code>version</code> or
+<code>updated_at</code> column:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">-- Fetch data without locks</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="kw">id</span>, balance, version <span class="kw">FROM</span> accounts <span class="kw">WHERE</span> <span class="kw">id</span> <span class="op">=</span> <span class="dv">1</span>;</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">-- Attempt update using version check</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">UPDATE</span> accounts </span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">SET</span> balance <span class="op">=</span> balance <span class="op">-</span> <span class="dv">50</span>, version <span class="op">=</span> version <span class="op">+</span> <span class="dv">1</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> <span class="kw">id</span> <span class="op">=</span> <span class="dv">1</span> <span class="kw">AND</span> version <span class="op">=</span> <span class="dv">3</span>;</span></code></pre></div>
+<p>If the row count affected is <code>0</code>, another transaction
+updated the row first. The application can then safely reload the state
+and retry.</p>
+<h2 id="implement-resilient-retry-logic">Implement Resilient Retry
+Logic</h2>
+<p>Because distributed and high-concurrency systems cannot eliminate
+every rare edge-case deadlock, applications must handle deadlock
+exceptions gracefully.</p>
+<p>Configure application database drivers or middleware to catch
+vendor-specific deadlock error codes (e.g., MySQL Error 1213, PostgreSQL
+Error 40P01). When detected, the application should automatically retry
+the transaction using randomized exponential backoff and jitter to
+prevent thundering herd conditions.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

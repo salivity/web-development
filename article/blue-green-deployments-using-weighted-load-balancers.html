@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue-Green Deployments Using Weighted Load Balancers - web-development</title>
+    <meta name="description" content="Blue-green deployments eliminate downtime and reduce release risk by running two identical production environments, where one serves live traffic while the other hosts the new release. By introducing weighted load balancer rules into this strategy, devel">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/blue-green-deployments-using-weighted-load-balancers">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Blue-Green Deployments Using Weighted Load Balancers - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/blue-green-deployments-using-weighted-load-balancers" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Blue-green deployments eliminate downtime and reduce release risk by running two identical production environments, where one serves live traffic while the other hosts the new release. By introducing weighted load balancer rules into this strategy, devel" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="blue-green-deployments-using-weighted-load-balancers">Blue-Green
+Deployments Using Weighted Load Balancers</h1>
+<p>Blue-green deployments eliminate downtime and reduce release risk by
+running two identical production environments, where one serves live
+traffic while the other hosts the new release. By introducing weighted
+load balancer rules into this strategy, development teams can gradually
+shift user traffic from the active "blue" environment to the updated
+"green" environment rather than executing an abrupt, all-at-once
+cutover. This approach provides an automated safety net, allowing teams
+to monitor performance metrics, catch regressions under partial load,
+and execute instant rollbacks if issues arise.</p>
+<h3 id="1-provisioning-dual-production-environments">1. Provisioning
+Dual Production Environments</h3>
+<p>Teams maintain two structurally identical production
+environments:</p>
+<ul>
+<li><strong>Blue (Active):</strong> Currently handles 100% of user
+traffic and runs the stable version of the application.</li>
+<li><strong>Green (Idle/Staging):</strong> Runs the newly deployed
+application version, provisioned via Infrastructure as Code (IaC) tools
+such as Terraform, AWS CloudFormation, or Kubernetes manifests.</li>
+</ul>
+<p>Both environments connect to the same persistent data stores or use
+synchronized, backward-compatible database schemas to ensure data
+integrity during parallel execution.</p>
+<h3 id="2-registering-distinct-target-groups">2. Registering Distinct
+Target Groups</h3>
+<p>Modern application load balancers (such as AWS ALB, GCP Cloud Load
+Balancing, NGINX, or HAProxy) organize compute instances or containers
+into target groups.</p>
+<p>The web development team registers:</p>
+<ul>
+<li>Target Group Blue containing instances running version
+<code>n</code>.</li>
+<li>Target Group Green containing instances running version
+<code>n+1</code>.</li>
+</ul>
+<p>Both target groups reside behind a single load balancer endpoint
+configured with listener rules capable of weight-based distribution.</p>
+<h3 id="3-pre-shift-validation">3. Pre-Shift Validation</h3>
+<p>Before routing public traffic to the green target group:</p>
+<ol type="1">
+<li>Internal synthetic testing and automated end-to-end smoke tests run
+against the green environment via internal-only host headers or direct
+IP routing.</li>
+<li>Health check endpoints on the green instances must return continuous
+<code>200 OK</code> responses to ensure the application layer is fully
+primed and dependencies are reachable.</li>
+</ol>
+<h3 id="4-incremental-traffic-shifting-via-weights">4. Incremental
+Traffic Shifting via Weights</h3>
+<p>Once validated, the team initiates traffic migration by modifying the
+load balancer listener rules. Weights are assigned to each target group,
+representing the percentage of total requests each environment will
+receive.</p>
+<p>A typical phased shift progresses as follows:</p>
+<ul>
+<li><strong>Initial State:</strong> Blue: 100% | Green: 0%</li>
+<li><strong>Canary Phase:</strong> Blue: 95% | Green: 5% (Monitors
+baseline performance under real-world conditions)</li>
+<li><strong>Intermediate Phase:</strong> Blue: 50% | Green: 50%
+(Validates capacity, connection pools, and database load)</li>
+<li><strong>Final Cutover:</strong> Blue: 0% | Green: 100% (The green
+environment now serves all incoming traffic)</li>
+</ul>
+<p>These adjustments can be executed manually through a dashboard or
+automated using continuous delivery pipelines (such as GitHub Actions,
+GitLab CI, or Argo Rollouts).</p>
+<h3 id="5-monitoring-and-automated-rollback">5. Monitoring and Automated
+Rollback</h3>
+<p>During each weighting phase, monitoring platforms observe key health
+indicators:</p>
+<ul>
+<li>HTTP 5xx error rates</li>
+<li>Request latency (p95 and p99 percentiles)</li>
+<li>CPU and memory saturation on green instances</li>
+</ul>
+<p>If any metric breaches predefined service-level thresholds, the
+deployment pipeline immediately intervenes by reverting the load
+balancer weight to <code>Blue: 100% / Green: 0%</code>. Because the blue
+environment remained warm throughout the rollout, traffic shifts back
+instantly with zero downtime.</p>
+<h3 id="6-post-deployment-decommissioning">6. Post-Deployment
+Decommissioning</h3>
+<p>After the green environment runs at 100% weight for a designated bake
+period without incident, the deployment concludes:</p>
+<ol type="1">
+<li>Active sessions on the blue environment are allowed to drain
+gracefully.</li>
+<li>The blue environment is either stopped to save infrastructure costs
+or designated as the standby target group for the next deployment
+cycle.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

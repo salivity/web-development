@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor vs Offset Pagination for Large Datasets - web-development</title>
+    <meta name="description" content="Pagination is a critical component of web development, determining how applications fetch and present data to users. While offset-based pagination is easy to implement, it creates significant performance bottlenecks and data inconsistencies when querying">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/cursor-vs-offset-pagination-for-large-datasets">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Cursor vs Offset Pagination for Large Datasets - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/cursor-vs-offset-pagination-for-large-datasets" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Pagination is a critical component of web development, determining how applications fetch and present data to users. While offset-based pagination is easy to implement, it creates significant performance bottlenecks and data inconsistencies when querying" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="cursor-vs-offset-pagination-for-large-datasets">Cursor vs Offset
+Pagination for Large Datasets</h1>
+<p>Pagination is a critical component of web development, determining
+how applications fetch and present data to users. While offset-based
+pagination is easy to implement, it creates significant performance
+bottlenecks and data inconsistencies when querying large datasets.
+Cursor-based pagination overcomes these limitations by utilizing indexed
+pointers to fetch records, resulting in constant-time query execution,
+reduced database load, and stable results that prevent duplicated or
+skipped records during live data mutations.</p>
+<h3
+id="understanding-offset-based-pagination-and-its-flaws">Understanding
+Offset-Based Pagination and Its Flaws</h3>
+<p>Offset-based pagination relies on an offset value and a limit (e.g.,
+<code>LIMIT 20 OFFSET 100000</code>) to paginate through data. To return
+the requested page, the database engine must read through all the
+skipped records from disk or memory before discarding them and returning
+the desired subset.</p>
+<p>As the offset grows, this mechanism scales with <span
+class="math inline">\(O(N)\)</span> time complexity:</p>
+<ul>
+<li><strong>Resource Exhaustion:</strong> Requesting page 5,000 with a
+page size of 20 requires the database to scan, sort, and discard 100,000
+records just to return 20. This consumes high CPU and I/O capacity.</li>
+<li><strong>Data Drift (Missed or Duplicated Records):</strong> If an
+item is added or deleted while a user navigates between pages, the
+window shifts. A newly inserted record at the top of the dataset pushes
+all subsequent items down by one, causing the user to see a duplicate
+record on the next page. Conversely, a deleted record causes an item to
+be skipped entirely.</li>
+</ul>
+<h3 id="how-cursor-based-pagination-works">How Cursor-Based Pagination
+Works</h3>
+<p>Cursor-based pagination (often called keyset pagination) replaces the
+arbitrary page number with a reference point: the cursor. The cursor
+represents the unique identifier or timestamp of the last item retrieved
+in the previous set.</p>
+<p>Instead of counting and discarding rows, the database uses a standard
+<code>WHERE</code> clause combined with an index:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode sql"><code class="sourceCode sql"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">SELECT</span> <span class="kw">id</span>, title, created_at </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">FROM</span> articles </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">WHERE</span> <span class="kw">id</span> <span class="op">&gt;</span> <span class="dv">100042</span> </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">ORDER</span> <span class="kw">BY</span> <span class="kw">id</span> <span class="kw">ASC</span> </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">LIMIT</span> <span class="dv">20</span>;</span></code></pre></div>
+<p>In this model, the client provides the last seen cursor
+(<code>100042</code>) in the subsequent API request. The database uses a
+B-Tree index to seek directly to that exact record and read the next 20
+entries.</p>
+<h3
+id="why-cursor-based-pagination-outperforms-offset-on-large-datasets">Why
+Cursor-Based Pagination Outperforms Offset on Large Datasets</h3>
+<ol type="1">
+<li><strong>Constant-Time Execution (<span
+class="math inline">\(O(1)\)</span> Complexity):</strong> Because the
+query relies on a direct index seek rather than sequential scanning, the
+execution time for page 1 is identical to the execution time for page
+10,000. The database never scans rows it does not intend to return.</li>
+<li><strong>Elimination of Page Drift:</strong> Since the query targets
+an absolute position relative to a specific record rather than a
+relative offset from the start of the table, real-time inserts and
+deletes do not disrupt pagination. New records added above or below the
+cursor do not shift the current result set.</li>
+<li><strong>Reduced Memory and Disk I/O:</strong> Bypassing the need to
+sort and discard massive row sets significantly reduces buffer pool
+usage and temporary disk writes on database servers, allowing the system
+to handle higher concurrent traffic.</li>
+</ol>
+<h3 id="implementation-considerations">Implementation
+Considerations</h3>
+<p>While cursor-based pagination is superior for performance and
+infinite scrolling interfaces, it does not support jumping directly to
+arbitrary page numbers (e.g., navigating directly to "Page 15"). It also
+requires the underlying cursor column (or composite columns) to be
+indexed, unique, and sequentially ordered. For high-volume applications
+and infinite feeds, these trade-offs are standard, making cursor-based
+pagination the modern standard for scalable data retrieval.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

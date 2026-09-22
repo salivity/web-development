@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Cross-Origin Opener Policy Prevents Spectre Attacks - web-development</title>
+    <meta name="description" content="The Cross-Origin Opener Policy (COOP) is a vital security header that defends web applications against Spectre-style side-channel attacks by enforcing process isolation at the operating system level. By isolating browsing contexts and severing direct cro">
+    <link rel="canonical" href="https://salivity.github.io/web-development/article/how-cross-origin-opener-policy-prevents-spectre-attacks">
+    <link rel="search" type="application/opensearchdescription+xml" title="web-development" href="/web-development/opensearch.xml">
+    <link rel="icon" href="/web-development/favicon.ico">
+    <link rel="stylesheet" href="/web-development/css/style.css">
+    <link media="print" rel="stylesheet" href="/web-development/css/print.css">
+    <script src="/web-development/js/fuse.min.js"></script>
+    <script src="/web-development/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Cross-Origin Opener Policy Prevents Spectre Attacks - web-development" />
+    <meta property="og:url" content="https://salivity.github.io/web-development/article/how-cross-origin-opener-policy-prevents-spectre-attacks" />
+    <meta property="og:image" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/web-development/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Cross-Origin Opener Policy (COOP) is a vital security header that defends web applications against Spectre-style side-channel attacks by enforcing process isolation at the operating system level. By isolating browsing contexts and severing direct cro" />
+    <link rel="manifest" href="/web-development/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/web-development/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>web-development</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/web-development/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-cross-origin-opener-policy-prevents-spectre-attacks">How
+Cross-Origin Opener Policy Prevents Spectre Attacks</h1>
+<p>The Cross-Origin Opener Policy (COOP) is a vital security header that
+defends web applications against Spectre-style side-channel attacks by
+enforcing process isolation at the operating system level. By isolating
+browsing contexts and severing direct cross-window references between
+origins, COOP ensures that sensitive data cannot share an execution
+process or memory space with untrusted, malicious code. This article
+explains the mechanics of Spectre attacks in web browsers, how process
+sharing creates vulnerabilities, and how implementing COOP prevents
+cross-origin data leakage.</p>
+<h3 id="the-threat-spectre-style-attacks-in-browsers">The Threat:
+Spectre-Style Attacks in Browsers</h3>
+<p>Spectre is a hardware vulnerability rooted in modern CPU branch
+prediction and speculative execution. When a processor speculatively
+executes instructions that are later discarded, traces of that execution
+remain in the CPU cache. By utilizing high-resolution timers—such as
+<code>performance.now()</code> or dedicated background worker loops—an
+attacker can measure the time it takes to access specific data.
+Variations in cache access latency expose the contents of memory that
+the executing script should not normally be able to read.</p>
+<p>In web environments, this means that if an attacker’s malicious site
+and a target application containing sensitive data (such as
+authentication tokens or personal identifiable information) share the
+same operating system process, the attacker can use microarchitectural
+side channels to leak data across boundaries.</p>
+<h3 id="the-role-of-shared-browsing-contexts">The Role of Shared
+Browsing Contexts</h3>
+<p>Historically, browsers allowed windows opened via
+<code>window.open()</code> or <code>target="_blank"</code> links to
+retain relationships with their opener pages. This mechanism allowed
+pages to retain a direct reference (<code>window.opener</code>) to one
+another.</p>
+<p>To optimize performance and facilitate cross-window communication,
+web browsers frequently grouped these interacting, cross-origin pages
+into the same browsing context group, often running them within the same
+operating system process. Consequently, both documents shared a unified
+address space in system memory, opening the door for Spectre-based
+memory probing.</p>
+<h3 id="how-coop-enforces-isolation">How COOP Enforces Isolation</h3>
+<p>Cross-Origin Opener Policy resolves this structural flaw by
+instructing the browser to segregate top-level documents into
+independent browsing context groups and dedicated processes.</p>
+<p>When a server sends the
+<code>Cross-Origin-Opener-Policy: same-origin</code> HTTP response
+header, the browser enforces two major security measures:</p>
+<ol type="1">
+<li><strong>Severing the Opener Reference:</strong> The browser
+explicitly breaks the script relationship between the current document
+and the opener document. The <code>window.opener</code> property is set
+to <code>null</code>, completely preventing direct DOM and object
+manipulation across the two windows.</li>
+<li><strong>Process Boundary Enforcement:</strong> Because the browsing
+context group is severed, the browser can assign the newly opened
+document to its own isolated operating system process. Since modern
+operating systems enforce strict virtual memory boundaries between
+different processes, CPU cache extraction techniques cannot cross these
+process walls. Even if speculative execution occurs within the
+attacker's process, it cannot access memory addresses assigned to the
+victim's process.</li>
+</ol>
+<h3 id="coop-header-directives">COOP Header Directives</h3>
+<p>Web developers can configure COOP using three primary directives,
+depending on the required level of isolation:</p>
+<ul>
+<li><strong><code>same-origin</code></strong>: Provides the highest
+level of security. It isolates the document exclusively to top-level
+contexts of the same origin. Any cross-origin opener or opened window is
+forced into a separate process without mutual references.</li>
+<li><strong><code>same-origin-allow-popups</code></strong>: Retains
+references to popups that either do not set COOP or opt out of
+isolation, while still isolating the page from cross-origin
+openers.</li>
+<li><strong><code>unsafe-none</code></strong>: The default behavior,
+which allows the document to be placed in the same browsing context
+group and OS process as the opener.</li>
+</ul>
+<h3 id="enabling-cross-origin-isolation">Enabling Cross-Origin
+Isolation</h3>
+<p>While COOP isolates top-level windows, modern web security requires
+complete cross-origin isolation to safely re-enable high-performance
+browser APIs (such as <code>SharedArrayBuffer</code> and high-precision
+timers) that were restricted post-Spectre.</p>
+<p>By pairing <code>Cross-Origin-Opener-Policy: same-origin</code> with
+<code>Cross-Origin-Embedder-Policy: require-corp</code> (COEP),
+developers achieve a "cross-origin isolated" state. COOP ensures process
+separation from external windows, while COEP ensures that all loaded
+subresources (iframes, scripts, media) explicitly grant permission to be
+loaded into that isolated environment. Together, they create an
+impenetrable sandbox that neutralizes browser-based side-channel cache
+attacks.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/web-development'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            utterancesScript.setAttribute('theme', localStorage.getItem('theme') === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="/web-development/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/web-development/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
