@@ -1,0 +1,22 @@
+{
+  "short_name": "web-development",
+  "name": "web-development",
+  "icons": [
+    {
+      "src": "/web-development/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/web-development/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "https://salivity.github.io/web-development",
+  "background_color": "#F0F4F8",
+  "theme_color": "#F0F4F8",
+  "display": "standalone",
+  "orientation": "portrait"
+}
